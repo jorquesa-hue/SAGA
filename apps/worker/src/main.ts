@@ -93,7 +93,7 @@ function respondJson(res: ServerResponse, status: number, body: unknown): void {
 
 main().catch((error) => {
   // Configuration or bootstrap failure: fail startup loudly (Appendix G).
-  // eslint-disable-next-line no-console
+   
   console.error(
     JSON.stringify({
       level: "error",

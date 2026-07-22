@@ -8,7 +8,7 @@ import {
   type Uuid,
 } from "@jk/domain-kernel";
 import { appendEvent, withTenantTransaction } from "@jk/database";
-import { ForbiddenError, IdentityService } from "@jk/identity-tenancy";
+import { ForbiddenError, type IdentityService } from "@jk/identity-tenancy";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDatabase, databaseAvailable, type TestDatabase } from "../../src/pg-harness.js";
 import {
