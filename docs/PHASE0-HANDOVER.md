@@ -4,6 +4,19 @@
 > Read `CLAUDE.md` first. This file is the entry point for any engineer or
 > AI session continuing the build.
 
+## Phase 0 status: COMPLETE ✅
+
+All Phase 0 foundation slices are implemented, tested, and pushed:
+**134 automated tests pass** (68 unit, 56 integration, 10 tenant-isolation);
+`build`, `lint`, `architecture:check`, `contracts:validate` all green.
+Delivered since the initial core: `@jk/observability`, `@jk/testkit` + the
+cross-tenant isolation attack suite (Phase 0 exit gate), `apps/api` (Fastify),
+the synthetic reference-farm seed, and the full docs set (ADRs 001-013,
+architecture, data dictionary, threat model, runbooks, traceability matrix).
+
+The sections below are retained as the record of what was built; the
+"Remaining Phase 0 work" list is now cleared — next up is **Phase 1**.
+
 ## ✅ Done, verified, and pushed
 
 | Area | Contents | Evidence |
@@ -37,30 +50,17 @@ Local dev database: PostgreSQL 16 + PostGIS with roles from
 5. `test:tenant-isolation` root script targets `@jk/testkit` which does not
    exist yet (see below) — CI's tenant-isolation step will no-op until then.
 
-## 🔲 Remaining Phase 0 work (in priority order)
+## ✅ Remaining Phase 0 work — DONE
 
-1. **`packages/testkit` + tenant-isolation attack suite** *(Phase 0 exit gate,
-   §67/§81.10)* — reusable disposable-DB harness + suite attacking every
-   interface (SQL/RLS, identity services, event store, projections) from a
-   second tenant; wire `pnpm test:tenant-isolation`.
-2. **`apps/api`** (NestJS + Fastify, §45–§47): health probes, typed config,
-   OIDC JWT skeleton (jose) + local dev fallback, TenantContext middleware
-   (tenant from validated membership, never client-chosen), Idempotency-Key
-   enforcement, RFC 9457 Problem Details filter, endpoints per
-   `contracts/openapi/jk-platform.yaml` (tenants/farms/invitations/users),
-   integration tests incl. cross-tenant 403s. Serve the authored OpenAPI file.
-3. **`packages/observability`**: pino logger with redaction + OTel API
-   baseline; adopt in api/worker (correlation IDs end-to-end, §77).
-4. **`database/seeds` reference farm** (§6): idempotent synthetic seed —
-   tenant, ~100 ha farm, 12 paddocks (PostGIS polygons), 6 role users,
-   15 Brangus animals + RFID identifiers, one worked event+outbox example;
-   `scripts/bootstrap/seed.mjs` (root script `db:seed` already points there).
-5. **`docs/` completion**: ADR-000 template; ADR-001..010 (open decisions,
-   §93 defaults); ADR-011 (pg driver), ADR-012 (RLS session tenancy);
-   architecture C4 docs; data dictionary from migrations; traceability
-   matrix (`docs/traceability/matrix.{md,csv}` — Appendix K format);
-   operations runbooks; threat-model baseline (§65).
-6. **Phase 0 exit review** against Volume XII exit criteria, then tag.
+1. ~~`packages/testkit` + tenant-isolation attack suite~~ — done (10 tests).
+2. ~~`apps/api`~~ — done on Fastify (ADR-013), 14 integration tests.
+3. ~~`packages/observability`~~ — done (7 tests), adopted by the API.
+4. ~~`database/seeds` reference farm~~ — done (idempotent, RLS-verified).
+5. ~~`docs/` completion~~ — done (ADRs 001-013, architecture, data dictionary,
+   threat model, runbooks, traceability matrix).
+6. **Phase 0 exit review** — foundation criteria met (clean onboarding via
+   `pnpm bootstrap`, CI-ready gates, deployable API + worker, tenant-isolation
+   suite green). Tagging a release is the next housekeeping step.
 
 ## ▶️ Phase 1 preview (next after Phase 0, Volume XII)
 

@@ -26,6 +26,7 @@ ADR-011+ record decisions actually taken during implementation.
 | [ADR-010](ADR-010-graph-database.md) | Dedicated graph database | OPEN |
 | [ADR-011](ADR-011-postgres-driver-and-sql-migrations.md) | node-postgres + reviewed SQL migrations (not Prisma) for Phase 0 | ACCEPTED |
 | [ADR-012](ADR-012-rls-session-tenancy.md) | RLS session tenancy: per-transaction `SET LOCAL app.tenant_id`, three-role model | ACCEPTED |
+| [ADR-013](ADR-013-api-framework-fastify-first.md) | API framework: Fastify-first for Phase 0, NestJS deferred | ACCEPTED |
 
 ## Process
 

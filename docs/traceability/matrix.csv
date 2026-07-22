@@ -1,0 +1,35 @@
+requirement_id,design_area,source,verification,status
+JK-CON-003,event ledger / corrections,database/migrations/0001;packages/domain-kernel/event-envelope.ts,packages/database/tests/integration/migrator.integration.test.ts,implemented
+JK-CON-008,mobile/sync/edge,,,planned
+JK-DOM-001,schema + RLS,database/migrations/0001-0004,packages/testkit/tests/tenant-isolation,implemented
+JK-DOM-002,animal schema,database/migrations/0001,database/seeds/0001_reference_farm.sql,partial
+JK-DOM-003,animal identifiers,database/migrations/0001 (animal_identifier_active_unique),database/seeds/0001_reference_farm.sql,implemented
+JK-DOM-004,schema design,database/migrations/0001,,partial
+JK-DOM-005,event envelope,packages/domain-kernel/event-envelope.ts;packages/database/event-store.ts,packages/domain-kernel/tests/event-envelope.test.ts,implemented
+JK-DOM-006,ledger trigger,database/migrations/0001 (domain_event_no_update),packages/database/tests/integration/migrator.integration.test.ts,implemented
+JK-DOM-007,measurement VO,packages/domain-kernel/measurement.ts,packages/domain-kernel/tests/measurement.test.ts,implemented
+JK-DOM-008,money VO,packages/domain-kernel/money.ts,packages/domain-kernel/tests/money.test.ts,implemented
+JK-DOM-009,ingestion,,,planned
+JK-DOM-010,lifecycle status,database/migrations/0001,,partial
+JK-DOM-011,health,,,planned
+JK-DOM-012,governed AI,,,planned
+JK-IAM-001,identity-tenancy,packages/identity-tenancy;database/migrations/0001-0002,packages/identity-tenancy/tests/integration/identity-service.integration.test.ts,implemented
+JK-IAM-002,API auth,apps/api/src/auth.ts,apps/api/tests/integration/api.integration.test.ts,partial
+JK-IAM-003,authorization policy,packages/identity-tenancy/authorization.ts,packages/identity-tenancy/tests/unit/authorization.test.ts,implemented
+JK-IAM-004,admin,,,planned
+JK-IAM-005,membership lifecycle,packages/identity-tenancy/identity-service.ts (revokeMembership),packages/identity-tenancy/tests/integration/identity-service.integration.test.ts,implemented
+JK-IAM-006,DB roles,database/policies/application_roles.sql,packages/testkit/tests/tenant-isolation,implemented
+JK-SEC-004,API + services,apps/api/src/request-context.ts;packages/identity-tenancy/identity-service.ts,packages/testkit/tests/tenant-isolation,implemented
+JK-SEC-005,migrations,database/migrations (RLS FORCE),packages/testkit/tests/tenant-isolation,implemented
+JK-SEC-006,observability,packages/observability/logger.ts,packages/observability/tests/observability.test.ts,implemented
+JK-SEC-009,audit stream,database/migrations/0002 (audit_record),packages/identity-tenancy/tests/integration/identity-service.integration.test.ts,implemented
+FITNESS-architecture,scripts/validate/architecture-check.mjs,scripts/validate/architecture-check.mjs,pnpm architecture:check,implemented
+FITNESS-contracts,contracts/,scripts/validate/contracts-validate.mjs,pnpm contracts:validate,implemented
+FITNESS-migrations,packages/database/migrator.ts,packages/database/migrator.ts,packages/database/tests/integration/migrator.integration.test.ts,implemented
+FITNESS-tenant-isolation,packages/testkit,packages/testkit/tests/tenant-isolation,pnpm test:tenant-isolation,implemented
+DELIVERABLE-3-openapi,contracts/openapi/jk-platform.yaml,contracts/openapi/jk-platform.yaml,pnpm contracts:validate,implemented
+DELIVERABLE-4-graphql,contracts/graphql/schema.graphql,contracts/graphql/schema.graphql,pnpm contracts:validate,implemented
+DELIVERABLE-5-asyncapi,contracts/asyncapi;contracts/json-schema,contracts/asyncapi/domain-events.yaml,pnpm contracts:validate,implemented
+DELIVERABLE-6-migrations,database/migrations,database/migrations/0001-0004,packages/database/tests/integration,implemented
+DELIVERABLE-16-tests,package tests,packages/*/tests;apps/*/tests,pnpm test,implemented
+DELIVERABLE-19-traceability,docs/traceability,docs/traceability/matrix.md,manual review,implemented
