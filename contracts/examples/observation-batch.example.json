@@ -1,0 +1,35 @@
+{
+  "gatewayId": "5a4b3c2d-1e0f-4a9b-8c7d-6e5f4a3b2c1d",
+  "batchId": "curral-boa-vista-2026-07-22-0001",
+  "sequence": 42,
+  "observations": [
+    {
+      "observationId": "bal01-2026-07-22-000187",
+      "capturedAt": "2026-07-22T08:14:05.000-04:00",
+      "deviceId": "balanca-curral-01",
+      "rfid": "982000123456789",
+      "measurementType": "weight",
+      "value": 412.5,
+      "unit": "kg",
+      "stable": true,
+      "rawPayload": {
+        "frame": "412.5,kg,ST",
+        "firmware": "2.4.1"
+      }
+    },
+    {
+      "observationId": "bal01-2026-07-22-000188",
+      "capturedAt": "2026-07-22T08:15:31.000-04:00",
+      "deviceId": "balanca-curral-01",
+      "rfid": "982000987654321",
+      "measurementType": "weight",
+      "value": 388.0,
+      "unit": "kg",
+      "stable": false,
+      "rawPayload": {
+        "frame": "388.0,kg,MO",
+        "firmware": "2.4.1"
+      }
+    }
+  ]
+}

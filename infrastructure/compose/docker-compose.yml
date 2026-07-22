@@ -1,0 +1,217 @@
+# JK Platform — local development stack (spec JK-PLT-EES-001 §30, Appendix H.2).
+#
+# Usage (from the repository root):
+#
+#   docker compose -f infrastructure/compose/docker-compose.yml up -d postgres redis nats minio keycloak otel-collector
+#   pnpm db:migrate && pnpm db:seed          # migrations + synthetic reference farm
+#   pnpm dev                                  # or run api/worker in containers:
+#   docker compose -f infrastructure/compose/docker-compose.yml up -d --build api worker
+#
+# Configuration comes from a git-ignored `.env` at the repository root
+# (see infrastructure/README.md for the variable inventory). All credentials
+# below are synthetic local-development values (never production secrets),
+# matching database/policies/application_roles.sql.
+#
+# Every long-running service has a healthcheck and a named volume
+# (Appendix H.2 mandate). The otel-collector image ships no shell, so its
+# health is exposed via the collector's own health_check extension
+# (http://localhost:13133/) instead of a Docker healthcheck.
+#
+# Deferred (Phase 0): sync, web, edge-gateway/simulator services land with
+# their apps in later phases (Volume XII); Keycloak realm bootstrap is manual
+# until the managed identity provider decision closes (ADR-002).
+
+name: jk-platform
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: jk
+      POSTGRES_PASSWORD: jk
+      POSTGRES_DB: jk_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jk -d jk_platform"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  nats:
+    image: nats:2-alpine
+    # -js enables JetStream (durable domain events, §30/§31.2);
+    # -sd persists streams into the named volume; -m exposes monitoring.
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8222/healthz | grep -q ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-jk_minio_local}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-jk_minio_local_secret}
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # web console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    # Development mode only (never production). Admin bootstrap credentials
+    # come from the root .env; defaults are synthetic local-only values.
+    # Realm/client bootstrap is intentionally manual until ADR-002 closes.
+    command: ["start-dev"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-jk_admin_local}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-jk_admin_local_secret}
+      KC_HEALTH_ENABLED: "true"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: jk
+      KC_DB_PASSWORD: jk
+    ports:
+      - "8080:8080"
+      - "9080:9000" # management interface (health/metrics)
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak-db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      # The Keycloak image ships no curl/wget; use bash /dev/tcp against the
+      # management port (the approach documented by the Keycloak project).
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # One-shot: create the dedicated keycloak database (kept out of jk_platform
+  # so identity-provider state never mixes with domain state).
+  keycloak-db-init:
+    image: postgis/postgis:16-3.4
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        'psql postgresql://jk:jk@postgres:5432/postgres -tc "SELECT 1 FROM pg_database WHERE datname = ''keycloak''" | grep -q 1 || psql postgresql://jk:jk@postgres:5432/postgres -c ''CREATE DATABASE keycloak''',
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ../observability/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8889:8889" # Prometheus exposition (scrape target)
+      - "13133:13133" # health_check extension
+    # No Docker healthcheck: the image is shell-less; use the health_check
+    # extension endpoint at http://localhost:13133/ instead.
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.api
+    env_file:
+      - path: ../../.env
+        required: false
+    environment:
+      APP_ENV: local
+      PORT: "4000"
+      # Application role (RLS-scoped, least privilege) — see
+      # database/policies/application_roles.sql. Synthetic local password.
+      DATABASE_URL: postgresql://jk_app:jk_app_local@postgres:5432/jk_platform
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      OIDC_ISSUER_URL: http://keycloak:8080/realms/jk-local
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    # Container healthcheck is defined in the image (HEALTHCHECK in
+    # Dockerfile.api, probing /health/live).
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.worker
+    env_file:
+      - path: ../../.env
+        required: false
+    environment:
+      APP_ENV: local
+      PORT: "4100"
+      # Dedicated worker role — never the app role (apps/worker/src/config.ts).
+      WORKER_DATABASE_URL: postgresql://jk_worker:jk_worker_local@postgres:5432/jk_platform
+      NATS_URL: nats://nats:4222
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    ports:
+      - "4100:4100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+
+volumes:
+  postgres-data:
+  redis-data:
+  nats-data:
+  minio-data:
+  keycloak-data:

@@ -1,0 +1,72 @@
+# Deployment validation pipeline (JK-PLT-EES-001 §74, §76-§77).
+# Actual cluster deployment is gated on ADR-001 (cloud/region) and ADR-003
+# (see docs/adr/): no registry, cluster, or cloud identity exists yet. Until
+# those close, this workflow is a real validation gate for the deployment
+# assets — Helm chart lint + offline render and Terraform fmt/validate — so
+# the manifests that will ship stay releasable at all times.
+#
+# id-token: write is declared now so OIDC federation to the chosen cloud
+# (no long-lived credentials) can be wired without a permissions change.
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.environment }}
+  cancel-in-progress: false # never cancel an in-flight deployment validation
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    # Binds to the GitHub environment so protected-environment approval
+    # rules apply to production (§74) once configured in repo settings.
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deployment plan
+        run: |
+          echo "## Deployment plan — ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo ""
+            echo "1. Build once, promote the immutable image digest (blocked: ADR-001 registry)."
+            echo "2. Apply database migrations via protected job (expand-migrate-contract, §74)."
+            echo "3. Rolling/canary rollout of api + worker with health gates (§74)."
+            echo "4. Verify health/SLO gates; roll back application artifacts on failure."
+            echo ""
+            echo "Currently executing validation-only: Helm lint/template + Terraform fmt/validate."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  helm-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Helm lint
+        run: helm lint infrastructure/helm/jk-api
+      - name: Helm template (offline render, no cluster)
+        run: helm template jk-api infrastructure/helm/jk-api > /dev/null
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform formatting
+        run: terraform fmt -check -recursive infrastructure/terraform
+      - name: Terraform validate (local stack, no backend)
+        run: |
+          terraform -chdir=infrastructure/terraform/environments/local init -backend=false
+          terraform -chdir=infrastructure/terraform/environments/local validate

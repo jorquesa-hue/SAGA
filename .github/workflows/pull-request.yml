@@ -1,0 +1,80 @@
+# CI validation pipeline (JK-PLT-EES-001 §73, Appendix I) adapted to the
+# repository's real script surface. Steps not yet implemented in Phase 0
+# (e2e critical path, coverage thresholds, container scans) land with the
+# apps that need them; security scans live in security.yml and contract
+# compatibility in contract-compatibility.yml.
+name: pull-request
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: jk
+          POSTGRES_PASSWORD: jk
+          POSTGRES_DB: jk_test
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U jk"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - "6379:6379"
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      nats:
+        # No health probe: the stock image does not expose the monitoring
+        # endpoint (-m 8222), and Phase 0 integration tests do not depend
+        # on NATS yet. Revisit when messaging integration tests land.
+        image: nats:2-alpine
+        ports:
+          - "4222:4222"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm architecture:check
+      - run: pnpm contracts:validate
+      # `pnpm build` runs strict tsc per package, so a separate
+      # `pnpm typecheck` pass would duplicate the same work.
+      - run: pnpm build
+      - run: pnpm test:unit
+      - name: Integration tests (disposable database per suite)
+        run: pnpm test:integration
+        env:
+          TEST_DATABASE_ADMIN_URL: postgresql://jk:jk@localhost:5432/postgres
+      - name: Cross-tenant isolation attack suite
+        run: pnpm test:tenant-isolation
+        env:
+          TEST_DATABASE_ADMIN_URL: postgresql://jk:jk@localhost:5432/postgres
+      - name: Migration validation from zero (apply + checksum verify)
+        run: node scripts/bootstrap/migrate.mjs --verify
+        env:
+          TEST_DATABASE_URL: postgresql://jk:jk@localhost:5432/jk_test

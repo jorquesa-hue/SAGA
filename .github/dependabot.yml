@@ -1,0 +1,19 @@
+# Dependency update automation (JK-PLT-EES-001 §73 item 8, §75).
+# Minor/patch updates are grouped to keep PR volume reviewable; majors stay
+# individual so breaking changes get dedicated review.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -1,0 +1,71 @@
+# Security scanning pipeline (JK-PLT-EES-001 §73 item 8, §75).
+# Covers: secrets (gitleaks), dependency review + license denylist on PRs,
+# dependency vulnerability audit (pnpm audit), and SAST (CodeQL).
+# IaC and container image scanning land with the image build pipeline
+# (gated on the registry decision, ADR-001).
+name: security
+
+on:
+  pull_request:
+  push:
+    branches: [main] # keeps the CodeQL default-branch baseline current
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so leaked-then-deleted secrets are caught
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      # Fails the build on high/critical advisories. pnpm audit is known to
+      # surface advisory noise from deep dev-only transitive dependencies;
+      # triage findings instead of weakening the gate — document accepted
+      # advisories in the security review notes, never blanket-ignore.
+      - run: pnpm audit --audit-level high
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"

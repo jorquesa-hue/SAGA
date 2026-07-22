@@ -1,0 +1,55 @@
+# Contract compatibility gate (JK-PLT-EES-001 §45-§47, §73 item 5, §74).
+# Runs on pull requests that touch contracts/**: validates head and base
+# contract sets, then blocks structurally-detectable breaking changes
+# (removed operations, schemas, or required fields) via
+# scripts/validate/openapi-compat.mjs.
+#
+# TODO (gated on tooling ADR, see docs/adr/): replace/augment the structural
+# comparer with a full semantic differ (e.g. oasdiff) once the contract
+# tooling decision is recorded. The structural gate stays as a floor.
+name: contract-compatibility
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out base branch contracts
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: .compat-base
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate head contracts
+        run: pnpm contracts:validate
+      - name: Validate base contracts
+        # Runs the base branch's own validator against the base contracts
+        # (bare imports resolve from the workspace-root node_modules).
+        run: |
+          if [ -f .compat-base/scripts/validate/contracts-validate.mjs ]; then
+            node .compat-base/scripts/validate/contracts-validate.mjs
+          else
+            echo "base branch has no contract validator yet; skipping"
+          fi
+      - name: OpenAPI breaking-change gate (base vs head)
+        run: >-
+          node scripts/validate/openapi-compat.mjs
+          --base .compat-base/contracts/openapi
+          --head contracts/openapi

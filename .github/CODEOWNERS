@@ -1,0 +1,4 @@
+# JK Platform code ownership (JK-PLT-EES-001 §72: reviewed changes only).
+# Every path requires review by the platform owner until per-module
+# ownership teams are established.
+* @jorquesa-hue

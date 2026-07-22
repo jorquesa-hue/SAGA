@@ -1,0 +1,69 @@
+# JK Platform — OpenTelemetry Collector baseline (JK-PLT-EES-001 §30, §77).
+#
+# Local development configuration mounted by
+# infrastructure/compose/docker-compose.yml into
+# otel/opentelemetry-collector-contrib. API, worker, and future services
+# export OTLP to this collector (OTEL_EXPORTER_OTLP_ENDPOINT).
+#
+# Correlation/trace IDs propagate end-to-end (§77); metric labels MUST NOT
+# carry high-cardinality tenant identifiers — tenants appear only as
+# pseudonymous keys in logs where permitted.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # memory_limiter MUST run first in every pipeline so backpressure applies
+  # before batching.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+  batch:
+    send_batch_size: 1024
+    timeout: 5s
+
+exporters:
+  # Local visibility: the debug exporter replaces the deprecated `logging`
+  # exporter in current collector releases.
+  debug:
+    verbosity: normal
+    sampling_initial: 5
+    sampling_thereafter: 200
+  # Prometheus-compatible exposition (§30 technology baseline). Scrape
+  # http://otel-collector:8889/metrics.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: jk
+    send_timestamps: true
+    enable_open_metrics: true
+
+extensions:
+  # Container-level health signal (the contrib image has no shell for a
+  # Docker healthcheck): http://otel-collector:13133/
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug, prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]

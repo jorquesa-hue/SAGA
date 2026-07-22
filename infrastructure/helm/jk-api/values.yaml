@@ -1,0 +1,131 @@
+# Default values for jk-api (JK-PLT-EES-001 §76, Appendix H.3).
+# Production overrides live with the GitOps environment configuration;
+# secrets are NEVER placed in values files (external-secret references only).
+
+replicaCount: 2
+
+image:
+  repository: registry.example/jk-api
+  # Images are promoted by immutable digest, never by mutable tag
+  # (Appendix I: build once, promote digests). REQUIRED at deploy time:
+  #   --set image.digest=sha256:<digest>
+  digest: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  # Defaults to the chart fullname when empty.
+  name: ""
+  automountServiceAccountToken: false
+
+podAnnotations:
+  # Observability annotations (§76): metrics are scraped from the app port.
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "4000"
+  prometheus.io/path: "/metrics"
+
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  # Named container port (Appendix H.3): http -> 4000.
+
+containerPort: 4000
+
+# Non-secret configuration ConfigMap and external-secret-materialized Secret
+# (§76: configuration and external-secret references). Both are envFrom'd.
+config:
+  configMapName: jk-api-config
+  secretName: jk-api-secrets
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 384Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+probes:
+  startup:
+    path: /health/startup
+    failureThreshold: 30
+    periodSeconds: 5
+  readiness:
+    path: /health/ready
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    path: /health/live
+    periodSeconds: 10
+    failureThreshold: 3
+
+# Read-only root filesystem requires an explicit writable /tmp.
+tmpVolume:
+  enabled: true
+  sizeLimit: 64Mi
+
+networkPolicy:
+  enabled: true
+  # Ingress is default-deny; only the ingress controller namespace may reach
+  # the API (namespace label selector, kubernetes.io/metadata.name).
+  ingressNamespaceLabels:
+    kubernetes.io/metadata.name: ingress-nginx
+  # Egress allowlist: DNS plus the platform data services.
+  egress:
+    postgres:
+      namespaceLabels:
+        kubernetes.io/metadata.name: jk-data
+      podLabels:
+        app.kubernetes.io/name: postgres
+      port: 5432
+    nats:
+      namespaceLabels:
+        kubernetes.io/metadata.name: jk-data
+      podLabels:
+        app.kubernetes.io/name: nats
+      port: 4222
+    redis:
+      namespaceLabels:
+        kubernetes.io/metadata.name: jk-data
+      podLabels:
+        app.kubernetes.io/name: redis
+      port: 6379
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+topologySpreadConstraints:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+terminationGracePeriodSeconds: 30

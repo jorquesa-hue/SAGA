@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.jk.example/json-schema/domain-event-envelope.schema.json",
+  "title": "JK Platform Domain Event Envelope",
+  "description": "Immutable domain event envelope (JK-PLT-EES-001 §39). Mirrors packages/domain-kernel/src/event-envelope.ts (eventEnvelopeSchema); the zod schema is the executable source of truth and this document is its published JSON Schema form.",
+  "type": "object",
+  "required": [
+    "eventId",
+    "eventType",
+    "schemaVersion",
+    "tenantId",
+    "farmId",
+    "aggregateType",
+    "aggregateId",
+    "aggregateVersion",
+    "occurredAt",
+    "recordedAt",
+    "actor",
+    "source",
+    "correlationId",
+    "causationId",
+    "idempotencyKey",
+    "payload",
+    "metadata"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Monotonic ULID (Crockford base32, 26 chars)."
+    },
+    "eventType": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+\\.v[1-9][0-9]*$",
+      "description": "Lower-case dot-separated past-tense fact with version suffix, e.g. identity.tenant_created.v1."
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "farmId": {
+      "type": ["string", "null"],
+      "format": "uuid"
+    },
+    "aggregateType": {
+      "type": "string",
+      "minLength": 1
+    },
+    "aggregateId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "aggregateVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "recordedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "actor": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["user", "device", "service", "agent"]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display": {
+          "type": "string"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["channel"],
+      "properties": {
+        "channel": {
+          "type": "string",
+          "enum": ["web", "mobile", "edge", "import", "api", "system"]
+        },
+        "deviceId": {
+          "type": ["string", "null"]
+        },
+        "appVersion": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "causationId": {
+      "type": ["string", "null"]
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "payload": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "locale": {
+          "type": "string"
+        },
+        "qualityFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "supersedesEventId": {
+          "type": ["string", "null"],
+          "default": null
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

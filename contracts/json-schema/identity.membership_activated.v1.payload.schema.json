@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.jk.example/json-schema/identity.membership_activated.v1.payload.schema.json",
+  "title": "identity.membership_activated.v1 payload",
+  "description": "Payload of identity.membership_activated.v1 (aggregate: user). Marks a previously invited membership as active.",
+  "type": "object",
+  "required": ["userId", "role"],
+  "additionalProperties": false,
+  "properties": {
+    "userId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "role": {
+      "$ref": "#/$defs/role"
+    }
+  },
+  "$defs": {
+    "role": {
+      "type": "string",
+      "description": "Canonical tenant-membership roles (platform_admin is platform-level, never a membership role).",
+      "enum": [
+        "tenant_owner",
+        "farm_manager",
+        "technician",
+        "veterinarian",
+        "genetics_specialist",
+        "finance_user",
+        "auditor",
+        "integration_service"
+      ]
+    }
+  }
+}

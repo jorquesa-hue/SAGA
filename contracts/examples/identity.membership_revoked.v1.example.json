@@ -1,0 +1,35 @@
+{
+  "eventId": "01J2ZK4G8QMEMBERREV0KED001",
+  "eventType": "identity.membership_revoked.v1",
+  "schemaVersion": 1,
+  "tenantId": "0f3a1c2e-7b4d-4e5f-8a9b-1c2d3e4f5a6b",
+  "farmId": null,
+  "aggregateType": "user",
+  "aggregateId": "2e1d0c9b-8a7f-4e6d-9c5b-4a3f2e1d0c9b",
+  "aggregateVersion": 3,
+  "occurredAt": "2026-07-22T16:45:00.000Z",
+  "recordedAt": "2026-07-22T16:45:00.087Z",
+  "actor": {
+    "type": "user",
+    "id": "4b3a2c1d-0e9f-4a8b-9c7d-6e5f4a3b2c1d",
+    "display": "Carlos Junqueira"
+  },
+  "source": {
+    "channel": "web",
+    "deviceId": null,
+    "appVersion": "web/0.1.0"
+  },
+  "correlationId": "9f8e7d6c-5b4a-4f3e-8d2c-1b0a9f8e7d6c",
+  "causationId": null,
+  "idempotencyKey": "revoke-membership-joao-pereira-boavista-2026-07-22",
+  "payload": {
+    "userId": "2e1d0c9b-8a7f-4e6d-9c5b-4a3f2e1d0c9b",
+    "role": "technician",
+    "reason": "desligamento da equipe"
+  },
+  "metadata": {
+    "locale": "pt-BR",
+    "qualityFlags": [],
+    "supersedesEventId": null
+  }
+}

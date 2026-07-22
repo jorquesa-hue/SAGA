@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.jk.example/json-schema/identity.tenant_created.v1.payload.schema.json",
+  "title": "identity.tenant_created.v1 payload",
+  "description": "Payload of identity.tenant_created.v1 (aggregate: tenant). Records the tenant registration fact with resolved locale/currency defaults.",
+  "type": "object",
+  "required": ["name", "defaultLocale", "defaultCurrency"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "defaultLocale": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 35,
+      "description": "BCP 47 language tag, e.g. pt-BR."
+    },
+    "defaultCurrency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217 currency code, e.g. BRL."
+    }
+  }
+}

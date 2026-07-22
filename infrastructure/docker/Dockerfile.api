@@ -1,0 +1,67 @@
+# syntax=docker/dockerfile:1.7
+#
+# JK Platform — application API image (spec JK-PLT-EES-001 Appendix H.1).
+#
+# Build from the REPOSITORY ROOT (the pnpm workspace root):
+#
+#   docker build -f infrastructure/docker/Dockerfile.api -t jk-api:local .
+#
+# Multi-stage pnpm workspace build:
+#   base         node:22-bookworm-slim + corepack-pinned pnpm
+#   dependencies lockfile-driven store fetch (maximally cacheable)
+#   build        workspace install + `pnpm --filter @jk/api... run build`
+#                + `pnpm deploy --prod` into a self-contained /out tree
+#   runtime      distroless-style slim runtime, non-root uid 10001,
+#                HEALTHCHECK against /health/live, EXPOSE 4000
+#
+# No secrets are baked into the image; all configuration is injected at
+# runtime via environment variables (Appendix G typed configuration).
+
+FROM node:22-bookworm-slim AS base
+ENV PNPM_HOME=/pnpm \
+    PATH=/pnpm:$PATH \
+    CI=true
+# corepack pins pnpm to the version declared in package.json#packageManager.
+RUN corepack enable
+WORKDIR /workspace
+
+FROM base AS dependencies
+# Lockfile-only layer: `pnpm fetch` populates the store from pnpm-lock.yaml
+# alone, so this layer is invalidated only when dependencies change.
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch
+# Workspace manifests: every importer present in the lockfile must exist for
+# --frozen-lockfile to succeed (apps/* and packages/* per pnpm-workspace.yaml).
+COPY package.json turbo.json tsconfig.base.json eslint.config.mjs ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/worker/package.json apps/worker/package.json
+COPY packages ./packages
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --offline
+
+FROM dependencies AS build
+COPY . .
+# Re-link after the full source copy (cheap; store is already warm).
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --offline
+# Build the API and everything it depends on (workspace topological order).
+# This repo intentionally uses plain pnpm filtering, not turbo.
+RUN pnpm --filter @jk/api... run build
+# Produce a pruned, production-only, self-contained deployment tree.
+# Note for pnpm >= 10: `pnpm deploy` may require `inject-workspace-packages=true`
+# in .npmrc or the `--legacy` flag; keep this in sync with the pinned
+# package.json#packageManager version when upgrading.
+RUN pnpm --filter @jk/api deploy --prod /out
+
+FROM node:22-bookworm-slim AS runtime
+ENV NODE_ENV=production \
+    PORT=4000
+RUN useradd --system --uid 10001 --user-group --create-home jk
+WORKDIR /app
+COPY --from=build --chown=10001:10001 /out ./
+USER 10001
+EXPOSE 4000
+# Node 22 ships global fetch, so no extra tooling is needed in the image.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT ?? 4000) + '/health/live').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+CMD ["node", "dist/main.js"]

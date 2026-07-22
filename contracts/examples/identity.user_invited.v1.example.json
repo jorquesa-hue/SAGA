@@ -1,0 +1,35 @@
+{
+  "eventId": "01J2ZK4G8QVSERNV1TED000001",
+  "eventType": "identity.user_invited.v1",
+  "schemaVersion": 1,
+  "tenantId": "0f3a1c2e-7b4d-4e5f-8a9b-1c2d3e4f5a6b",
+  "farmId": null,
+  "aggregateType": "user",
+  "aggregateId": "6d5c4b3a-2f1e-4d0c-9b8a-7f6e5d4c3b2a",
+  "aggregateVersion": 1,
+  "occurredAt": "2026-07-22T12:10:00.000Z",
+  "recordedAt": "2026-07-22T12:10:00.052Z",
+  "actor": {
+    "type": "user",
+    "id": "4b3a2c1d-0e9f-4a8b-9c7d-6e5f4a3b2c1d",
+    "display": "Carlos Junqueira"
+  },
+  "source": {
+    "channel": "web",
+    "deviceId": null,
+    "appVersion": "web/0.1.0"
+  },
+  "correlationId": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "causationId": null,
+  "idempotencyKey": "invite-user-maria-souza-boavista-2026-07-22",
+  "payload": {
+    "email": "maria.souza@boavista.example",
+    "displayName": "Maria Souza",
+    "role": "farm_manager"
+  },
+  "metadata": {
+    "locale": "pt-BR",
+    "qualityFlags": [],
+    "supersedesEventId": null
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "type": "https://jk.example/problems/identifier-conflict",
+  "title": "RFID already assigned",
+  "status": 409,
+  "detail": "RFID 982000123456789 is active on another animal.",
+  "instance": "/api/v1/animals/3f2e1d0c-9b8a-4f7e-8d6c-5b4a3f2e1d0c/identifiers",
+  "code": "JK-ANI-RFID-CONFLICT",
+  "correlationId": "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d",
+  "errors": [
+    {
+      "field": "rfid",
+      "reason": "active_assignment_exists"
+    }
+  ]
+}

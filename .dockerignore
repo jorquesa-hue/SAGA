@@ -1,0 +1,17 @@
+# Build-context hygiene for infrastructure/docker/Dockerfile.* (built from
+# the repository root). Keeps host artifacts out of the image and guarantees
+# no local secrets or databases ever enter a build context.
+.git
+.github
+node_modules
+**/node_modules
+**/dist
+**/coverage
+**/.turbo
+.env
+.env.*
+*.local
+infrastructure/compose
+infrastructure/helm
+infrastructure/terraform
+docs

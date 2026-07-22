@@ -1,0 +1,288 @@
+# JK Platform domain event topics (JK-PLT-EES-001 §49, Appendix E baseline).
+#
+# Subject convention (§49): jk.{environment}.{tenantShard}.{context}.{aggregate}.{event}.v{major}
+# Public subjects never carry raw tenant identifiers; the envelope carries the
+# tenant id and the subject a non-sensitive routing shard (see
+# packages/database/src/event-store.ts subjectForEvent).
+#
+# Phase 0 adds the five canonical identity events on top of the Appendix E
+# animal.weight_recorded.v1 baseline.
+asyncapi: 3.0.0
+info:
+  title: JK Platform Domain Events
+  version: 1.0.0
+  description: >
+    At-least-once domain event topics. Every message is a validated domain
+    event envelope (contracts/json-schema/domain-event-envelope.schema.json);
+    consumers deduplicate on eventId and declare supported schema versions.
+defaultContentType: application/json
+channels:
+  animalWeightRecorded:
+    address: jk.{environment}.{tenantShard}.animal.animal.weight-recorded.v1
+    parameters:
+      environment: { description: Deployment environment }
+      tenantShard: { description: Non-sensitive routing shard }
+    messages:
+      weightRecorded:
+        $ref: "#/components/messages/WeightRecorded"
+  identityTenantCreated:
+    address: jk.{environment}.{tenantShard}.identity.tenant.tenant-created.v1
+    parameters:
+      environment: { description: Deployment environment }
+      tenantShard: { description: Non-sensitive routing shard }
+    messages:
+      tenantCreated:
+        $ref: "#/components/messages/TenantCreated"
+  identityFarmCreated:
+    address: jk.{environment}.{tenantShard}.identity.farm.farm-created.v1
+    parameters:
+      environment: { description: Deployment environment }
+      tenantShard: { description: Non-sensitive routing shard }
+    messages:
+      farmCreated:
+        $ref: "#/components/messages/FarmCreated"
+  identityUserInvited:
+    address: jk.{environment}.{tenantShard}.identity.user.user-invited.v1
+    parameters:
+      environment: { description: Deployment environment }
+      tenantShard: { description: Non-sensitive routing shard }
+    messages:
+      userInvited:
+        $ref: "#/components/messages/UserInvited"
+  identityMembershipActivated:
+    address: jk.{environment}.{tenantShard}.identity.user.membership-activated.v1
+    parameters:
+      environment: { description: Deployment environment }
+      tenantShard: { description: Non-sensitive routing shard }
+    messages:
+      membershipActivated:
+        $ref: "#/components/messages/MembershipActivated"
+  identityMembershipRevoked:
+    address: jk.{environment}.{tenantShard}.identity.user.membership-revoked.v1
+    parameters:
+      environment: { description: Deployment environment }
+      tenantShard: { description: Non-sensitive routing shard }
+    messages:
+      membershipRevoked:
+        $ref: "#/components/messages/MembershipRevoked"
+operations:
+  publishWeightRecorded:
+    action: send
+    channel: { $ref: "#/channels/animalWeightRecorded" }
+    messages:
+      - { $ref: "#/channels/animalWeightRecorded/messages/weightRecorded" }
+  publishTenantCreated:
+    action: send
+    channel: { $ref: "#/channels/identityTenantCreated" }
+    messages:
+      - { $ref: "#/channels/identityTenantCreated/messages/tenantCreated" }
+  publishFarmCreated:
+    action: send
+    channel: { $ref: "#/channels/identityFarmCreated" }
+    messages:
+      - { $ref: "#/channels/identityFarmCreated/messages/farmCreated" }
+  publishUserInvited:
+    action: send
+    channel: { $ref: "#/channels/identityUserInvited" }
+    messages:
+      - { $ref: "#/channels/identityUserInvited/messages/userInvited" }
+  publishMembershipActivated:
+    action: send
+    channel: { $ref: "#/channels/identityMembershipActivated" }
+    messages:
+      - { $ref: "#/channels/identityMembershipActivated/messages/membershipActivated" }
+  publishMembershipRevoked:
+    action: send
+    channel: { $ref: "#/channels/identityMembershipRevoked" }
+    messages:
+      - { $ref: "#/channels/identityMembershipRevoked/messages/membershipRevoked" }
+components:
+  messages:
+    WeightRecorded:
+      name: animal.weight_recorded.v1
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        $ref: "#/components/schemas/WeightRecordedEnvelope"
+    TenantCreated:
+      name: identity.tenant_created.v1
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        $ref: "#/components/schemas/TenantCreatedEnvelope"
+    FarmCreated:
+      name: identity.farm_created.v1
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        $ref: "#/components/schemas/FarmCreatedEnvelope"
+    UserInvited:
+      name: identity.user_invited.v1
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        $ref: "#/components/schemas/UserInvitedEnvelope"
+    MembershipActivated:
+      name: identity.membership_activated.v1
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        $ref: "#/components/schemas/MembershipActivatedEnvelope"
+    MembershipRevoked:
+      name: identity.membership_revoked.v1
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        $ref: "#/components/schemas/MembershipRevokedEnvelope"
+  schemas:
+    EnvelopeBase:
+      type: object
+      description: >
+        Common domain event envelope fields (§39); the canonical machine
+        contract is contracts/json-schema/domain-event-envelope.schema.json.
+      required:
+        [
+          eventId,
+          eventType,
+          schemaVersion,
+          tenantId,
+          aggregateId,
+          aggregateVersion,
+          occurredAt,
+          recordedAt,
+          actor,
+          source,
+          correlationId,
+          idempotencyKey,
+          payload,
+        ]
+      properties:
+        eventId: { type: string, pattern: "^[0-9A-HJKMNP-TV-Z]{26}$" }
+        schemaVersion: { const: 1 }
+        tenantId: { type: string, format: uuid }
+        farmId: { type: [string, "null"], format: uuid }
+        aggregateId: { type: string, format: uuid }
+        aggregateVersion: { type: integer, minimum: 1 }
+        occurredAt: { type: string, format: date-time }
+        recordedAt: { type: string, format: date-time }
+        correlationId: { type: string, format: uuid }
+        causationId: { type: [string, "null"] }
+        idempotencyKey: { type: string, minLength: 1, maxLength: 200 }
+        actor: { type: object }
+        source: { type: object }
+        metadata: { type: object }
+    WeightRecordedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeBase"
+        - type: object
+          properties:
+            eventType: { const: animal.weight_recorded.v1 }
+            aggregateType: { const: animal }
+            payload:
+              type: object
+              required: [weightKilograms, observationId, eligibleForAnalytics]
+              properties:
+                weightKilograms: { type: number, exclusiveMinimum: 0 }
+                observationId: { type: string }
+                handlingSessionId: { type: [string, "null"], format: uuid }
+                eligibleForAnalytics: { type: boolean }
+                qualityFlags: { type: array, items: { type: string } }
+    TenantCreatedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeBase"
+        - type: object
+          properties:
+            eventType: { const: identity.tenant_created.v1 }
+            aggregateType: { const: tenant }
+            payload:
+              type: object
+              required: [name, defaultLocale, defaultCurrency]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 200 }
+                defaultLocale: { type: string }
+                defaultCurrency: { type: string, pattern: "^[A-Z]{3}$" }
+    FarmCreatedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeBase"
+        - type: object
+          properties:
+            eventType: { const: identity.farm_created.v1 }
+            aggregateType: { const: farm }
+            payload:
+              type: object
+              required: [name, timezone, areaHa]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 200 }
+                timezone: { type: string }
+                areaHa: { type: [number, "null"], exclusiveMinimum: 0 }
+    UserInvitedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeBase"
+        - type: object
+          properties:
+            eventType: { const: identity.user_invited.v1 }
+            aggregateType: { const: user }
+            payload:
+              type: object
+              required: [email, displayName, role]
+              properties:
+                email: { type: string, format: email }
+                displayName: { type: string, minLength: 1, maxLength: 200 }
+                role:
+                  type: string
+                  enum:
+                    - tenant_owner
+                    - farm_manager
+                    - technician
+                    - veterinarian
+                    - genetics_specialist
+                    - finance_user
+                    - auditor
+                    - integration_service
+    MembershipActivatedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeBase"
+        - type: object
+          properties:
+            eventType: { const: identity.membership_activated.v1 }
+            aggregateType: { const: user }
+            payload:
+              type: object
+              required: [userId, role]
+              properties:
+                userId: { type: string, format: uuid }
+                role:
+                  type: string
+                  enum:
+                    - tenant_owner
+                    - farm_manager
+                    - technician
+                    - veterinarian
+                    - genetics_specialist
+                    - finance_user
+                    - auditor
+                    - integration_service
+    MembershipRevokedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeBase"
+        - type: object
+          properties:
+            eventType: { const: identity.membership_revoked.v1 }
+            aggregateType: { const: user }
+            payload:
+              type: object
+              required: [userId, role, reason]
+              properties:
+                userId: { type: string, format: uuid }
+                role:
+                  type: string
+                  enum:
+                    - tenant_owner
+                    - farm_manager
+                    - technician
+                    - veterinarian
+                    - genetics_specialist
+                    - finance_user
+                    - auditor
+                    - integration_service
+                reason: { type: [string, "null"], maxLength: 500 }

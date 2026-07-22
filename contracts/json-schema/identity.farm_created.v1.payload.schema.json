@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.jk.example/json-schema/identity.farm_created.v1.payload.schema.json",
+  "title": "identity.farm_created.v1 payload",
+  "description": "Payload of identity.farm_created.v1 (aggregate: farm). The envelope farmId equals the aggregateId of the created farm.",
+  "type": "object",
+  "required": ["name", "timezone", "areaHa"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "IANA time zone identifier, e.g. America/Campo_Grande."
+    },
+    "areaHa": {
+      "type": ["number", "null"],
+      "exclusiveMinimum": 0,
+      "description": "Total farm area in hectares; null when not informed."
+    }
+  }
+}

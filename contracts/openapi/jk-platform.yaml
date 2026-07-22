@@ -1,0 +1,454 @@
+# JK Platform REST API contract (JK-PLT-EES-001 Volume VI §45-§47, Appendix C).
+#
+# Source of truth for the REST surface. Phase 0 adds the identity surface
+# (tenants, farms, users) on top of the Appendix C baseline (animals and
+# device-observation ingestion, which are the Phase 1 contract baseline).
+#
+# Conventions (§46):
+#   - base path /api/v1 (encoded in the server URL);
+#   - camelCase JSON, snake_case only in the database;
+#   - Idempotency-Key header required on every POST command;
+#   - RFC 9457 Problem Details for all errors (code + correlationId);
+#   - cursor pagination (limit + cursor) on growing collections;
+#   - tenant context derives from the authenticated membership — it is never
+#     a client-chosen request parameter.
+openapi: 3.1.0
+info:
+  title: JK Platform API
+  version: 1.0.0
+  description: Command and integration API for JK Platform.
+servers:
+  - url: https://api.example.com/api/v1
+security:
+  - oidc: []
+tags:
+  - name: Tenants
+    description: Tenant lifecycle (platform administration and tenant self-view).
+  - name: Farms
+    description: Farms inside the authenticated tenant.
+  - name: Users
+    description: Tenant memberships and invitations.
+  - name: Animals
+    description: Animal registry (Phase 1 contract baseline).
+  - name: Devices
+    description: Edge device ingestion (Phase 1 contract baseline).
+paths:
+  /tenants:
+    post:
+      operationId: registerTenant
+      summary: Register a tenant (platform administration)
+      description: >
+        Creates a tenant. Restricted to platform administrators
+        (platform_admin is a platform-level role, outside tenant membership).
+        Emits identity.tenant_created.v1.
+      tags: [Tenants]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterTenantRequest" }
+      responses:
+        "201":
+          description: Tenant registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tenant" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+  /tenants/current:
+    get:
+      operationId: getCurrentTenant
+      summary: Read the tenant of the authenticated membership
+      tags: [Tenants]
+      responses:
+        "200":
+          description: Tenant derived from the authenticated membership
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tenant" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /farms:
+    post:
+      operationId: createFarm
+      summary: Create a farm in the current tenant
+      description: Emits identity.farm_created.v1. Farm names are unique per tenant.
+      tags: [Farms]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateFarmRequest" }
+      responses:
+        "201":
+          description: Farm created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Farm" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listFarms
+      summary: List farms visible to the authenticated membership
+      tags: [Farms]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Cursor-paginated farm list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FarmList" }
+  /users/invitations:
+    post:
+      operationId: inviteUser
+      summary: Invite a user into the current tenant
+      description: >
+        Creates a pending membership with a canonical role and emits
+        identity.user_invited.v1. Requires an inviting membership authorized
+        to grant the requested role.
+      tags: [Users]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InviteUserRequest" }
+      responses:
+        "201":
+          description: Invitation created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Invitation" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+  /users:
+    get:
+      operationId: listUsers
+      summary: List tenant memberships
+      tags: [Users]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Cursor-paginated membership list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserList" }
+  /animals:
+    post:
+      operationId: registerAnimal
+      summary: Register an animal
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterAnimalRequest" }
+      responses:
+        "201":
+          description: Animal registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Animal" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /animals/{animalId}:
+    get:
+      operationId: getAnimal
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+      responses:
+        "200":
+          description: Authorized animal summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Animal" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /device-observations:batch:
+    post:
+      operationId: ingestDeviceObservationBatch
+      tags: [Devices]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ObservationBatch" }
+      responses:
+        "207":
+          description: Per-observation result; partial success allowed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ObservationBatchResult" }
+components:
+  securitySchemes:
+    oidc:
+      type: openIdConnect
+      openIdConnectUrl: https://identity.example.com/.well-known/openid-configuration
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: >
+        Client-generated idempotency key (§46). Retried commands with the same
+        key return the original result instead of duplicating the effect.
+      schema: { type: string, minLength: 16, maxLength: 200 }
+    AnimalId:
+      name: animalId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum items per page.
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque cursor token from a previous page (stable ordering, §46).
+      schema: { type: string, maxLength: 512 }
+  schemas:
+    Role:
+      type: string
+      description: Canonical tenant-membership roles. platform_admin is platform-level and never a tenant membership role.
+      enum:
+        - tenant_owner
+        - farm_manager
+        - technician
+        - veterinarian
+        - genetics_specialist
+        - finance_user
+        - auditor
+        - integration_service
+    RegisterTenantRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        defaultLocale:
+          type: string
+          minLength: 2
+          maxLength: 35
+          default: pt-BR
+          description: BCP 47 language tag.
+        defaultCurrency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          default: BRL
+          description: ISO 4217 currency code.
+    Tenant:
+      type: object
+      required: [id, name, defaultLocale, defaultCurrency, status, createdAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        defaultLocale: { type: string }
+        defaultCurrency: { type: string }
+        status: { type: string, enum: [active, suspended] }
+        createdAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 0 }
+    CreateFarmRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        timezone:
+          type: string
+          maxLength: 64
+          default: America/Sao_Paulo
+          description: IANA time zone identifier.
+        areaHa:
+          type: [number, "null"]
+          exclusiveMinimum: 0
+          description: Total farm area in hectares.
+    Farm:
+      type: object
+      required: [id, tenantId, name, timezone, areaHa, createdAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        name: { type: string }
+        timezone: { type: string }
+        areaHa: { type: [number, "null"] }
+        createdAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 0 }
+    FarmList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Farm" }
+        nextCursor:
+          type: [string, "null"]
+          description: Cursor for the next page; null when exhausted.
+    InviteUserRequest:
+      type: object
+      additionalProperties: false
+      required: [email, displayName, role]
+      properties:
+        email: { type: string, format: email, maxLength: 320 }
+        displayName: { type: string, minLength: 1, maxLength: 200 }
+        role: { $ref: "#/components/schemas/Role" }
+    Invitation:
+      type: object
+      required: [id, tenantId, email, displayName, role, status, invitedAt]
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        status: { type: string, enum: [invited, active, revoked, expired] }
+        invitedAt: { type: string, format: date-time }
+        expiresAt: { type: [string, "null"], format: date-time }
+    User:
+      type: object
+      required: [id, email, displayName, role, membershipStatus, invitedAt, activatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        membershipStatus: { type: string, enum: [invited, active, revoked] }
+        invitedAt: { type: string, format: date-time }
+        activatedAt: { type: [string, "null"], format: date-time }
+    UserList:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/User" }
+        nextCursor:
+          type: [string, "null"]
+          description: Cursor for the next page; null when exhausted.
+    RegisterAnimalRequest:
+      type: object
+      additionalProperties: false
+      required: [farmId, visualId, sex, breedCode]
+      properties:
+        farmId: { type: string, format: uuid }
+        visualId: { type: string, minLength: 1, maxLength: 80 }
+        rfid: { type: [string, "null"], maxLength: 128 }
+        sex: { type: string, enum: [female, male, unknown] }
+        breedCode: { type: string, default: BRANGUS }
+        birthDate: { type: [string, "null"], format: date }
+    Animal:
+      type: object
+      required: [id, farmId, visualId, sex, breedCode, lifecycleStatus, version]
+      properties:
+        id: { type: string, format: uuid }
+        farmId: { type: string, format: uuid }
+        visualId: { type: string }
+        sex: { type: string }
+        breedCode: { type: string }
+        lifecycleStatus: { type: string }
+        version: { type: integer, minimum: 0 }
+    ObservationBatch:
+      type: object
+      required: [gatewayId, batchId, observations]
+      properties:
+        gatewayId: { type: string, format: uuid }
+        batchId: { type: string }
+        sequence: { type: integer, minimum: 0 }
+        observations:
+          type: array
+          maxItems: 2000
+          items: { $ref: "#/components/schemas/DeviceObservation" }
+    DeviceObservation:
+      type: object
+      required: [observationId, capturedAt, deviceId, measurementType, value, unit]
+      properties:
+        observationId: { type: string }
+        capturedAt: { type: string, format: date-time }
+        deviceId: { type: string }
+        rfid: { type: [string, "null"] }
+        measurementType: { type: string, enum: [weight] }
+        value: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string, enum: [kg, lb] }
+        stable: { type: [boolean, "null"] }
+        rawPayload: { type: [object, "null"] }
+    ObservationBatchResult:
+      type: object
+      required: [batchId, results]
+      properties:
+        batchId: { type: string }
+        results:
+          type: array
+          items:
+            type: object
+            required: [observationId, status]
+            properties:
+              observationId: { type: string }
+              serverObservationId: { type: [string, "null"] }
+              status:
+                type: string
+                enum:
+                  [
+                    accepted,
+                    duplicate,
+                    pending_resolution,
+                    rejected_validation,
+                    retryable_error,
+                  ]
+              problem: { $ref: "#/components/schemas/Problem" }
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details with JK extensions (§46.1).
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        code: { type: string }
+        correlationId: { type: string, format: uuid }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, reason]
+            properties:
+              field: { type: string }
+              reason: { type: string }
+  responses:
+    Conflict:
+      description: Business conflict
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Resource not found or not visible
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Forbidden:
+      description: Authenticated but not authorized for this action
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    UnprocessableEntity:
+      description: Request understood but semantically invalid
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }

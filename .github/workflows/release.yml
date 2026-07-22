@@ -1,0 +1,53 @@
+# Release pipeline (JK-PLT-EES-001 §74, Appendix I): build once from the tag,
+# verify, publish a GitHub release with generated notes, and attach a
+# deterministic source dependency inventory (SBOM stand-in).
+#
+# Follow-ups gated on ADR-001 (cloud/registry decision, see docs/adr/):
+#   - container image build, signing (cosign), and immutable digest promotion;
+#   - CycloneDX SBOM generation (@cyclonedx/cyclonedx-npm is not part of the
+#     workspace toolchain yet — the pnpm dependency inventory below is the
+#     deterministic interim evidence artifact).
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # create the GitHub release for the pushed tag
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test:unit
+      - name: Generate dependency inventory (source SBOM stand-in)
+        run: |
+          mkdir -p sbom
+          pnpm licenses list --json > sbom/sbom-deps.json
+          pnpm list -r --depth Infinity --json > sbom/sbom-tree.json
+      - name: Upload dependency inventory artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.ref_name }}
+          path: sbom/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Create GitHub release with generated notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --generate-notes \
+            --verify-tag \
+            sbom/sbom-deps.json sbom/sbom-tree.json

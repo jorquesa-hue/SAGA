@@ -1,0 +1,182 @@
+# JK Platform GraphQL read schema (JK-PLT-EES-001 §48, Appendix D baseline).
+#
+# GraphQL is read-first: it shares authorization and application services with
+# REST and implements no independent business logic. Types referenced but not
+# defined by Appendix D are given minimal shapes here; the appendix enums are
+# reproduced exactly.
+
+scalar Date
+scalar DateTime
+scalar Decimal
+scalar JSON
+
+type Query {
+  animal(id: ID!): Animal
+  animals(filter: AnimalFilter, first: Int = 50, after: String): AnimalConnection!
+  herdDashboard(farmId: ID!, asOf: DateTime): HerdDashboard!
+  workQueue(farmId: ID!, filter: WorkQueueFilter): WorkQueue!
+}
+
+type Animal {
+  id: ID!
+  visualId: String!
+  rfid: String
+  sex: AnimalSex!
+  breedCode: String!
+  birthDate: Date
+  birthDatePrecision: DatePrecision!
+  lifecycleStatus: AnimalLifecycleStatus!
+  currentLot: Lot
+  currentPaddock: Paddock
+  latestWeight: WeightObservation
+  weightSeries(from: DateTime, to: DateTime): [WeightObservation!]!
+  reproduction: ReproductionSummary
+  healthRestrictions: [HealthRestriction!]!
+  parents: AnimalParents!
+  timeline(first: Int = 100, after: String, types: [String!]): EventConnection!
+  dataQuality: DataQualitySummary!
+  version: Int!
+}
+
+type WeightObservation {
+  id: ID!
+  occurredAt: DateTime!
+  kilograms: Decimal!
+  source: ObservationSource!
+  eligibleForAnalytics: Boolean!
+  qualityFlags: [String!]!
+  supersedesEventId: ID
+}
+
+type EventConnection { edges: [EventEdge!]!, pageInfo: PageInfo! }
+type EventEdge { cursor: String!, node: DomainEvent! }
+
+type DomainEvent {
+  id: ID!
+  eventType: String!
+  occurredAt: DateTime!
+  recordedAt: DateTime!
+  actor: Actor!
+  payload: JSON!
+  evidence: [Attachment!]!
+}
+
+type PageInfo { hasNextPage: Boolean!, endCursor: String }
+type AnimalConnection { edges: [AnimalEdge!]!, pageInfo: PageInfo!, totalCount: Int! }
+type AnimalEdge { cursor: String!, node: Animal! }
+
+enum AnimalSex { FEMALE MALE UNKNOWN }
+enum DatePrecision { EXACT ESTIMATED_MONTH ESTIMATED_YEAR UNKNOWN }
+enum AnimalLifecycleStatus { PLANNED ACTIVE QUARANTINED SOLD DECEASED MISSING TRANSFERRED }
+
+input AnimalFilter {
+  farmId: ID!
+  lotId: ID
+  paddockId: ID
+  lifecycleStatus: [AnimalLifecycleStatus!]
+  search: String
+  dueWeightBefore: DateTime
+}
+
+# --- Minimal shapes for types the appendix references but does not define ---
+
+"""Actor snapshot recorded on every domain event (§39)."""
+type Actor {
+  type: ActorType!
+  id: ID!
+  display: String
+}
+
+enum ActorType { USER DEVICE SERVICE AGENT }
+
+"""Provenance of an observation (mirrors the envelope source context)."""
+type ObservationSource {
+  channel: SourceChannel!
+  deviceId: ID
+  appVersion: String
+}
+
+enum SourceChannel { WEB MOBILE EDGE IMPORT API SYSTEM }
+
+type Lot {
+  id: ID!
+  farmId: ID!
+  name: String!
+}
+
+type Paddock {
+  id: ID!
+  farmId: ID!
+  name: String!
+  areaHa: Decimal
+}
+
+type ReproductionSummary {
+  status: ReproductionStatus!
+  lastServiceAt: DateTime
+  lastPregnancyCheckAt: DateTime
+  lastCalvingAt: DateTime
+  expectedCalvingAt: Date
+}
+
+enum ReproductionStatus { OPEN SERVED PREGNANT POSTPARTUM UNKNOWN }
+
+type HealthRestriction {
+  id: ID!
+  restrictionType: String!
+  reason: String
+  effectiveFrom: DateTime!
+  effectiveTo: DateTime
+  active: Boolean!
+}
+
+type AnimalParents {
+  dam: Animal
+  sire: Animal
+  damRecordedAs: String
+  sireRecordedAs: String
+}
+
+type Attachment {
+  id: ID!
+  fileName: String!
+  mediaType: String!
+  sizeBytes: Int!
+  url: String
+}
+
+type DataQualitySummary {
+  qualityFlags: [String!]!
+  pendingResolutionCount: Int!
+  lastReviewedAt: DateTime
+}
+
+type HerdDashboard {
+  farmId: ID!
+  asOf: DateTime!
+  totalActiveAnimals: Int!
+  weighedLast30Days: Int!
+  averageDailyGainKg: Decimal
+  pendingObservations: Int!
+  alerts: [String!]!
+}
+
+type WorkQueue {
+  farmId: ID!
+  items: [WorkQueueItem!]!
+  totalCount: Int!
+}
+
+type WorkQueueItem {
+  id: ID!
+  kind: String!
+  animal: Animal
+  dueAt: DateTime
+  priority: Int!
+}
+
+input WorkQueueFilter {
+  kinds: [String!]
+  dueBefore: DateTime
+  minPriority: Int
+}

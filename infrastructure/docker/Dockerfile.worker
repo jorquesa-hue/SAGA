@@ -1,0 +1,50 @@
+# syntax=docker/dockerfile:1.7
+#
+# JK Platform — worker image (outbox relay + idempotent projections),
+# spec JK-PLT-EES-001 Appendix H.1 pattern.
+#
+# Build from the REPOSITORY ROOT (the pnpm workspace root):
+#
+#   docker build -f infrastructure/docker/Dockerfile.worker -t jk-worker:local .
+#
+# Stages mirror Dockerfile.api; only the filter target, port, and the
+# runtime database role differ. The worker connects with the dedicated
+# jk_worker role (least privilege), never the app role — enforced by
+# configuration, not by the image.
+
+FROM node:22-bookworm-slim AS base
+ENV PNPM_HOME=/pnpm \
+    PATH=/pnpm:$PATH \
+    CI=true
+RUN corepack enable
+WORKDIR /workspace
+
+FROM base AS dependencies
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch
+COPY package.json turbo.json tsconfig.base.json eslint.config.mjs ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/worker/package.json apps/worker/package.json
+COPY packages ./packages
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --offline
+
+FROM dependencies AS build
+COPY . .
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --offline
+RUN pnpm --filter @jk/worker... run build
+# See Dockerfile.api note about `pnpm deploy` on pnpm >= 10.
+RUN pnpm --filter @jk/worker deploy --prod /out
+
+FROM node:22-bookworm-slim AS runtime
+ENV NODE_ENV=production \
+    PORT=4100
+RUN useradd --system --uid 10001 --user-group --create-home jk
+WORKDIR /app
+COPY --from=build --chown=10001:10001 /out ./
+USER 10001
+EXPOSE 4100
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT ?? 4100) + '/health/live').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+CMD ["node", "dist/main.js"]

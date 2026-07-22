@@ -2,7 +2,7 @@
   "name": "@jk/worker",
   "version": "0.1.0",
   "private": true,
-  "description": "JK Platform worker: transactional outbox relay with pluggable publishers (NATS JetStream / in-memory) and idempotent projection consumers. §31.1-§31.2, §77.",
+  "description": "JK Platform worker: transactional outbox relay with pluggable publishers (NATS JetStream / in-memory) and idempotent projection consumers. \u00a731.1-\u00a731.2, \u00a777.",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -15,7 +15,6 @@
   "dependencies": {
     "@jk/database": "workspace:*",
     "@jk/domain-kernel": "workspace:*",
-    "@jk/observability": "workspace:*",
     "dotenv": "^16.4.5",
     "nats": "^2.28.2",
     "pg": "^8.12.0",
