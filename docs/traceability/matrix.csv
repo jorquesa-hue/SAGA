@@ -33,3 +33,17 @@ DELIVERABLE-5-asyncapi,contracts/asyncapi;contracts/json-schema,contracts/asynca
 DELIVERABLE-6-migrations,database/migrations,database/migrations/0001-0004,packages/database/tests/integration,implemented
 DELIVERABLE-16-tests,package tests,packages/*/tests;apps/*/tests,pnpm test,implemented
 DELIVERABLE-19-traceability,docs/traceability,docs/traceability/matrix.md,manual review,implemented
+JK-ANI-001,animal registry,packages/animal-registry,packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-ANI-002,identifiers,packages/animal-registry/animal-registry-service.ts,packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-ANI-004,timeline,packages/animal-registry (getTimeline),packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-ANI-008,identifier history,packages/animal-registry (replaceIdentifier),packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-DOM-002,animal aggregate,packages/animal-registry;database/migrations/0001,packages/animal-registry/tests/integration,implemented
+JK-DOM-003,identifier index,database/migrations/0001,packages/animal-registry/tests/integration,implemented
+JK-DOM-009,observation ledger,database/migrations/0005 (device_observation),packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-001,herd ops,packages/herd-operations (startSession),packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-002,validation pipeline,packages/herd-operations/observation-pipeline.ts,packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-003,exception queue,packages/herd-operations;database/migrations/0005,packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-004,observation,database/migrations/0005,packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-006,analytics,packages/herd-operations (computeAdg),packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-008,ingestion,packages/herd-operations (ingestBatch),devices/simulators/tests/integration/handling-session-500.integration.test.ts,implemented
+PHASE1-EXIT-500,e2e,devices/simulators,devices/simulators/tests/integration/handling-session-500.integration.test.ts,implemented

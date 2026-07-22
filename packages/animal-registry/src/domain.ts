@@ -92,7 +92,8 @@ export const registerAnimalInputSchema = z
   })
   .strict();
 
-export type RegisterAnimalInput = z.infer<typeof registerAnimalInputSchema>;
+// z.input (not z.infer/output): callers may omit fields that carry defaults.
+export type RegisterAnimalInput = z.input<typeof registerAnimalInputSchema>;
 
 export const assignIdentifierInputSchema = z
   .object({

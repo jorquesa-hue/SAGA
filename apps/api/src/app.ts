@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { AnimalRegistryService } from "@jk/animal-registry";
+import { WeighingService } from "@jk/herd-operations";
 import { IdentityService } from "@jk/identity-tenancy";
 import {
   CORRELATION_HEADER,
@@ -14,7 +16,9 @@ import { createAuthenticator, type AuthenticatedPrincipal, type Authenticator } 
 import { RouteNotFoundError, UnauthorizedError } from "./errors.js";
 import type { DatabasePools } from "./pools.js";
 import { PROBLEM_CONTENT_TYPE, toProblem } from "./problem.js";
+import { registerAnimalRoutes } from "./routes/animals.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerHerdRoutes } from "./routes/herd.js";
 import { registerIdentityRoutes } from "./routes/identity.js";
 
 declare module "fastify" {
@@ -50,6 +54,14 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       appPool: deps.pools.appPool,
       environment: deps.config.APP_ENV,
     });
+  const animalRegistry = new AnimalRegistryService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const weighing = new WeighingService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
 
@@ -116,6 +128,8 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   registerHealthRoutes(app, deps.pools);
   registerIdentityRoutes(app, identityService);
+  registerAnimalRoutes(app, animalRegistry);
+  registerHerdRoutes(app, weighing);
 
   // Surface a typed unauthorized when auth decoration is somehow missing.
   app.decorateRequest("principal", null as unknown as AuthenticatedPrincipal);

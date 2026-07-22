@@ -53,12 +53,18 @@ importers:
       '@fastify/under-pressure':
         specifier: ^8.5.0
         version: 8.5.2
+      '@jk/animal-registry':
+        specifier: workspace:*
+        version: link:../../packages/animal-registry
       '@jk/database':
         specifier: workspace:*
         version: link:../../packages/database
       '@jk/domain-kernel':
         specifier: workspace:*
         version: link:../../packages/domain-kernel
+      '@jk/herd-operations':
+        specifier: workspace:*
+        version: link:../../packages/herd-operations
       '@jk/identity-tenancy':
         specifier: workspace:*
         version: link:../../packages/identity-tenancy

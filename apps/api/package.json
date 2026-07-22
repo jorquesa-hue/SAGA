@@ -15,8 +15,10 @@
   },
   "dependencies": {
     "@fastify/under-pressure": "^8.5.0",
+    "@jk/animal-registry": "workspace:*",
     "@jk/database": "workspace:*",
     "@jk/domain-kernel": "workspace:*",
+    "@jk/herd-operations": "workspace:*",
     "@jk/identity-tenancy": "workspace:*",
     "@jk/observability": "workspace:*",
     "dotenv": "^16.4.5",

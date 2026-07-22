@@ -163,6 +163,26 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Animal" }
         "409": { $ref: "#/components/responses/Conflict" }
+    get:
+      operationId: listAnimals
+      summary: List animals in the tenant (optionally by farm)
+      tags: [Animals]
+      parameters:
+        - name: farmId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Animal list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Animal" }
   /animals/{animalId}:
     get:
       operationId: getAnimal
@@ -193,6 +213,146 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ObservationBatchResult" }
+  /animals/{animalId}/timeline:
+    get:
+      operationId: getAnimalTimeline
+      summary: Cursor/limited chronological event timeline (JK-ANI-004)
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 500 } }
+        - { name: types, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Timeline entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { type: object } }
+  /animals/{animalId}/identifiers:
+    post:
+      operationId: assignOrReplaceIdentifier
+      summary: Assign or replace an identifier (JK-ANI-002, JK-DOM-003)
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifierType, identifierValue]
+              properties:
+                identifierType: { type: string, enum: [rfid, visual, official, legacy] }
+                identifierValue: { type: string }
+                replace: { type: boolean, default: false }
+                reason: { type: string }
+      responses:
+        "201": { description: Identifier assigned or replaced }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /animals/{animalId}/weights:
+    get:
+      operationId: getAnimalWeights
+      summary: Validated weight series (§11)
+      tags: [Herd]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+      responses:
+        "200":
+          description: Weight points
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { type: object } }
+  /animals/{animalId}/adg:
+    get:
+      operationId: getAnimalAdg
+      summary: Average daily gain from eligible readings (JK-WGT-006)
+      tags: [Herd]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+      responses:
+        "200":
+          description: ADG result (or null when insufficient data)
+          content:
+            application/json:
+              schema: { type: object }
+  /handling-sessions:
+    post:
+      operationId: startHandlingSession
+      summary: Start a handling session (JK-WGT-001)
+      tags: [Herd]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [farmId]
+              properties:
+                farmId: { type: string, format: uuid }
+                purpose: { type: string, enum: [weighing, vaccination, pregnancy_check, treatment, handling, other] }
+                deviceId: { type: string }
+                expectedCount: { type: integer, minimum: 0 }
+      responses:
+        "201": { description: Session started }
+  /handling-sessions/{sessionId}/observations:
+    post:
+      operationId: recordObservation
+      summary: Record one weight observation through the validation pipeline
+      tags: [Herd]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceObservation" }
+      responses:
+        "201": { description: Accepted observation }
+        "202": { description: Observation recorded as exception (pending/rejected) }
+  /handling-sessions/{sessionId}/close:
+    post:
+      operationId: closeHandlingSession
+      summary: Close and summarize a handling session
+      tags: [Herd]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Session closed with counts summary }
+  /handling-sessions/{sessionId}/exceptions:
+    get:
+      operationId: listSessionExceptions
+      summary: Unresolved/rejected observations for a session (JK-WGT-003)
+      tags: [Herd]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Exception queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { type: object } }
 components:
   securitySchemes:
     oidc:

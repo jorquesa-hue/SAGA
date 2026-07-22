@@ -47,6 +47,26 @@ Generated for the Phase 0 baseline (foundation and decision closure).
 | JK-SEC-009 tamper-evident audit for privileged actions | audit stream | `audit_record` (append-only trigger), service writes | `identity-service.integration.test.ts` (denials audited) | implemented |
 | JK-SEC-001/002/007/010 TLS, encryption, file scan, CI scans | infra / CI | `infrastructure/`, `.github/workflows/security.yml` | workflow (structural) | partial (infra ADRs) |
 
+## Phase 1 — Operational Identity and Weighing
+
+| Requirement | Design area | Source | Verification | Status |
+|---|---|---|---|---|
+| JK-ANI-001 register manual/batch/import | animal registry | `@jk/animal-registry` registerAnimal | `animal-registry.integration.test.ts` | implemented (manual/batch; import later) |
+| JK-ANI-002 assign visual/RFID/official/legacy | identifiers | `assignIdentifier`, `replaceIdentifier` | integration test | implemented |
+| JK-ANI-004 chronological event timeline | timeline | `getTimeline` + `domain_event` | integration + API test | implemented |
+| JK-ANI-008 preserve prior values on identity change | identifier history | `replaceIdentifier` closes interval | integration test (history + reassign) | implemented |
+| JK-DOM-002 immutable UUID + human id | animal aggregate | `@jk/animal-registry`, migration 0001 | integration test | implemented |
+| JK-DOM-003 RFID unique among active | identifier index | `animal_identifier_active_unique` | uniqueness conflict test | implemented |
+| JK-DOM-004 identity independent of lot/paddock | design | animal vs temporal relations | replace-keeps-identity test | implemented |
+| JK-DOM-009 device raw payload preserved | observation ledger | `device_observation.raw_payload` (migration 0005) | weighing integration test | implemented |
+| JK-WGT-001 start handling session | herd ops | `WeighingService.startSession` | weighing + API test | implemented |
+| JK-WGT-002 one validation pipeline (all channels) | pipeline | `processObservation` | weighing test; 500-animal E2E | implemented |
+| JK-WGT-003 unresolved/duplicate/implausible as exceptions | pipeline | resolution_status + exception queue | weighing test (pending/rejected/flag) | implemented |
+| JK-WGT-004 raw + normalized stored separately | observation | `raw_value`/`unit` vs `normalized_weight_kg` | weighing test | implemented |
+| JK-WGT-006 ADG from eligible readings only | analytics | `computeAdg`, `animal_weight.eligible_for_analytics` | ADG test | implemented |
+| JK-WGT-008 store-and-forward idempotent replay | ingestion | `ingestBatch` + idem index | 500-animal disconnect/replay E2E | implemented |
+| Phase 1 exit: 500-animal session disconnect/replay | e2e | `devices/simulators` | `handling-session-500.integration.test.ts` | implemented |
+
 ## Architecture fitness functions (§36)
 
 | Requirement | Source | Verification | Status |
