@@ -1,0 +1,30 @@
+{
+  "name": "@jk/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PostgreSQL access layer: checksum-enforced migration runner, RLS-aware tenant clients, transactional outbox writer. JK-PLT-EES-001 §37-§39, §67, Appendix B.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run --exclude '**/*.integration.test.ts' --passWithNoTests",
+    "test:integration": "vitest run tests/integration"
+  },
+  "dependencies": {
+    "@jk/domain-kernel": "workspace:*",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.9"
+  }
+}

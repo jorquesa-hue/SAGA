@@ -1,0 +1,44 @@
+{
+  "name": "jk-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "JK Platform (working name: SAGA) — enterprise farm operating system for livestock enterprises. Implements JK-PLT-EES-001.",
+  "type": "module",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@11.15.1",
+  "scripts": {
+    "build": "pnpm -r --workspace-concurrency=4 run build",
+    "typecheck": "pnpm -r --workspace-concurrency=4 run typecheck",
+    "lint": "eslint .",
+    "format:check": "prettier --check \"**/*.{ts,mts,mjs,json,yaml,yml,md}\"",
+    "format": "prettier --write \"**/*.{ts,mts,mjs,json,yaml,yml,md}\"",
+    "test:unit": "pnpm -r --workspace-concurrency=1 run test:unit",
+    "test:integration": "pnpm -r --workspace-concurrency=1 run test:integration",
+    "test:tenant-isolation": "pnpm --filter @jk/testkit run test:tenant-isolation",
+    "test": "pnpm run test:unit && pnpm run test:integration",
+    "architecture:check": "node scripts/validate/architecture-check.mjs",
+    "contracts:validate": "node scripts/validate/contracts-validate.mjs",
+    "db:migrate": "node scripts/bootstrap/migrate.mjs",
+    "db:migrate:test": "node scripts/bootstrap/migrate.mjs --verify",
+    "db:seed": "node scripts/bootstrap/seed.mjs",
+    "bootstrap": "bash scripts/bootstrap/bootstrap.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "eslint": "^9.9.0",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.5.0",
+    "prettier": "^3.3.3",
+    "vitest": "^2.1.9",
+    "tsx": "^4.19.0",
+    "graphql": "^16.9.0",
+    "@apidevtools/swagger-parser": "^10.1.0",
+    "yaml": "^2.5.0",
+    "pg": "^8.12.0",
+    "@types/pg": "^8.11.0",
+    "dotenv": "^16.4.5"
+  }
+}

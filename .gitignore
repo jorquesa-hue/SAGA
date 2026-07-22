@@ -1,7 +1,11 @@
 node_modules/
 dist/
-*.log
-.env
-.env.*
-.DS_Store
+.turbo/
 coverage/
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+.DS_Store
+tmp/

@@ -1,0 +1,29 @@
+{
+  "name": "@jk/domain-kernel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared domain primitives: event envelope, tenant/actor context, money, measurement, temporal validity, errors, typed configuration. JK-PLT-EES-001 §35, §39.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run",
+    "test:integration": "echo 'no integration tests for domain-kernel'"
+  },
+  "dependencies": {
+    "ulid": "^2.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.9"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@jk/worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JK Platform worker: transactional outbox relay with pluggable publishers (NATS JetStream / in-memory) and idempotent projection consumers. §31.1-§31.2, §77.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/main.js",
+    "dev": "tsx watch src/main.ts",
+    "test:unit": "vitest run --exclude '**/*.integration.test.ts' --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
+  },
+  "dependencies": {
+    "@jk/database": "workspace:*",
+    "@jk/domain-kernel": "workspace:*",
+    "@jk/observability": "workspace:*",
+    "dotenv": "^16.4.5",
+    "nats": "^2.28.2",
+    "pg": "^8.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.6.2",
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.9"
+  }
+}

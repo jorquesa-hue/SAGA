@@ -1,70 +1,78 @@
-# SAGA — ERP para el Agronegocio
+# JK Platform (SAGA)
 
-**SAGA** is an ERP (Enterprise Resource Planning) system for the agribusiness
-sector: farms, parcels, crop cycles, agricultural inputs, harvests, inventory,
-business partners, procurement, sales and traceability.
+**JK Platform** is an enterprise farm operating system for livestock
+enterprises — immutable animal history, herd operations, genetics,
+reproduction, health, pasture, inventory, finance, devices, analytics, and
+explainable AI in one traceable, multi-tenant platform.
 
-> **Status: foundation / early scaffold.**
-> This repository currently contains the *core domain foundation* and a working,
-> fully-tested backend slice (master data: farms, parcels, crop cycles, partners).
-> It is built to grow **module by module** as the full SAGA specification is
-> digested. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the plan.
+> Repository working name: **SAGA**. Canonical product name per the
+> authoritative specification (**JK-PLT-EES-001**, v1.0) is **JK Platform**.
 
-## Why it's built this way
+The first operational target is a Brangus farm (~100 ha, Lagoinha/Cunha,
+São Paulo, Brazil) with two coordinated verticals: a **genetic nucleus**
+(selection, reproduction, lineage, breeding sales) and a **beef operation**
+(lot-based growth, grazing, health, cost, sale performance).
 
-An agribusiness ERP is a large system. Rather than a fragile "everything at once"
-demo, SAGA is built in **vertical slices** on a **hexagonal (ports & adapters)**
-architecture:
+## Architecture at a glance
 
-- The **domain** is pure TypeScript with no framework or database dependencies —
-  it encodes the business rules and is fully unit-tested.
-- **Adapters** (in-memory now, PostgreSQL later) plug into the domain via ports,
-  so we can swap persistence without rewriting business logic.
-- Each **module** (master data, inventory, procurement, sales, agronomy,
-  traceability, finance…) is added as a self-contained slice.
+- **Monorepo**: pnpm workspaces (TypeScript, Node.js 22).
+- **Backend**: modular monolith (NestJS + Fastify) with event-driven seams.
+- **System of record**: PostgreSQL 16 + PostGIS; immutable domain-event
+  ledger + transactional outbox; Row-Level Security for tenant isolation.
+- **Messaging**: NATS JetStream (at-least-once; idempotent consumers).
+- **Contracts**: OpenAPI (commands/integrations), GraphQL (composite reads),
+  AsyncAPI + JSON Schema (events) — validated in CI.
+- **Observability**: OpenTelemetry, structured logs, correlation IDs.
+- **Offline-first**: mobile/edge store-and-forward with idempotent replay
+  (arrives in later phases per the roadmap).
 
-This means: after every session you have something that **runs and is tested**,
-and the codebase stays coherent as it scales toward the full spec.
+See `docs/architecture/` and the specification for the full design.
 
 ## Repository layout
 
 ```
-SAGA/
-├── docs/                  Architecture, domain model, module roadmap
-│   ├── ARCHITECTURE.md
-│   ├── DOMAIN_MODEL.md
-│   └── ROADMAP.md
-└── backend/               TypeScript backend (API + domain)
-    ├── src/
-    │   ├── domain/        Pure business entities & rules (no deps)
-    │   ├── application/   Use cases + ports (repository interfaces)
-    │   ├── infrastructure/  Adapters: in-memory repos, HTTP (Express)
-    │   └── index.ts       Server bootstrap
-    └── tests/             Unit tests (Vitest)
+apps/            Deployable workloads (api, worker; web/mobile/sync/edge/ai in later phases)
+packages/        Domain modules and shared platform packages
+contracts/       OpenAPI, GraphQL SDL, AsyncAPI, JSON Schemas
+database/        SQL migrations, seeds, policies, verification
+infrastructure/  Docker, Compose, Helm, Terraform, observability
+docs/            Architecture, ADRs, domain, data dictionary, traceability
+scripts/         Bootstrap, generate, validate, release, recovery
+tests/           Cross-cutting test suites (e2e, contracts, security, ...)
 ```
 
-## Quick start
+## Getting started
+
+Prerequisites: Node.js >= 22, pnpm >= 9, PostgreSQL 16 with PostGIS
+(or Docker via `infrastructure/compose/`).
 
 ```bash
-cd backend
-npm install
-npm test          # run the unit tests
-npm run dev       # start the API on http://localhost:3000
+cp .env.example .env
+pnpm install
+pnpm build
+pnpm db:migrate
+pnpm db:seed              # synthetic reference farm
+pnpm test:unit
+pnpm test:integration     # needs TEST_DATABASE_URL (see .env.example)
+pnpm --filter @jk/api start
+curl http://localhost:4000/health/ready
 ```
 
-Try it:
+One-command bootstrap: `pnpm bootstrap`.
 
-```bash
-curl http://localhost:3000/health
-curl -X POST http://localhost:3000/api/farms \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"Finca La Esperanza","totalAreaHa":120.5,"municipality":"Écija","province":"Sevilla"}'
-curl http://localhost:3000/api/farms
-```
+## Engineering rules
 
-## Where this is going
+The specification is a contract, not inspiration. Key invariants: tenant
+isolation everywhere; append-only domain history (corrections supersede,
+never overwrite); stable animal identity; idempotent ingestion;
+at-least-once messaging; explainable, human-approved AI. See `CLAUDE.md`
+and `docs/adr/` before contributing.
 
-This foundation is intentionally a **starting point**, not the finished ERP.
-The next steps — once the SAGA specification document is available — are to map
-the spec's entities, workflows and rules onto this architecture and implement the
-remaining modules. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+## Status
+
+**Phase 0 — Foundation and Decision Closure** (Volume XII): monorepo,
+tenancy + identity foundation, event ledger + outbox, RLS, contracts
+pipeline, CI, observability baseline, synthetic seed, ADRs, traceability.
+Later phases add the full functional scope (animal registry & weighing,
+health, reproduction, pasture, inventory, finance, genetics, governed AI,
+web/mobile/edge apps).
