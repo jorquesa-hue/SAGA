@@ -107,3 +107,4 @@ JK-EXPORT-ASYNC,exports,packages/analytics-intelligence/export-service.ts;databa
 JK-EXPORT-TIMELIMIT,exports,database/migrations/0017 (expires_at);packages/analytics-intelligence/export-service.ts,packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
 JK-EXPORT-AUDIT,exports,database/migrations/0017 (export_access_log append-only),packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
 JK-EXPORT-CHECKSUM,exports,packages/analytics-intelligence/export-service.ts (sha256),packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-API-TYPED-CLIENT,contracts,packages/contracts-rest (JkPlatformClient),packages/contracts-rest/tests/client.test.ts,implemented

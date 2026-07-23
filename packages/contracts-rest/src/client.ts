@@ -1,0 +1,105 @@
+import { HttpClient, type ClientConfig, type RequestOptions } from "./http.js";
+import type {
+  Animal,
+  ConnectorRegistration,
+  CreateRecommendationRequest,
+  CreateWebhookSubscriptionRequest,
+  ExportJob,
+  Farm,
+  Page,
+  Recommendation,
+  RequestExportRequest,
+  Tenant,
+  WebhookDelivery,
+  WebhookSubscription,
+  WebhookSubscriptionWithSecret,
+} from "./types.js";
+
+/**
+ * Typed client for the JK Platform REST API (Volume VI). Groups operations by
+ * resource; every mutating call carries an idempotency key and every call
+ * propagates a correlation id and the tenant header (see HttpClient).
+ */
+export class JkPlatformClient {
+  private readonly http: HttpClient;
+
+  constructor(config: ClientConfig) {
+    this.http = new HttpClient(config);
+  }
+
+  private async get<T>(path: string, options?: RequestOptions): Promise<T> {
+    return (await this.http.request<T>("GET", path, undefined, options)).data;
+  }
+  private async post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return (await this.http.request<T>("POST", path, body, options)).data;
+  }
+  private async del(path: string, options?: RequestOptions): Promise<void> {
+    await this.http.request<void>("DELETE", path, undefined, options);
+  }
+
+  // -- Identity & tenancy --
+  readonly tenants = {
+    register: (body: { name: string }, o?: RequestOptions) => this.post<Tenant>("/api/v1/tenants", body, o),
+    current: (o?: RequestOptions) => this.get<Tenant>("/api/v1/tenants/current", o),
+  };
+  readonly farms = {
+    create: (body: { name: string; areaHa?: number }, o?: RequestOptions) => this.post<Farm>("/api/v1/farms", body, o),
+  };
+
+  // -- Animals --
+  readonly animals = {
+    list: (o?: RequestOptions) => this.get<Page<Animal>>("/api/v1/animals", o),
+    get: (id: string, o?: RequestOptions) => this.get<Animal>(`/api/v1/animals/${id}`, o),
+    timeline: (id: string, o?: RequestOptions) => this.get<Page<Record<string, unknown>>>(`/api/v1/animals/${id}/timeline`, o),
+  };
+
+  // -- Governed AI --
+  readonly recommendations = {
+    create: (body: CreateRecommendationRequest, o?: RequestOptions) =>
+      this.post<Recommendation>("/api/v1/recommendations", body, o),
+    list: (status?: string, o?: RequestOptions) =>
+      this.get<Page<Recommendation>>("/api/v1/recommendations", { ...o, query: { ...o?.query, status } }),
+    get: (id: string, o?: RequestOptions) => this.get<Recommendation>(`/api/v1/recommendations/${id}`, o),
+    approve: (id: string, o?: RequestOptions) => this.post<void>(`/api/v1/recommendations/${id}/approve`, undefined, o),
+    reject: (id: string, reason?: string, o?: RequestOptions) =>
+      this.post<void>(`/api/v1/recommendations/${id}/reject`, { reason }, o),
+    execute: (id: string, o?: RequestOptions) =>
+      this.post<{ executed: boolean }>(`/api/v1/recommendations/${id}/execute`, undefined, o),
+  };
+
+  // -- Webhooks & connectors --
+  readonly webhooks = {
+    subscribe: (body: CreateWebhookSubscriptionRequest, o?: RequestOptions) =>
+      this.post<WebhookSubscriptionWithSecret>("/api/v1/webhooks/subscriptions", body, o),
+    list: (o?: RequestOptions) => this.get<Page<WebhookSubscription>>("/api/v1/webhooks/subscriptions", o),
+    get: (id: string, o?: RequestOptions) => this.get<WebhookSubscription>(`/api/v1/webhooks/subscriptions/${id}`, o),
+    rotateSecret: (id: string, o?: RequestOptions) =>
+      this.post<WebhookSubscriptionWithSecret>(`/api/v1/webhooks/subscriptions/${id}/rotate-secret`, undefined, o),
+    deactivate: (id: string, o?: RequestOptions) => this.del(`/api/v1/webhooks/subscriptions/${id}`, o),
+    deliveries: (query?: { status?: string; subscriptionId?: string }, o?: RequestOptions) =>
+      this.get<Page<WebhookDelivery>>("/api/v1/webhooks/deliveries", { ...o, query: { ...o?.query, ...query } }),
+    replay: (id: string, o?: RequestOptions) => this.post<WebhookDelivery>(`/api/v1/webhooks/deliveries/${id}/replay`, undefined, o),
+  };
+  readonly connectors = {
+    register: (body: { connectorType: string; name: string; config?: Record<string, unknown> }, o?: RequestOptions) =>
+      this.post<ConnectorRegistration>("/api/v1/connectors", body, o),
+    list: (o?: RequestOptions) => this.get<Page<ConnectorRegistration>>("/api/v1/connectors", o),
+    get: (id: string, o?: RequestOptions) => this.get<ConnectorRegistration>(`/api/v1/connectors/${id}`, o),
+  };
+
+  // -- Exports --
+  readonly exports = {
+    request: (body: RequestExportRequest, o?: RequestOptions) => this.post<ExportJob>("/api/v1/exports", body, o),
+    list: (status?: string, o?: RequestOptions) =>
+      this.get<Page<ExportJob>>("/api/v1/exports", { ...o, query: { ...o?.query, status } }),
+    get: (id: string, o?: RequestOptions) => this.get<ExportJob>(`/api/v1/exports/${id}`, o),
+    process: (id: string, o?: RequestOptions) => this.post<ExportJob>(`/api/v1/exports/${id}/process`, undefined, o),
+    /** Raw artifact download (JSON/CSV text). */
+    download: (id: string, o?: RequestOptions) => this.get<unknown>(`/api/v1/exports/${id}/download`, o),
+  };
+
+  // -- Analytics --
+  readonly analytics = {
+    executiveDashboard: (o?: RequestOptions) => this.get<Record<string, unknown>>("/api/v1/analytics/executive-dashboard", o),
+  };
+}
