@@ -102,3 +102,8 @@ JK-INT-WEBHOOK-DELIVERY,automation-integration,packages/automation-integration/d
 JK-INT-WEBHOOK-DEADLETTER,automation-integration,packages/automation-integration/delivery-dispatcher.ts;database/migrations/0016,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
 JK-INT-WEBHOOK-REPLAY,automation-integration,packages/automation-integration/webhook-service.ts (replayDelivery),packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
 JK-INT-CONNECTOR-FRAMEWORK,automation-integration,packages/automation-integration/connector-registry.ts;database/migrations/0016,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-ANI-006,exports,packages/analytics-intelligence/export-service.ts (buildAnimalTraceabilityPacket);database/migrations/0017,packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-EXPORT-ASYNC,exports,packages/analytics-intelligence/export-service.ts;database/migrations/0017,packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-EXPORT-TIMELIMIT,exports,database/migrations/0017 (expires_at);packages/analytics-intelligence/export-service.ts,packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-EXPORT-AUDIT,exports,database/migrations/0017 (export_access_log append-only),packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-EXPORT-CHECKSUM,exports,packages/analytics-intelligence/export-service.ts (sha256),packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented

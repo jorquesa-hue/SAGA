@@ -45,6 +45,10 @@ tags:
       manual replay (§51).
   - name: Connectors
     description: Connector registrations behind stable domain interfaces (§33).
+  - name: Exports
+    description: >
+      Asynchronous, tenant-scoped, time-limited, audited exports and the animal
+      traceability packet (§27, JK-ANI-006).
 paths:
   /tenants:
     post:
@@ -667,6 +671,104 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ConnectorRegistration" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /exports:
+    post:
+      operationId: requestExport
+      summary: Start a secure asynchronous export (§27)
+      description: >
+        Creates an export job. Exports are asynchronous, tenant-scoped,
+        time-limited, and audited. The response is 202 with a pending job whose
+        `resolvableUrl` becomes downloadable once processing completes.
+      tags: [Exports]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RequestExportRequest" }
+      responses:
+        "202":
+          description: Export job accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listExports
+      summary: List export jobs
+      tags: [Exports]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, running, completed, failed, expired]
+      responses:
+        "200":
+          description: Export jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ExportJob" }
+  /exports/{exportId}:
+    get:
+      operationId: getExport
+      summary: Read an export job's status
+      tags: [Exports]
+      parameters:
+        - $ref: "#/components/parameters/ExportId"
+      responses:
+        "200":
+          description: Export job
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportJob" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /exports/{exportId}/process:
+    post:
+      operationId: processExport
+      summary: Process a pending export (assemble the artifact)
+      tags: [Exports]
+      parameters:
+        - $ref: "#/components/parameters/ExportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Export processed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /exports/{exportId}/download:
+    get:
+      operationId: downloadExport
+      summary: Download a completed, non-expired export (audited, §27)
+      description: >
+        Returns the artifact body with an `x-content-checksum-sha256` header.
+        A 422 is returned if the export is expired or not yet completed. This
+        path is the QR-resolvable link for the animal traceability packet
+        (JK-ANI-006).
+      tags: [Exports]
+      parameters:
+        - $ref: "#/components/parameters/ExportId"
+      responses:
+        "200":
+          description: Export artifact
+          content:
+            application/json: {}
+            text/csv: {}
+            application/octet-stream: {}
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
 components:
   securitySchemes:
     oidc:
@@ -693,6 +795,11 @@ components:
       schema: { type: string, format: uuid }
     SubscriptionId:
       name: subscriptionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ExportId:
+      name: exportId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -1078,6 +1185,42 @@ components:
         status:
           type: string
           enum: [active, suspended, error]
+    RequestExportRequest:
+      type: object
+      required: [exportType]
+      properties:
+        exportType:
+          type: string
+          enum: [animal_traceability_packet, animal_inventory, herd_weights, finance_ledger]
+        format:
+          type: string
+          enum: [json, csv, xlsx, pdf, geojson, zip]
+          default: json
+        params:
+          type: object
+          additionalProperties: true
+          description: >
+            Export-specific parameters. animal_traceability_packet requires
+            params.animalId.
+    ExportJob:
+      type: object
+      required: [id, exportType, format, status, resolvableUrl]
+      properties:
+        id: { type: string, format: uuid }
+        exportType: { type: string }
+        format: { type: string }
+        status:
+          type: string
+          enum: [pending, running, completed, failed, expired]
+        byteSize: { type: integer, nullable: true }
+        checksum:
+          type: string
+          nullable: true
+          description: SHA-256 of the artifact.
+        expiresAt: { type: string, format: date-time, nullable: true }
+        resolvableUrl:
+          type: string
+          description: QR-resolvable download path (JK-ANI-006).
   responses:
     Conflict:
       description: Business conflict
