@@ -359,3 +359,17 @@ textarea {
   gap: 0.75rem;
   margin-top: 0.75rem;
 }
+
+.locale {
+  display: flex;
+  gap: 0.2rem;
+}
+.locale button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+.locale button.on {
+  border-color: var(--accent);
+  color: var(--text);
+}

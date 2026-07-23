@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useI18n } from "../i18n/index.js";
 
 export interface Paged<T> {
   pageItems: T[];
@@ -35,17 +36,18 @@ export function usePagination<T>(items: T[], pageSize = 20): Paged<T> {
 }
 
 export function Pagination({ paged }: { paged: Paged<unknown> }): JSX.Element | null {
+  const { t } = useI18n();
   if (paged.pageCount <= 1) return null;
   return (
     <div className="pagination">
       <button type="button" onClick={paged.prev} disabled={paged.page <= 1}>
-        ‹ Anterior
+        {t("pager.prev")}
       </button>
       <span className="muted">
-        Página {paged.page} de {paged.pageCount} · {paged.total} itens
+        {t("pager.status", { page: paged.page, pages: paged.pageCount, total: paged.total })}
       </span>
       <button type="button" onClick={paged.next} disabled={paged.page >= paged.pageCount}>
-        Próxima ›
+        {t("pager.next")}
       </button>
     </div>
   );

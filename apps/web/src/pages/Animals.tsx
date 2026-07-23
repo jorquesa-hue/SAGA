@@ -5,6 +5,7 @@ import { useClient } from "../session.js";
 import { useAsync } from "../use-async.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 import { Pagination, usePagination } from "../components/Pagination.js";
+import { useI18n } from "../i18n/index.js";
 
 /**
  * Animal registry: register new animals, filter the list (visual ID / RFID /
@@ -13,6 +14,7 @@ import { Pagination, usePagination } from "../components/Pagination.js";
  */
 export function Animals(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const { loading, data, error, reload } = useAsync(() => client.animals.list(), []);
   const [exportState, setExportState] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
@@ -48,38 +50,38 @@ export function Animals(): JSX.Element {
   return (
     <section>
       <div className="page-head">
-        <h2>Animais</h2>
+        <h2>{t("animals.title")}</h2>
         <button type="button" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Fechar" : "Registrar animal"}
+          {showForm ? t("animals.close") : t("animals.register")}
         </button>
       </div>
 
       {showForm && <RegisterForm onDone={() => { setShowForm(false); reload(); }} />}
 
       <div className="inline-form">
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por ID visual…" style={{ minWidth: 220 }} />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("animals.searchPlaceholder")} style={{ minWidth: 220 }} />
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="all">Todos os status</option>
+          <option value="all">{t("animals.allStatus")}</option>
           <option value="active">Ativo</option>
           <option value="sold">Vendido</option>
           <option value="deceased">Óbito</option>
           <option value="quarantined">Quarentena</option>
         </select>
-        <span className="muted">{filtered.length} de {data?.items.length ?? 0}</span>
+        <span className="muted">{t("animals.count", { shown: filtered.length, total: data?.items.length ?? 0 })}</span>
       </div>
 
-      {loading && <p className="muted">Carregando…</p>}
+      {loading && <p className="muted">{t("dashboard.loading")}</p>}
       {error && <p className="error">{error}</p>}
-      {data && filtered.length === 0 && <p className="muted">Nenhum animal encontrado.</p>}
+      {data && filtered.length === 0 && <p className="muted">{t("animals.empty")}</p>}
       {filtered.length > 0 && (
         <table className="grid">
           <thead>
             <tr>
-              <th>ID visual</th>
-              <th>Sexo</th>
-              <th>Raça</th>
-              <th>Status</th>
-              <th>Rastreabilidade</th>
+              <th>{t("animals.colVisual")}</th>
+              <th>{t("animals.colSex")}</th>
+              <th>{t("animals.colBreed")}</th>
+              <th>{t("animals.colStatus")}</th>
+              <th>{t("animals.colTrace")}</th>
             </tr>
           </thead>
           <tbody>
@@ -93,7 +95,7 @@ export function Animals(): JSX.Element {
                 <td>{a.lifecycleStatus ?? "—"}</td>
                 <td>
                   <button type="button" onClick={() => void exportPacket(a.id)}>
-                    Exportar
+                    {t("animals.export")}
                   </button>
                   {exportState[a.id] && <span className="hint"> {exportState[a.id]}</span>}
                 </td>

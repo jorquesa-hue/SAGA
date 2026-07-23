@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useI18n } from "../i18n/index.js";
 import { useSession } from "../session.js";
 
 /**
@@ -8,6 +9,7 @@ import { useSession } from "../session.js";
  */
 export function SignIn(): JSX.Element {
   const { signIn } = useSession();
+  const { t } = useI18n();
   const [userId, setUserId] = useState("");
   const [tenantId, setTenantId] = useState("");
   const [platformAdmin, setPlatformAdmin] = useState(false);
@@ -21,22 +23,22 @@ export function SignIn(): JSX.Element {
   return (
     <div className="signin">
       <h1>JK Platform</h1>
-      <p className="muted">Console de gestão — sessão de desenvolvimento</p>
+      <p className="muted">{t("signin.subtitle")}</p>
       <form onSubmit={submit}>
         <label>
-          User ID (UUID)
+          {t("signin.userId")}
           <input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="00000000-0000-0000-0000-000000000000" />
         </label>
         <label>
-          Tenant ID (UUID)
+          {t("signin.tenantId")}
           <input value={tenantId} onChange={(e) => setTenantId(e.target.value)} placeholder="tenant uuid" />
         </label>
         <label className="checkbox">
           <input type="checkbox" checked={platformAdmin} onChange={(e) => setPlatformAdmin(e.target.checked)} />
-          Administrador de plataforma
+          {t("signin.platformAdmin")}
         </label>
         <button type="submit" disabled={!userId || !tenantId}>
-          Entrar
+          {t("signin.submit")}
         </button>
       </form>
     </div>

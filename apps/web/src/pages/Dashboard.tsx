@@ -1,5 +1,6 @@
 import { useClient } from "../session.js";
 import { useAsync } from "../use-async.js";
+import { useI18n } from "../i18n/index.js";
 
 /**
  * Executive dashboard — reads the Farm Intelligence summary (§59, Phase 4).
@@ -8,18 +9,19 @@ import { useAsync } from "../use-async.js";
  */
 export function Dashboard(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const { loading, data, error, reload } = useAsync(() => client.analytics.executiveDashboard(), []);
 
   return (
     <section>
       <div className="page-head">
-        <h2>Painel executivo</h2>
+        <h2>{t("dashboard.title")}</h2>
         <button type="button" onClick={reload}>
-          Atualizar
+          {t("dashboard.refresh")}
         </button>
       </div>
-      {loading && <p className="muted">Carregando…</p>}
-      {error && <p className="error">Não foi possível carregar o painel — {error}</p>}
+      {loading && <p className="muted">{t("dashboard.loading")}</p>}
+      {error && <p className="error">{t("dashboard.error", { error })}</p>}
       {data && (
         <div className="kpi-grid">
           {Object.entries(flatten(data)).map(([key, value]) => (

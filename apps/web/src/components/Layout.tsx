@@ -1,24 +1,26 @@
 import { useState, type FormEvent } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { LOCALES, useI18n } from "../i18n/index.js";
 import { useSession } from "../session.js";
 
 const NAV = [
-  { to: "/", label: "Painel", end: true },
-  { to: "/animals", label: "Animais" },
-  { to: "/weighing", label: "Pesagem" },
-  { to: "/treatments", label: "Sanidade" },
-  { to: "/reproduction", label: "Reprodução" },
-  { to: "/lots", label: "Lotes" },
-  { to: "/finance", label: "Financeiro" },
-  { to: "/alerts", label: "Alertas" },
-  { to: "/recommendations", label: "IA" },
-  { to: "/integrations", label: "Integrações" },
-  { to: "/exports", label: "Exportações" },
-  { to: "/imports", label: "Importar" },
+  { to: "/", key: "nav.dashboard", end: true },
+  { to: "/animals", key: "nav.animals" },
+  { to: "/weighing", key: "nav.weighing" },
+  { to: "/treatments", key: "nav.health" },
+  { to: "/reproduction", key: "nav.reproduction" },
+  { to: "/lots", key: "nav.lots" },
+  { to: "/finance", key: "nav.finance" },
+  { to: "/alerts", key: "nav.alerts" },
+  { to: "/recommendations", key: "nav.ai" },
+  { to: "/integrations", key: "nav.integrations" },
+  { to: "/exports", key: "nav.exports" },
+  { to: "/imports", key: "nav.imports" },
 ];
 
 export function Layout(): JSX.Element {
   const { session, signOut } = useSession();
+  const { t, locale, setLocale } = useI18n();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
 
@@ -35,21 +37,28 @@ export function Layout(): JSX.Element {
         <nav className="nav">
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => (isActive ? "active" : "")}>
-              {item.label}
+              {t(item.key)}
             </NavLink>
           ))}
         </nav>
         <form className="topsearch" onSubmit={submitSearch}>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar…" aria-label="Busca global" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("chrome.searchPlaceholder")} aria-label="Search" />
         </form>
+        <div className="locale">
+          {LOCALES.map((l) => (
+            <button key={l.value} type="button" className={l.value === locale ? "on" : ""} onClick={() => setLocale(l.value)}>
+              {l.label}
+            </button>
+          ))}
+        </div>
         <div className="session">
           {session && (
             <>
-              <span className="tenant" title="Tenant ativo">
-                tenant: {session.tenantId.slice(0, 8)}…
+              <span className="tenant" title="tenant">
+                {t("chrome.tenant")}: {session.tenantId.slice(0, 8)}…
               </span>
               <button type="button" onClick={signOut}>
-                Sair
+                {t("chrome.signOut")}
               </button>
             </>
           )}
