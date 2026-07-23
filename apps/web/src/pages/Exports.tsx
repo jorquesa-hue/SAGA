@@ -1,18 +1,20 @@
 import { useState, type FormEvent } from "react";
 import { ApiError, type ExportType } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
+import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 
-const TYPES: { value: ExportType; label: string; needsAnimal?: boolean }[] = [
-  { value: "animal_traceability_packet", label: "Rastreabilidade do animal", needsAnimal: true },
-  { value: "animal_inventory", label: "Inventário de animais" },
-  { value: "herd_weights", label: "Pesagens do rebanho" },
-  { value: "finance_ledger", label: "Razão financeiro" },
+const TYPES: { value: ExportType; labelKey: string; needsAnimal?: boolean }[] = [
+  { value: "animal_traceability_packet", labelKey: "exports.typeTrace", needsAnimal: true },
+  { value: "animal_inventory", labelKey: "exports.typeInventory" },
+  { value: "herd_weights", labelKey: "exports.typeWeights" },
+  { value: "finance_ledger", labelKey: "exports.typeLedger" },
 ];
 
 /** Exports center (§27): request, process, and track secure exports. */
 export function Exports(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const jobs = useAsync(() => client.exports.list(), []);
   const [type, setType] = useState<ExportType>("animal_inventory");
   const [animalId, setAnimalId] = useState("");
@@ -40,45 +42,45 @@ export function Exports(): JSX.Element {
   return (
     <section>
       <div className="page-head">
-        <h2>Exportações</h2>
+        <h2>{t("exports.title")}</h2>
         <button type="button" onClick={jobs.reload}>
-          Atualizar
+          {t("common.refresh")}
         </button>
       </div>
 
       <form className="inline-form" onSubmit={request}>
         <select value={type} onChange={(e) => setType(e.target.value as ExportType)}>
-          {TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
+          {TYPES.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {t(opt.labelKey)}
             </option>
           ))}
         </select>
         {selected?.needsAnimal && (
-          <input value={animalId} onChange={(e) => setAnimalId(e.target.value)} placeholder="animal UUID" style={{ minWidth: 240 }} />
+          <input value={animalId} onChange={(e) => setAnimalId(e.target.value)} placeholder={t("exports.animalPlaceholder")} style={{ minWidth: 240 }} />
         )}
         <select value={format} onChange={(e) => setFormat(e.target.value as "json" | "csv")}>
           <option value="json">JSON</option>
           <option value="csv">CSV</option>
         </select>
         <button type="submit" disabled={selected?.needsAnimal && !animalId}>
-          Gerar
+          {t("exports.generate")}
         </button>
       </form>
       {msg && <p className="error">{msg}</p>}
 
-      {jobs.loading && <p className="muted">Carregando…</p>}
+      {jobs.loading && <p className="muted">{t("common.loading")}</p>}
       {jobs.error && <p className="error">{jobs.error}</p>}
-      {jobs.data && jobs.data.items.length === 0 && <p className="muted">Nenhuma exportação.</p>}
+      {jobs.data && jobs.data.items.length === 0 && <p className="muted">{t("exports.empty")}</p>}
       {jobs.data && jobs.data.items.length > 0 && (
         <table className="grid">
           <thead>
             <tr>
-              <th>Tipo</th>
-              <th>Formato</th>
-              <th>Status</th>
-              <th>Tamanho</th>
-              <th>Download</th>
+              <th>{t("common.type")}</th>
+              <th>{t("exports.format")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("exports.size")}</th>
+              <th>{t("exports.download")}</th>
             </tr>
           </thead>
           <tbody>

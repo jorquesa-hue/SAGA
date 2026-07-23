@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useClient } from "../session.js";
+import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 
 /**
@@ -7,10 +8,11 @@ import { Field, FormMessage, SelectField, useCommand } from "../components/Form.
  * Each sub-form posts to its command; calving may register and link a calf.
  */
 export function Reproduction(): JSX.Element {
+  const { t } = useI18n();
   return (
     <section>
       <div className="page-head">
-        <h2>Reprodução</h2>
+        <h2>{t("repro.title")}</h2>
       </div>
       <ServiceForm />
       <PregnancyForm />
@@ -21,6 +23,7 @@ export function Reproduction(): JSX.Element {
 
 function ServiceForm(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const cmd = useCommand();
   const [damId, setDamId] = useState("");
   const [method, setMethod] = useState("ai");
@@ -29,26 +32,26 @@ function ServiceForm(): JSX.Element {
 
   return (
     <div className="form">
-      <h3>Serviço / cobertura</h3>
-      <Field label="Matriz (dam) ID" value={damId} onChange={setDamId} />
+      <h3>{t("repro.serviceTitle")}</h3>
+      <Field label={t("repro.dam")} value={damId} onChange={setDamId} />
       <SelectField
-        label="Método"
+        label={t("repro.method")}
         value={method}
         onChange={setMethod}
         options={[
-          { value: "ai", label: "IA" },
-          { value: "tai", label: "IATF" },
-          { value: "natural", label: "Monta natural" },
+          { value: "ai", label: t("repro.methodAi") },
+          { value: "tai", label: t("repro.methodTai") },
+          { value: "natural", label: t("repro.methodNatural") },
         ]}
       />
-      <Field label="Touro (bull) ID (opcional)" value={bullId} onChange={setBullId} />
-      <Field label="Data (ISO)" value={serviceDate} onChange={setServiceDate} />
+      <Field label={t("repro.bull")} value={bullId} onChange={setBullId} />
+      <Field label={t("repro.date")} value={serviceDate} onChange={setServiceDate} />
       <button
         type="button"
         disabled={cmd.busy || !damId}
         onClick={() => void cmd.run(() => client.reproductionCommands.recordService({ damId, method, serviceDate, ...(bullId ? { bullId } : {}) }))}
       >
-        Registrar serviço
+        {t("repro.recordService")}
       </button>
       <FormMessage state={cmd} />
     </div>
@@ -57,6 +60,7 @@ function ServiceForm(): JSX.Element {
 
 function PregnancyForm(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const cmd = useCommand();
   const [damId, setDamId] = useState("");
   const [result, setResult] = useState("positive");
@@ -64,26 +68,26 @@ function PregnancyForm(): JSX.Element {
 
   return (
     <div className="form">
-      <h3>Diagnóstico de gestação</h3>
-      <Field label="Matriz (dam) ID" value={damId} onChange={setDamId} />
+      <h3>{t("repro.pregTitle")}</h3>
+      <Field label={t("repro.dam")} value={damId} onChange={setDamId} />
       <SelectField
-        label="Resultado"
+        label={t("repro.result")}
         value={result}
         onChange={setResult}
         options={[
-          { value: "positive", label: "Positivo" },
-          { value: "negative", label: "Negativo" },
-          { value: "uncertain", label: "Inconclusivo" },
-          { value: "loss", label: "Perda" },
+          { value: "positive", label: t("repro.resultPositive") },
+          { value: "negative", label: t("repro.resultNegative") },
+          { value: "uncertain", label: t("repro.resultUncertain") },
+          { value: "loss", label: t("repro.resultLoss") },
         ]}
       />
-      <Field label="Data (ISO)" value={checkDate} onChange={setCheckDate} />
+      <Field label={t("repro.date")} value={checkDate} onChange={setCheckDate} />
       <button
         type="button"
         disabled={cmd.busy || !damId}
         onClick={() => void cmd.run(() => client.reproductionCommands.recordPregnancyCheck({ damId, result, checkDate }))}
       >
-        Registrar diagnóstico
+        {t("repro.recordPreg")}
       </button>
       <FormMessage state={cmd} />
     </div>
@@ -92,6 +96,7 @@ function PregnancyForm(): JSX.Element {
 
 function CalvingForm(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const cmd = useCommand();
   const [damId, setDamId] = useState("");
   const [outcome, setOutcome] = useState("live");
@@ -105,42 +110,42 @@ function CalvingForm(): JSX.Element {
       outcome === "live" && calfVisualId && calfFarmId
         ? { calf: { farmId: calfFarmId, visualId: calfVisualId, sex: calfSex } }
         : {};
-    void cmd.run(() => client.reproductionCommands.recordCalving({ damId, outcome, calvingDate, ...calf }), "Parto registrado");
+    void cmd.run(() => client.reproductionCommands.recordCalving({ damId, outcome, calvingDate, ...calf }), t("repro.calvingMsg"));
   };
 
   return (
     <div className="form">
-      <h3>Parto</h3>
-      <Field label="Matriz (dam) ID" value={damId} onChange={setDamId} />
+      <h3>{t("repro.calvingTitle")}</h3>
+      <Field label={t("repro.dam")} value={damId} onChange={setDamId} />
       <SelectField
-        label="Desfecho"
+        label={t("repro.outcome")}
         value={outcome}
         onChange={setOutcome}
         options={[
-          { value: "live", label: "Nascido vivo" },
-          { value: "stillborn", label: "Natimorto" },
-          { value: "aborted", label: "Aborto" },
+          { value: "live", label: t("repro.outcomeLive") },
+          { value: "stillborn", label: t("repro.outcomeStillborn") },
+          { value: "aborted", label: t("repro.outcomeAborted") },
         ]}
       />
-      <Field label="Data (ISO)" value={calvingDate} onChange={setCalvingDate} />
+      <Field label={t("repro.date")} value={calvingDate} onChange={setCalvingDate} />
       {outcome === "live" && (
         <>
-          <Field label="Bezerro — ID visual" value={calfVisualId} onChange={setCalfVisualId} />
-          <Field label="Bezerro — fazenda ID" value={calfFarmId} onChange={setCalfFarmId} />
+          <Field label={t("repro.calfVisual")} value={calfVisualId} onChange={setCalfVisualId} />
+          <Field label={t("repro.calfFarm")} value={calfFarmId} onChange={setCalfFarmId} />
           <SelectField
-            label="Bezerro — sexo"
+            label={t("repro.calfSex")}
             value={calfSex}
             onChange={setCalfSex}
             options={[
-              { value: "female", label: "Fêmea" },
-              { value: "male", label: "Macho" },
-              { value: "unknown", label: "Desconhecido" },
+              { value: "female", label: t("repro.sexFemale") },
+              { value: "male", label: t("repro.sexMale") },
+              { value: "unknown", label: t("repro.sexUnknown") },
             ]}
           />
         </>
       )}
       <button type="button" disabled={cmd.busy || !damId} onClick={submit}>
-        Registrar parto
+        {t("repro.recordCalving")}
       </button>
       <FormMessage state={cmd} />
     </div>

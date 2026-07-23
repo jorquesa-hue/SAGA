@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ApiError } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
+import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 
 const FAMILIES = ["animal", "weight", "health", "reproduction", "herd", "inventory", "finance", "genetics", "pasture", "asset"];
@@ -12,6 +13,7 @@ const FAMILIES = ["animal", "weight", "health", "reproduction", "herd", "invento
  */
 export function Integrations(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const subs = useAsync(() => client.webhooks.list(), []);
   const deliveries = useAsync(() => client.webhooks.deliveries(), []);
   const connectors = useAsync(() => client.connectors.list(), []);
@@ -57,12 +59,12 @@ export function Integrations(): JSX.Element {
   return (
     <section>
       <div className="page-head">
-        <h2>Integrações</h2>
+        <h2>{t("integrations.title")}</h2>
       </div>
 
-      <h3>Nova assinatura de webhook</h3>
+      <h3>{t("integrations.newSubTitle")}</h3>
       <form className="inline-form" onSubmit={subscribe}>
-        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://endpoint" style={{ minWidth: 260 }} />
+        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder={t("integrations.urlPlaceholder")} style={{ minWidth: 260 }} />
         <div className="chips">
           {FAMILIES.map((f) => (
             <label key={f} className={`chip ${families.includes(f) ? "on" : ""}`}>
@@ -72,27 +74,27 @@ export function Integrations(): JSX.Element {
           ))}
         </div>
         <button type="submit" disabled={!url.startsWith("https://") || families.length === 0}>
-          Assinar
+          {t("integrations.subscribe")}
         </button>
       </form>
       {freshSecret && (
         <p className="secret">
-          Segredo (mostrado uma vez): <code>{freshSecret}</code>
+          {t("integrations.secretShown")} <code>{freshSecret}</code>
         </p>
       )}
       {msg && <p className="error">{msg}</p>}
 
-      <h3>Assinaturas</h3>
-      {subs.loading && <p className="muted">Carregando…</p>}
+      <h3>{t("integrations.subsTitle")}</h3>
+      {subs.loading && <p className="muted">{t("common.loading")}</p>}
       {subs.error && <p className="error">{subs.error}</p>}
       {subs.data && (
         <table className="grid">
           <thead>
             <tr>
-              <th>URL</th>
-              <th>Famílias</th>
-              <th>Ativa</th>
-              <th>Ações</th>
+              <th>{t("integrations.colUrl")}</th>
+              <th>{t("integrations.colFamilies")}</th>
+              <th>{t("integrations.colActive")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -100,17 +102,17 @@ export function Integrations(): JSX.Element {
               <tr key={s.id}>
                 <td>{s.url}</td>
                 <td>{s.eventFamilies.join(", ")}</td>
-                <td>{s.active ? "sim" : "não"}</td>
+                <td>{s.active ? t("integrations.yes") : t("integrations.no")}</td>
                 <td>
                   <button type="button" onClick={() => void rotate(s.id)}>
-                    Rotacionar
+                    {t("integrations.rotate")}
                   </button>{" "}
                   <button
                     type="button"
                     disabled={!s.active}
                     onClick={() => void client.webhooks.deactivate(s.id).then(() => subs.reload())}
                   >
-                    Desativar
+                    {t("integrations.deactivate")}
                   </button>
                 </td>
               </tr>
@@ -119,16 +121,16 @@ export function Integrations(): JSX.Element {
         </table>
       )}
 
-      <h3>Entregas</h3>
-      {deliveries.data && deliveries.data.items.length === 0 && <p className="muted">Sem entregas.</p>}
+      <h3>{t("integrations.deliveriesTitle")}</h3>
+      {deliveries.data && deliveries.data.items.length === 0 && <p className="muted">{t("integrations.noDeliveries")}</p>}
       {deliveries.data && deliveries.data.items.length > 0 && (
         <table className="grid">
           <thead>
             <tr>
-              <th>Evento</th>
-              <th>Status</th>
-              <th>Tentativas</th>
-              <th>Ações</th>
+              <th>{t("integrations.colEvent")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("integrations.colAttempts")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -147,7 +149,7 @@ export function Integrations(): JSX.Element {
                     disabled={d.status !== "dead_letter" && d.status !== "failed"}
                     onClick={() => void replay(d.id)}
                   >
-                    Reenviar
+                    {t("integrations.replay")}
                   </button>
                 </td>
               </tr>
@@ -156,7 +158,7 @@ export function Integrations(): JSX.Element {
         </table>
       )}
 
-      <h3>Conectores</h3>
+      <h3>{t("integrations.connectorsTitle")}</h3>
       {connectors.data && (
         <ul className="cards">
           {connectors.data.items.map((c) => (
@@ -167,7 +169,7 @@ export function Integrations(): JSX.Element {
               </p>
             </li>
           ))}
-          {connectors.data.items.length === 0 && <p className="muted">Nenhum conector registrado.</p>}
+          {connectors.data.items.length === 0 && <p className="muted">{t("integrations.noConnectors")}</p>}
         </ul>
       )}
     </section>

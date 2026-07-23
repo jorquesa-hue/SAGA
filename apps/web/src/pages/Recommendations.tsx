@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApiError, type Recommendation } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
+import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 
 /**
@@ -11,6 +12,7 @@ import { useAsync } from "../use-async.js";
  */
 export function Recommendations(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const { loading, data, error, reload } = useAsync(() => client.recommendations.list("pending"), []);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<Record<string, string>>({});
@@ -19,7 +21,7 @@ export function Recommendations(): JSX.Element {
     setBusy(rec.id);
     try {
       await client.recommendations.approve(rec.id);
-      setNote((n) => ({ ...n, [rec.id]: "Aprovada" }));
+      setNote((n) => ({ ...n, [rec.id]: t("rec.approved") }));
       reload();
     } catch (e) {
       setNote((n) => ({ ...n, [rec.id]: e instanceof ApiError ? e.code : "erro" }));
@@ -31,29 +33,29 @@ export function Recommendations(): JSX.Element {
   return (
     <section>
       <div className="page-head">
-        <h2>Recomendações de IA</h2>
+        <h2>{t("rec.title")}</h2>
         <button type="button" onClick={reload}>
-          Atualizar
+          {t("common.refresh")}
         </button>
       </div>
-      {loading && <p className="muted">Carregando…</p>}
+      {loading && <p className="muted">{t("common.loading")}</p>}
       {error && <p className="error">{error}</p>}
-      {data && data.items.length === 0 && <p className="muted">Sem recomendações pendentes.</p>}
+      {data && data.items.length === 0 && <p className="muted">{t("rec.empty")}</p>}
       <ul className="cards">
         {data?.items.map((rec) => (
           <li className="card" key={rec.id}>
             <div className="card-head">
               <strong>{rec.proposedActionCategory}</strong>
               <span className={`badge risk-${rec.riskClass ?? "low"}`}>{rec.riskClass ?? "low"}</span>
-              {rec.prohibited && <span className="badge prohibited">proibida (autônoma)</span>}
-              {rec.highImpact && !rec.prohibited && <span className="badge high">alto impacto</span>}
+              {rec.prohibited && <span className="badge prohibited">{t("rec.prohibited")}</span>}
+              {rec.highImpact && !rec.prohibited && <span className="badge high">{t("rec.highImpact")}</span>}
             </div>
             <p className="muted">
-              confiança {Math.round(rec.confidence * 100)}% · {rec.evidenceEventIds.length} evidência(s)
+              {t("rec.confidence", { pct: Math.round(rec.confidence * 100), n: rec.evidenceEventIds.length })}
             </p>
             <div className="card-actions">
               <button type="button" disabled={rec.prohibited || busy === rec.id} onClick={() => void approve(rec)}>
-                Aprovar
+                {t("rec.approve")}
               </button>
               {note[rec.id] && <span className="hint">{note[rec.id]}</span>}
             </div>

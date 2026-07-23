@@ -1,11 +1,13 @@
 import { Link, useSearchParams } from "react-router-dom";
 import type { SearchHit } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
+import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 
 /** Global search results (§27) grouped by entity type. */
 export function SearchResults(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const [params] = useSearchParams();
   const q = params.get("q") ?? "";
   const { loading, data, error } = useAsync(() => (q ? client.search.query(q, 15) : Promise.resolve(null)), [q]);
@@ -15,18 +17,18 @@ export function SearchResults(): JSX.Element {
   return (
     <section>
       <div className="page-head">
-        <h2>Busca{q ? `: “${q}”` : ""}</h2>
+        <h2>{t("search.title")}{q ? `: “${q}”` : ""}</h2>
       </div>
-      {!q && <p className="muted">Digite um termo na barra superior.</p>}
-      {loading && <p className="muted">Buscando…</p>}
+      {!q && <p className="muted">{t("search.prompt")}</p>}
+      {loading && <p className="muted">{t("search.searching")}</p>}
       {error && <p className="error">{error}</p>}
-      {data && total === 0 && <p className="muted">Nenhum resultado.</p>}
+      {data && total === 0 && <p className="muted">{t("search.empty")}</p>}
       {data && (
         <>
-          <Group title="Animais" hits={data.animals} to={(h) => `/animals/${h.id}`} />
-          <Group title="Lotes" hits={data.lots} />
-          <Group title="Piquetes" hits={data.paddocks} />
-          <Group title="Pessoas" hits={data.people} />
+          <Group title={t("search.animals")} hits={data.animals} to={(h) => `/animals/${h.id}`} />
+          <Group title={t("search.lots")} hits={data.lots} />
+          <Group title={t("search.paddocks")} hits={data.paddocks} />
+          <Group title={t("search.people")} hits={data.people} />
         </>
       )}
     </section>

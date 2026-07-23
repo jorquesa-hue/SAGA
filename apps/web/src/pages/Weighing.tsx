@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useClient } from "../session.js";
+import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 
 /**
@@ -10,6 +11,7 @@ import { Field, FormMessage, SelectField, useCommand } from "../components/Form.
  */
 export function Weighing(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const start = useCommand();
   const obs = useCommand();
   const close = useCommand();
@@ -29,7 +31,7 @@ export function Weighing(): JSX.Element {
     void start.run(async () => {
       const s = await client.herd.startSession({ farmId, purpose });
       setSessionId(String(s.id ?? s.sessionId ?? ""));
-    }, "Sessão iniciada");
+    }, t("weighing.startedMsg"));
   };
 
   const record = (): void => {
@@ -44,7 +46,7 @@ export function Weighing(): JSX.Element {
       });
       setCaptured((c) => c + 1);
       setWeight("");
-    }, "Pesagem capturada");
+    }, t("weighing.capturedMsg"));
   };
 
   const closeSession = (): void => {
@@ -53,31 +55,31 @@ export function Weighing(): JSX.Element {
       await client.herd.closeSession(sessionId);
       setSessionId(null);
       setCaptured(0);
-    }, "Sessão encerrada");
+    }, t("weighing.closedMsg"));
   };
 
   return (
     <section>
       <div className="page-head">
-        <h2>Pesagem</h2>
+        <h2>{t("weighing.title")}</h2>
       </div>
 
       {!sessionId && (
         <div className="form">
-          <h3>Iniciar sessão de manejo</h3>
-          <Field label="Fazenda ID" value={farmId} onChange={setFarmId} />
+          <h3>{t("weighing.startSession")}</h3>
+          <Field label={t("weighing.farmId")} value={farmId} onChange={setFarmId} />
           <SelectField
-            label="Finalidade"
+            label={t("weighing.purpose")}
             value={purpose}
             onChange={setPurpose}
             options={[
-              { value: "weighing", label: "Pesagem" },
-              { value: "vaccination", label: "Vacinação" },
-              { value: "handling", label: "Manejo" },
+              { value: "weighing", label: t("weighing.purposeWeighing") },
+              { value: "vaccination", label: t("weighing.purposeVaccination") },
+              { value: "handling", label: t("weighing.purposeHandling") },
             ]}
           />
           <button type="button" disabled={start.busy || !farmId} onClick={startSession}>
-            Iniciar
+            {t("weighing.start")}
           </button>
           <FormMessage state={start} />
         </div>
@@ -86,16 +88,16 @@ export function Weighing(): JSX.Element {
       {sessionId && (
         <div className="form">
           <h3>
-            Capturar pesagem <span className="muted">· sessão {sessionId.slice(0, 8)}… · {captured} capturada(s)</span>
+            {t("weighing.captureTitle")} <span className="muted">{t("weighing.sessionMeta", { id: sessionId.slice(0, 8), n: captured })}</span>
           </h3>
-          <Field label="RFID (para vincular o animal)" value={rfid} onChange={setRfid} placeholder="982000..." />
-          <Field label="Peso (kg)" value={weight} onChange={setWeight} type="number" />
+          <Field label={t("weighing.rfid")} value={rfid} onChange={setRfid} placeholder="982000..." />
+          <Field label={t("weighing.weight")} value={weight} onChange={setWeight} type="number" />
           <button type="button" disabled={obs.busy || !weight} onClick={record}>
-            Capturar
+            {t("weighing.capture")}
           </button>
           <FormMessage state={obs} />
           <button type="button" disabled={close.busy} onClick={closeSession}>
-            Encerrar sessão
+            {t("weighing.close")}
           </button>
           <FormMessage state={close} />
         </div>

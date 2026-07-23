@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
+import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 
 /**
@@ -12,6 +13,7 @@ import { useAsync } from "../use-async.js";
 export function AnimalDetail(): JSX.Element {
   const { id = "" } = useParams();
   const client = useClient();
+  const { t } = useI18n();
   const animal = useAsync(() => client.animals.get(id), [id]);
   const weights = useAsync(() => client.animals.weights(id), [id]);
   const restrictions = useAsync(() => client.health.restrictions(id), [id]);
@@ -20,13 +22,13 @@ export function AnimalDetail(): JSX.Element {
   const [exportMsg, setExportMsg] = useState<string | null>(null);
 
   const exportPacket = async (): Promise<void> => {
-    setExportMsg("Gerando…");
+    setExportMsg(t("animalDetail.generating"));
     try {
       const job = await client.exports.request({ exportType: "animal_traceability_packet", format: "json", params: { animalId: id } });
       const done = await client.exports.process(job.id);
-      setExportMsg(done.status === "completed" ? `Pronto — ${done.resolvableUrl}` : `Status: ${done.status}`);
+      setExportMsg(done.status === "completed" ? t("animalDetail.ready", { url: done.resolvableUrl }) : t("animalDetail.status", { status: done.status }));
     } catch (e) {
-      setExportMsg(e instanceof ApiError ? `Falha: ${e.code}` : "Falha");
+      setExportMsg(e instanceof ApiError ? t("animalDetail.failCode", { code: e.code }) : t("animalDetail.fail"));
     }
   };
 
@@ -35,12 +37,12 @@ export function AnimalDetail(): JSX.Element {
       <div className="page-head">
         <h2>
           <Link to="/animals" className="back">
-            ← Animais
+            {t("animalDetail.back")}
           </Link>{" "}
           {animal.data?.visualId ?? id.slice(0, 8)}
         </h2>
         <button type="button" onClick={() => void exportPacket()}>
-          Exportar rastreabilidade
+          {t("animalDetail.exportTrace")}
         </button>
       </div>
       {exportMsg && <p className="hint">{exportMsg}</p>}
@@ -48,19 +50,19 @@ export function AnimalDetail(): JSX.Element {
       {animal.error && <p className="error">{animal.error}</p>}
       {animal.data && (
         <div className="kpi-grid">
-          <Tile label="Sexo" value={animal.data.sex} />
-          <Tile label="Raça" value={animal.data.breedCode} />
-          <Tile label="Status" value={animal.data.lifecycleStatus} />
+          <Tile label={t("animalDetail.sex")} value={animal.data.sex} />
+          <Tile label={t("animalDetail.breed")} value={animal.data.breedCode} />
+          <Tile label={t("animalDetail.statusLabel")} value={animal.data.lifecycleStatus} />
         </div>
       )}
 
-      <Section title="Pesagens" state={weights}>
+      <Section title={t("animalDetail.weights")} state={weights}>
         {(rows) => (
           <table className="grid">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Peso (kg)</th>
+                <th>{t("animalDetail.colDate")}</th>
+                <th>{t("animalDetail.colWeight")}</th>
               </tr>
             </thead>
             <tbody>
@@ -75,7 +77,7 @@ export function AnimalDetail(): JSX.Element {
         )}
       </Section>
 
-      <Section title="Restrições" state={restrictions}>
+      <Section title={t("animalDetail.restrictions")} state={restrictions}>
         {(rows) => (
           <ul className="cards">
             {rows.map((r, i) => (
@@ -88,13 +90,13 @@ export function AnimalDetail(): JSX.Element {
         )}
       </Section>
 
-      <Section title="Tratamentos" state={treatments}>
+      <Section title={t("animalDetail.treatments")} state={treatments}>
         {(rows) => (
           <ul className="cards">
-            {rows.map((t, i) => (
+            {rows.map((tr, i) => (
               <li className="card" key={i}>
-                <strong>{String(t.productName ?? t.product_name ?? t.treatmentType ?? "tratamento")}</strong>
-                <p className="muted">{String(t.administeredAt ?? t.administered_at ?? "—")}</p>
+                <strong>{String(tr.productName ?? tr.product_name ?? tr.treatmentType ?? t("animalDetail.treatmentFallback"))}</strong>
+                <p className="muted">{String(tr.administeredAt ?? tr.administered_at ?? "—")}</p>
               </li>
             ))}
           </ul>
@@ -102,10 +104,10 @@ export function AnimalDetail(): JSX.Element {
       </Section>
 
       <div className="page-head" style={{ marginTop: "1.5rem" }}>
-        <h3 style={{ margin: 0 }}>Reprodução</h3>
+        <h3 style={{ margin: 0 }}>{t("animalDetail.reproduction")}</h3>
       </div>
-      {repro.loading && <p className="muted">Carregando…</p>}
-      {repro.error && <p className="muted">Sem dados reprodutivos.</p>}
+      {repro.loading && <p className="muted">{t("common.loading")}</p>}
+      {repro.error && <p className="muted">{t("animalDetail.noRepro")}</p>}
       {repro.data && (
         <div className="kpi-grid">
           {Object.entries(repro.data).map(([k, v]) => (
@@ -141,14 +143,15 @@ function Section<T>({
   state: Loadable<T>;
   children: (rows: T[]) => JSX.Element;
 }): JSX.Element {
+  const { t } = useI18n();
   return (
     <>
       <div className="page-head" style={{ marginTop: "1.5rem" }}>
         <h3 style={{ margin: 0 }}>{title}</h3>
       </div>
-      {state.loading && <p className="muted">Carregando…</p>}
-      {state.error && <p className="muted">Sem registros.</p>}
-      {state.data && state.data.items.length === 0 && <p className="muted">Sem registros.</p>}
+      {state.loading && <p className="muted">{t("common.loading")}</p>}
+      {state.error && <p className="muted">{t("animalDetail.noRecords")}</p>}
+      {state.data && state.data.items.length === 0 && <p className="muted">{t("animalDetail.noRecords")}</p>}
       {state.data && state.data.items.length > 0 && children(state.data.items)}
     </>
   );

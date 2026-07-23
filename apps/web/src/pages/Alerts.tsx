@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { ApiError } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
+import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 
 /** Operational alert queue (§26): acknowledge and resolve, evidence-linked. */
 export function Alerts(): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const { loading, data, error, reload } = useAsync(() => client.alerts.list(), []);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -24,22 +26,22 @@ export function Alerts(): JSX.Element {
   return (
     <section>
       <div className="page-head">
-        <h2>Alertas</h2>
+        <h2>{t("alerts.title")}</h2>
         <button type="button" onClick={reload}>
-          Atualizar
+          {t("common.refresh")}
         </button>
       </div>
-      {loading && <p className="muted">Carregando…</p>}
+      {loading && <p className="muted">{t("common.loading")}</p>}
       {error && <p className="error">{error}</p>}
-      {data && data.items.length === 0 && <p className="muted">Nenhum alerta ativo.</p>}
+      {data && data.items.length === 0 && <p className="muted">{t("alerts.empty")}</p>}
       {data && data.items.length > 0 && (
         <table className="grid">
           <thead>
             <tr>
-              <th>Tipo</th>
-              <th>Severidade</th>
-              <th>Status</th>
-              <th>Ações</th>
+              <th>{t("common.type")}</th>
+              <th>{t("alerts.severity")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -55,10 +57,10 @@ export function Alerts(): JSX.Element {
                   <td>{status}</td>
                   <td>
                     <button type="button" disabled={busy === id || status !== "open"} onClick={() => void act(id, () => client.alerts.acknowledge(id))}>
-                      Reconhecer
+                      {t("alerts.acknowledge")}
                     </button>{" "}
                     <button type="button" disabled={busy === id || status === "resolved"} onClick={() => void act(id, () => client.alerts.resolve(id))}>
-                      Resolver
+                      {t("alerts.resolve")}
                     </button>
                   </td>
                 </tr>
