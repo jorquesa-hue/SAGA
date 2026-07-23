@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   AlertService,
   ExportService,
+  SearchService,
   FarmIntelligenceService,
   RecommendationService,
   ReportService,
@@ -42,6 +43,7 @@ import { registerPhase4Routes } from "./routes/phase4.routes.js";
 import { registerAiRoutes } from "./routes/ai.routes.js";
 import { registerWebhookRoutes } from "./routes/webhooks.routes.js";
 import { registerExportRoutes } from "./routes/exports.routes.js";
+import { registerSearchRoutes } from "./routes/search.routes.js";
 import { registerReproductionRoutes } from "./routes/reproduction.routes.js";
 
 declare module "fastify" {
@@ -113,6 +115,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const webhookService = new WebhookService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
   const connectorService = new ConnectorRegistryService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
   const exportService = new ExportService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
+  const searchService = new SearchService({ appPool: deps.pools.appPool });
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
 
@@ -190,6 +193,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerAiRoutes(app, recommendationService);
   registerWebhookRoutes(app, webhookService, connectorService);
   registerExportRoutes(app, exportService);
+  registerSearchRoutes(app, searchService);
 
   // Surface a typed unauthorized when auth decoration is somehow missing.
   app.decorateRequest("principal", null as unknown as AuthenticatedPrincipal);

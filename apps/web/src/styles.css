@@ -314,3 +314,12 @@ h3 {
 .success {
   color: var(--accent);
 }
+
+.topsearch input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  color: var(--text);
+  min-width: 200px;
+}

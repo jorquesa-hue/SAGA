@@ -9,6 +9,7 @@ import type {
   Page,
   Recommendation,
   RequestExportRequest,
+  SearchResults,
   Tenant,
   WebhookDelivery,
   WebhookSubscription,
@@ -176,6 +177,10 @@ export class JkPlatformClient {
     executiveDashboard: (o?: RequestOptions) => this.get<Record<string, unknown>>("/api/v1/dashboards/executive", o),
     farmIntelligenceIndex: (o?: RequestOptions) => this.get<Record<string, unknown>>("/api/v1/reports/farm-intelligence-index", o),
     monthlyNucleus: (o?: RequestOptions) => this.get<Record<string, unknown>>("/api/v1/reports/monthly-nucleus", o),
+  };
+  readonly search = {
+    query: (q: string, limit?: number, o?: RequestOptions) =>
+      this.get<SearchResults>("/api/v1/search", { ...o, query: { ...o?.query, q, limit } }),
   };
   readonly alerts = {
     list: (status?: string, o?: RequestOptions) =>

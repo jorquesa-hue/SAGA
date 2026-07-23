@@ -136,3 +136,18 @@ export interface ExportJob {
 export interface Page<T> {
   items: T[];
 }
+
+export interface SearchHit {
+  type: "animal" | "lot" | "paddock" | "person";
+  id: string;
+  label: string;
+  sublabel?: string;
+}
+
+export interface SearchResults {
+  query: string;
+  animals: SearchHit[];
+  lots: SearchHit[];
+  paddocks: SearchHit[];
+  people: SearchHit[];
+}

@@ -6,3 +6,4 @@ export * from "./farm-intelligence.js";
 export * from "./ai-safety.js";
 export * from "./recommendation-service.js";
 export * from "./export-service.js";
+export * from "./search-service.js";

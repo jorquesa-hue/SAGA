@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useState, type FormEvent } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useSession } from "../session.js";
 
 const NAV = [
@@ -17,6 +18,15 @@ const NAV = [
 
 export function Layout(): JSX.Element {
   const { session, signOut } = useSession();
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+
+  const submitSearch = (e: FormEvent): void => {
+    e.preventDefault();
+    const term = q.trim();
+    if (term) navigate(`/search?q=${encodeURIComponent(term)}`);
+  };
+
   return (
     <div className="app">
       <header className="topbar">
@@ -28,6 +38,9 @@ export function Layout(): JSX.Element {
             </NavLink>
           ))}
         </nav>
+        <form className="topsearch" onSubmit={submitSearch}>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar…" aria-label="Busca global" />
+        </form>
         <div className="session">
           {session && (
             <>

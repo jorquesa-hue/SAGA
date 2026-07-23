@@ -49,6 +49,8 @@ tags:
     description: >
       Asynchronous, tenant-scoped, time-limited, audited exports and the animal
       traceability packet (§27, JK-ANI-006).
+  - name: Search
+    description: Global search across animals, lots, paddocks, and people (§27).
 paths:
   /tenants:
     post:
@@ -769,6 +771,28 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/UnprocessableEntity" }
+  /search:
+    get:
+      operationId: globalSearch
+      summary: Global search across entities within authorization scope (§27)
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search term (matched literally; LIKE wildcards are escaped).
+          schema: { type: string, minLength: 1 }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 25, default: 8 }
+      responses:
+        "200":
+          description: Grouped search results
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SearchResults" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 components:
   securitySchemes:
     oidc:
@@ -1221,6 +1245,33 @@ components:
         resolvableUrl:
           type: string
           description: QR-resolvable download path (JK-ANI-006).
+    SearchHit:
+      type: object
+      required: [type, id, label]
+      properties:
+        type:
+          type: string
+          enum: [animal, lot, paddock, person]
+        id: { type: string }
+        label: { type: string }
+        sublabel: { type: string }
+    SearchResults:
+      type: object
+      required: [query, animals, lots, paddocks, people]
+      properties:
+        query: { type: string }
+        animals:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
+        lots:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
+        paddocks:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
+        people:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
   responses:
     Conflict:
       description: Business conflict

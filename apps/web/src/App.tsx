@@ -10,6 +10,7 @@ import { Integrations } from "./pages/Integrations.js";
 import { Lots } from "./pages/Lots.js";
 import { Recommendations } from "./pages/Recommendations.js";
 import { Reproduction } from "./pages/Reproduction.js";
+import { SearchResults } from "./pages/SearchResults.js";
 import { SignIn } from "./pages/SignIn.js";
 import { Treatments } from "./pages/Treatments.js";
 import { Weighing } from "./pages/Weighing.js";
@@ -30,6 +31,7 @@ export function App(): JSX.Element {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
+        <Route path="search" element={<SearchResults />} />
         <Route path="animals" element={<Animals />} />
         <Route path="animals/:id" element={<AnimalDetail />} />
         <Route path="weighing" element={<Weighing />} />
