@@ -67,6 +67,25 @@ Generated for the Phase 0 baseline (foundation and decision closure).
 | JK-WGT-008 store-and-forward idempotent replay | ingestion | `ingestBatch` + idem index | 500-animal disconnect/replay E2E | implemented |
 | Phase 1 exit: 500-animal session disconnect/replay | e2e | `devices/simulators` | `handling-session-500.integration.test.ts` | implemented |
 
+## Phase 2 — Health, Reproduction, and Movement
+
+| Requirement | Design area | Source | Verification | Status |
+|---|---|---|---|---|
+| JK-HLT-001 protocols by species/age/class/version | health | `@jk/health-laboratory` defineProtocol; migration 0006 | health integration test | implemented |
+| JK-HLT-003 batch vaccination/treatment + exceptions | health | `batchTreatment` (savepoints) | health integration test | implemented |
+| JK-HLT-004 medicine batch/dose/route/withdrawal | health | `treatment` table + `recordTreatment` | health integration test | implemented |
+| JK-HLT-005 block sale-clear during withdrawal + override | health | `checkSaleClear`, `overrideRestriction` | health test (block, vet override, tech denied) | implemented |
+| JK-HLT-006 clinical case open→outcome | health | `openCase`/`resolveCase`, `health_case` | health integration test | implemented |
+| JK-DOM-011 withdrawal → restriction + due date | health | `animal_restriction` + restriction_started | health integration test | implemented |
+| JK-REP-003 record AI/TAI/natural service | reproduction | `@jk/reproduction-genetics` recordService | reproduction integration test | implemented |
+| JK-REP-004/005 pregnancy check + outcomes | reproduction | `recordPregnancyCheck` (+ expected calving) | reproduction integration test | implemented |
+| JK-REP-006 calving creates/links calf + parentage | reproduction | `recordCalving` + CalfRegistrar + `animal_parentage` | reproduction test (calf + pedigree) | implemented |
+| JK-GEN-001 typed confidence-rated pedigree | genetics | `animal_parentage` (migration 0007) | reproduction integration test | implemented |
+| JK-HER-001 create lot with purpose | herd ops | `LotsService.createLot`; migration 0008 | lots integration test | implemented |
+| JK-HER-002 temporal membership, one primary lot | herd ops | `lot_membership` partial unique + addAnimals | lots test (one-active-lot) | implemented |
+| JK-HER-003 batch move between paddocks | herd ops | `moveToPaddock` closes prior occupation | lots test (paddock move) | implemented |
+| JK-HER-004 current location as projection | herd ops | `getAnimalLot`/`getCurrentPaddock` | lots integration test | implemented |
+
 ## Architecture fitness functions (§36)
 
 | Requirement | Source | Verification | Status |

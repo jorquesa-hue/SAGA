@@ -62,6 +62,9 @@ importers:
       '@jk/domain-kernel':
         specifier: workspace:*
         version: link:../../packages/domain-kernel
+      '@jk/health-laboratory':
+        specifier: workspace:*
+        version: link:../../packages/health-laboratory
       '@jk/herd-operations':
         specifier: workspace:*
         version: link:../../packages/herd-operations
@@ -71,6 +74,9 @@ importers:
       '@jk/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@jk/reproduction-genetics':
+        specifier: workspace:*
+        version: link:../../packages/reproduction-genetics
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1

@@ -2,8 +2,10 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AnimalRegistryService } from "@jk/animal-registry";
-import { WeighingService } from "@jk/herd-operations";
+import { HealthService } from "@jk/health-laboratory";
+import { LotsService, WeighingService } from "@jk/herd-operations";
 import { IdentityService } from "@jk/identity-tenancy";
+import { ReproductionGeneticsService } from "@jk/reproduction-genetics";
 import {
   CORRELATION_HEADER,
   createLogger,
@@ -17,9 +19,12 @@ import { RouteNotFoundError, UnauthorizedError } from "./errors.js";
 import type { DatabasePools } from "./pools.js";
 import { PROBLEM_CONTENT_TYPE, toProblem } from "./problem.js";
 import { registerAnimalRoutes } from "./routes/animals.js";
-import { registerHealthRoutes } from "./routes/health.js";
+import { registerHealthRoutes as registerHealthProbeRoutes } from "./routes/health.js";
+import { registerHealthRoutes } from "./routes/health.routes.js";
 import { registerHerdRoutes } from "./routes/herd.js";
 import { registerIdentityRoutes } from "./routes/identity.js";
+import { registerLotRoutes } from "./routes/lots.routes.js";
+import { registerReproductionRoutes } from "./routes/reproduction.routes.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -59,6 +64,18 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     environment: deps.config.APP_ENV,
   });
   const weighing = new WeighingService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const lotsService = new LotsService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const healthService = new HealthService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const reproductionService = new ReproductionGeneticsService({
     appPool: deps.pools.appPool,
     environment: deps.config.APP_ENV,
   });
@@ -126,10 +143,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     }
   });
 
-  registerHealthRoutes(app, deps.pools);
+  registerHealthProbeRoutes(app, deps.pools);
   registerIdentityRoutes(app, identityService);
   registerAnimalRoutes(app, animalRegistry);
   registerHerdRoutes(app, weighing);
+  registerLotRoutes(app, lotsService);
+  registerHealthRoutes(app, healthService);
+  registerReproductionRoutes(app, reproductionService);
 
   // Surface a typed unauthorized when auth decoration is somehow missing.
   app.decorateRequest("principal", null as unknown as AuthenticatedPrincipal);

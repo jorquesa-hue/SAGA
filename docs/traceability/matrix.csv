@@ -47,3 +47,18 @@ JK-WGT-004,observation,database/migrations/0005,packages/herd-operations/tests/i
 JK-WGT-006,analytics,packages/herd-operations (computeAdg),packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
 JK-WGT-008,ingestion,packages/herd-operations (ingestBatch),devices/simulators/tests/integration/handling-session-500.integration.test.ts,implemented
 PHASE1-EXIT-500,e2e,devices/simulators,devices/simulators/tests/integration/handling-session-500.integration.test.ts,implemented
+JK-HLT-001,health,packages/health-laboratory;database/migrations/0006,packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-HLT-003,health,packages/health-laboratory (batchTreatment),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-HLT-004,health,database/migrations/0006 (treatment),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-HLT-005,health,packages/health-laboratory (checkSaleClear/overrideRestriction),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-HLT-006,health,packages/health-laboratory (openCase/resolveCase),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-DOM-011,health,database/migrations/0006 (animal_restriction),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-REP-003,reproduction,packages/reproduction-genetics (recordService),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-REP-004,reproduction,packages/reproduction-genetics (recordPregnancyCheck),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-REP-005,reproduction,packages/reproduction-genetics (recordPregnancyCheck),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-REP-006,reproduction,packages/reproduction-genetics (recordCalving+CalfRegistrar),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-GEN-001,genetics,database/migrations/0007 (animal_parentage),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-HER-001,herd ops,packages/herd-operations (LotsService);database/migrations/0008,packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
+JK-HER-002,herd ops,database/migrations/0008 (lot_membership),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
+JK-HER-003,herd ops,packages/herd-operations (moveToPaddock),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
+JK-HER-004,herd ops,packages/herd-operations (projections),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
