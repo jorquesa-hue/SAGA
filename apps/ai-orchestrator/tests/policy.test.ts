@@ -24,8 +24,27 @@ describe("DeterministicProvider", () => {
     expect(draft!.proposedActionCategory).toBe("task");
   });
 
+  it("flags an active withdrawal as a sale-clearance review (high confidence)", () => {
+    const [draft] = new DeterministicProvider().propose([finding({ kind: "withdrawal_active", severity: "medium" })]);
+    expect(draft!.proposedActionCategory).toBe("review");
+    expect(draft!.confidence).toBeGreaterThanOrEqual(0.9);
+    expect(draft!.proposedAction).toMatchObject({ review: "sale_clearance" });
+  });
+
+  it("turns a reproduction gap into a breeding-review task", () => {
+    const [draft] = new DeterministicProvider().propose([finding({ kind: "reproduction_gap", severity: "low" })]);
+    expect(draft!.proposedActionCategory).toBe("task");
+    expect(draft!.proposedAction).toMatchObject({ task: "breeding_review" });
+  });
+
   it("never proposes a finding without evidence", () => {
     expect(new DeterministicProvider().propose([finding({ evidenceEventIds: [] })])).toHaveLength(0);
+  });
+
+  it("only ever proposes safe action categories", () => {
+    const kinds = ["low_weight", "missing_weight", "withdrawal_active", "reproduction_gap", "unknown"];
+    const drafts = new DeterministicProvider().propose(kinds.map((k) => finding({ kind: k })));
+    for (const d of drafts) expect(["review", "task"]).toContain(d.proposedActionCategory);
   });
 });
 

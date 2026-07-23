@@ -64,6 +64,24 @@ describe.skipIf(!available)("Orchestrator (integration)", () => {
        VALUES ($1,$2, now(), 200, true, 'evt-low-1')`,
       [tenantId, animalId],
     );
+
+    // A second animal under an active medicine withdrawal (treatment-grounded).
+    const withheld = newUuid();
+    await db.adminPool.query(
+      `INSERT INTO animal (id, tenant_id, farm_id, visual_id, sex, breed_code, version) VALUES ($1,$2,$3,'BR-WD','male','BRANGUS',0)`,
+      [withheld, tenantId, farm.id],
+    );
+    const treatmentId = newUuid();
+    await db.adminPool.query(
+      `INSERT INTO treatment (id, tenant_id, animal_id, kind, product_name, administered_at, withdrawal_until, event_id)
+       VALUES ($1,$2,$3,'treatment','Oxitetraciclina', now(), now() + interval '20 days', 'evt-treat-1')`,
+      [treatmentId, tenantId, withheld],
+    );
+    await db.adminPool.query(
+      `INSERT INTO animal_restriction (tenant_id, animal_id, restriction_type, source_treatment_id, valid_from, status)
+       VALUES ($1,$2,'withdrawal',$3, now(), 'active')`,
+      [tenantId, withheld, treatmentId],
+    );
   }, 90_000);
 
   afterAll(async () => {
@@ -77,10 +95,15 @@ describe.skipIf(!available)("Orchestrator (integration)", () => {
     expect(report.created.length).toBeGreaterThanOrEqual(1);
 
     const recs = await recommendations.listRecommendations(owner, "pending");
-    const review = recs.find((r) => r.proposedActionCategory === "review");
+    const review = recs.find((r) => r.evidenceEventIds.includes("evt-low-1"));
     expect(review).toBeDefined();
+    expect(review!.proposedActionCategory).toBe("review");
     expect(review!.prohibited).toBe(false);
-    expect(review!.evidenceEventIds).toContain("evt-low-1");
+
+    // The withdrawal tool grounded a sale-clearance review on the treatment.
+    const withdrawal = recs.find((r) => r.evidenceEventIds.includes("evt-treat-1"));
+    expect(withdrawal).toBeDefined();
+    expect(withdrawal!.proposedActionCategory).toBe("review");
   });
 
   it("blocks a rogue provider's prohibited proposal — nothing prohibited is ever created", async () => {

@@ -60,4 +60,62 @@ export function missingWeightTool(): EvidenceTool {
   };
 }
 
-export const DEFAULT_TOOLS: EvidenceTool[] = [lowWeightTool(), missingWeightTool()];
+/**
+ * Animals under an active medicine-withdrawal restriction — they must not be
+ * sold until it lifts (JK-DOM-011). Grounded on the treatment event that
+ * created the restriction.
+ */
+export function withdrawalNearSaleTool(): EvidenceTool {
+  return async (client) => {
+    const rows = await client.query<{ animal_id: string; farm_id: string; visual_id: string; event_id: string; valid_to: string | null }>(
+      `SELECT a.id AS animal_id, a.farm_id, a.visual_id, t.event_id, r.valid_to::text AS valid_to
+         FROM animal_restriction r
+         JOIN animal a ON a.id = r.animal_id
+         JOIN treatment t ON t.id = r.source_treatment_id
+        WHERE r.restriction_type = 'withdrawal' AND r.status = 'active' AND t.event_id IS NOT NULL`,
+    );
+    return rows.rows.map((r) => ({
+      kind: "withdrawal_active",
+      animalId: r.animal_id,
+      farmId: r.farm_id,
+      summary: `animal ${r.visual_id}${r.valid_to ? ` (liberado após ${r.valid_to.slice(0, 10)})` : ""}`,
+      evidenceEventIds: [r.event_id],
+      severity: "medium" as const,
+    }));
+  };
+}
+
+/**
+ * Active females with no reproduction service ever recorded — a breeding gap
+ * to review. Grounded on the animal's registration event.
+ */
+export function reproductionGapTool(): EvidenceTool {
+  return async (client) => {
+    const rows = await client.query<{ animal_id: string; farm_id: string; visual_id: string; reg_event_id: string | null }>(
+      `SELECT a.id AS animal_id, a.farm_id, a.visual_id,
+              (SELECT event_id FROM domain_event de
+                WHERE de.aggregate_type = 'animal' AND de.aggregate_id = a.id
+                ORDER BY occurred_at LIMIT 1) AS reg_event_id
+         FROM animal a
+        WHERE a.lifecycle_status = 'active' AND a.sex = 'female'
+          AND NOT EXISTS (SELECT 1 FROM reproduction_service s WHERE s.dam_id = a.id)`,
+    );
+    return rows.rows
+      .filter((r) => r.reg_event_id)
+      .map((r) => ({
+        kind: "reproduction_gap",
+        animalId: r.animal_id,
+        farmId: r.farm_id,
+        summary: `matriz ${r.visual_id} sem serviço reprodutivo registrado`,
+        evidenceEventIds: [r.reg_event_id as string],
+        severity: "low" as const,
+      }));
+  };
+}
+
+export const DEFAULT_TOOLS: EvidenceTool[] = [
+  lowWeightTool(),
+  missingWeightTool(),
+  withdrawalNearSaleTool(),
+  reproductionGapTool(),
+];

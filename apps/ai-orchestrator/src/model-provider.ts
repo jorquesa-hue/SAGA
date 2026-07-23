@@ -54,27 +54,50 @@ export class DeterministicProvider implements ModelProvider {
   }
 
   private draftFor(f: Finding): Draft {
-    if (f.kind === "low_weight") {
-      return {
-        agentName: "Herd Weight Analyst",
-        recommendationText: `Revisar ${f.summary} — peso abaixo do esperado; verificar sanidade e nutrição.`,
-        proposedActionCategory: "review",
-        confidence: f.severity === "high" ? 0.8 : 0.6,
-        riskClass: "low",
-        evidenceEventIds: f.evidenceEventIds,
-        assumptions: "Baseado nas pesagens elegíveis mais recentes.",
-        proposedAction: { review: "animal_performance", animalId: f.animalId },
-      };
+    switch (f.kind) {
+      case "low_weight":
+        return {
+          agentName: "Herd Weight Analyst",
+          recommendationText: `Revisar ${f.summary} — peso abaixo do esperado; verificar sanidade e nutrição.`,
+          proposedActionCategory: "review",
+          confidence: f.severity === "high" ? 0.8 : 0.6,
+          riskClass: "low",
+          evidenceEventIds: f.evidenceEventIds,
+          assumptions: "Baseado nas pesagens elegíveis mais recentes.",
+          proposedAction: { review: "animal_performance", animalId: f.animalId },
+        };
+      case "withdrawal_active":
+        return {
+          agentName: "Sanitary Compliance Analyst",
+          recommendationText: `Não vender ${f.summary} — carência de medicamento ativa; conferir liberação antes de qualquer venda.`,
+          proposedActionCategory: "review",
+          confidence: 0.9,
+          riskClass: "low",
+          evidenceEventIds: f.evidenceEventIds,
+          assumptions: "Restrição de carência ativa vinculada a um tratamento.",
+          proposedAction: { review: "sale_clearance", animalId: f.animalId },
+        };
+      case "reproduction_gap":
+        return {
+          agentName: "Reproduction Analyst",
+          recommendationText: `Avaliar aptidão reprodutiva e agendar cobertura: ${f.summary}.`,
+          proposedActionCategory: "task",
+          confidence: 0.6,
+          riskClass: "low",
+          evidenceEventIds: f.evidenceEventIds,
+          proposedAction: { task: "breeding_review", animalId: f.animalId },
+        };
+      case "missing_weight":
+      default:
+        return {
+          agentName: "Herd Coverage Analyst",
+          recommendationText: `Agendar pesagem: ${f.summary}.`,
+          proposedActionCategory: "task",
+          confidence: 0.7,
+          riskClass: "low",
+          evidenceEventIds: f.evidenceEventIds,
+          proposedAction: { task: "schedule_weighing", animalId: f.animalId },
+        };
     }
-    // missing_weight and any other finding → a weighing task (safe).
-    return {
-      agentName: "Herd Coverage Analyst",
-      recommendationText: `Agendar pesagem: ${f.summary}.`,
-      proposedActionCategory: "task",
-      confidence: 0.7,
-      riskClass: "low",
-      evidenceEventIds: f.evidenceEventIds,
-      proposedAction: { task: "schedule_weighing", animalId: f.animalId },
-    };
   }
 }
