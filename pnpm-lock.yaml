@@ -376,6 +376,34 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@22.20.1)(supports-color@7.2.0)
 
+  packages/nutrition-inventory:
+    dependencies:
+      '@jk/database':
+        specifier: workspace:*
+        version: link:../database
+      '@jk/domain-kernel':
+        specifier: workspace:*
+        version: link:../domain-kernel
+      pg:
+        specifier: ^8.12.0
+        version: 8.22.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@jk/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.20.0
+      typescript:
+        specifier: ^5.6.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.20.1)(supports-color@7.2.0)
+
   packages/observability:
     dependencies:
       '@opentelemetry/api':
