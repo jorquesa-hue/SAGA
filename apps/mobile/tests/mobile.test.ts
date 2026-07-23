@@ -2,7 +2,7 @@ import { JkPlatformClient, type FetchLike } from "@jk/contracts-rest";
 import { SyncEngine, type OutboxRecord } from "@jk/offline-sync";
 import { describe, expect, it } from "vitest";
 import { AsyncKvLocalStore, MemoryAsyncKv } from "../src/kv-store.js";
-import { HttpSyncTransport } from "../src/http-transport.js";
+import { HttpSyncTransport } from "@jk/sync-http";
 import { CaptureController } from "../src/capture-controller.js";
 
 /** A client whose batch endpoint returns a scripted per-observation result. */

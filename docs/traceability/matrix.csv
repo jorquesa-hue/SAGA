@@ -124,3 +124,6 @@ JK-SYNC-IDEMPOTENT,offline-sync,packages/offline-sync/outbox.ts (stable id = ide
 JK-MOBILE-CAPTURE,mobile,apps/mobile/src/capture-controller.ts;apps/mobile/ui/CaptureScreen.tsx,apps/mobile/tests/mobile.test.ts,implemented
 JK-MOBILE-LOCALSTORE,mobile,apps/mobile/src/kv-store.ts (AsyncKvLocalStore),apps/mobile/tests/mobile.test.ts,implemented
 JK-MOBILE-TRANSPORT,mobile,apps/mobile/src/http-transport.ts (207 -> outcomes),apps/mobile/tests/mobile.test.ts,implemented
+JK-EDGE-INGEST,edge-gateway,apps/edge-gateway/src/gateway.ts;src/main.ts,apps/edge-gateway/tests/gateway.test.ts,implemented
+JK-EDGE-DURABLE-BUFFER,edge-gateway,apps/edge-gateway/src/file-store.ts (FileLocalStore),apps/edge-gateway/tests/gateway.test.ts,implemented
+JK-SYNC-HTTP-TRANSPORT,sync-http,packages/sync-http/src/http-transport.ts,apps/mobile/tests/mobile.test.ts,implemented
