@@ -126,6 +126,52 @@ describe.skipIf(!available)("End-to-end farm scenario (integration)", () => {
     const rfidSearch = await app.inject({ method: "GET", url: "/api/v1/search?q=982000000E2E001", headers: read(ownerId, tenantId) });
     expect(rfidSearch.json().animals.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("enforces the tenant base currency on finance writes and reports margin in it", async () => {
+    // A tenant whose books are kept in USD.
+    const tenantRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/tenants",
+      headers: { ...cmd(newUuid()), "x-dev-platform-admin": "true" },
+      payload: { name: "Rancho USD", defaultCurrency: "USD", owner: { email: "usd@example.com", displayName: "USD Owner" } },
+    });
+    expect(tenantRes.statusCode).toBe(201);
+    const tenantId = tenantRes.json().tenant.id as string;
+    const ownerId = tenantRes.json().ownerUserId as string;
+
+    // Matching currency is accepted.
+    const okRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/finance/expenses",
+      headers: cmd(ownerId, tenantId),
+      payload: { category: "feed", amount: "100.00", currency: "USD" },
+    });
+    expect(okRes.statusCode).toBe(201);
+
+    // An absent currency defaults to the tenant base (still accepted).
+    const defaultRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/finance/revenue",
+      headers: cmd(ownerId, tenantId),
+      payload: { category: "sale", amount: "250.00" },
+    });
+    expect(defaultRes.statusCode).toBe(201);
+
+    // A mismatched currency is rejected (no FX): 422 JK-CURRENCY-MISMATCH.
+    const badRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/finance/expenses",
+      headers: cmd(ownerId, tenantId),
+      payload: { category: "feed", amount: "100.00", currency: "BRL" },
+    });
+    expect(badRes.statusCode).toBe(422);
+    expect(badRes.json().code).toBe("JK-CURRENCY-MISMATCH");
+
+    // Margin reads report the tenant currency.
+    const marginRes = await app.inject({ method: "GET", url: `/api/v1/lots/${newUuid()}/margin`, headers: read(ownerId, tenantId) });
+    expect(marginRes.statusCode).toBe(200);
+    expect(marginRes.json().currency).toBe("USD");
+  });
 });
 
 describe.skipIf(available)("End-to-end farm scenario (PostgreSQL unavailable)", () => {

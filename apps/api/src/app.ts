@@ -205,7 +205,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerReproductionRoutes(app, reproductionService);
   registerAnalyticsRoutes(app, alertService, reportService);
   registerPhase3Routes(app, landService, inventoryService, assetsService);
-  registerPhase4Routes(app, financeService, geneticsService, farmIntelligenceService);
+  registerPhase4Routes(app, financeService, geneticsService, farmIntelligenceService, identityService);
   registerAiRoutes(app, recommendationService);
   registerWebhookRoutes(app, webhookService, connectorService);
   registerExportRoutes(app, exportService);

@@ -17,3 +17,13 @@ export class RouteNotFoundError extends PlatformError {
   readonly code = "JK-ROUTE-NOT-FOUND";
   readonly httpStatus = 404;
 }
+
+/**
+ * A money write specified a currency other than the tenant's base currency.
+ * The console records in the tenant currency; cross-currency entries need FX
+ * (out of scope), so a mismatch is rejected rather than silently stored. 422.
+ */
+export class CurrencyMismatchError extends PlatformError {
+  readonly code = "JK-CURRENCY-MISMATCH";
+  readonly httpStatus = 422;
+}

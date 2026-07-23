@@ -11,7 +11,9 @@ export function LotDetail(): JSX.Element {
   const { t, td, fmt } = useI18n();
   const members = useAsync(() => client.lots.members(id), [id]);
   const paddock = useAsync(() => client.lots.currentPaddock(id), [id]);
+  const margin = useAsync(() => client.finance.lotMargin(id), [id]);
   const rows = members.data?.items ?? [];
+  const money = (v: unknown): string => fmt.currency(v, margin.data?.currency as string | undefined);
   const paged = usePagination(rows, 25);
 
   return (
@@ -37,6 +39,26 @@ export function LotDetail(): JSX.Element {
           <span className="kpi-value">{members.loading ? "…" : rows.length}</span>
         </div>
       </div>
+
+      {margin.data && (
+        <>
+          <h3>{t("lotDetail.financials")}</h3>
+          <div className="kpi-grid">
+            <div className="kpi">
+              <span className="kpi-label">{t("lotDetail.revenue")}</span>
+              <span className="kpi-value">{money(margin.data.revenue)}</span>
+            </div>
+            <div className="kpi">
+              <span className="kpi-label">{t("lotDetail.cost")}</span>
+              <span className="kpi-value">{money(margin.data.cost)}</span>
+            </div>
+            <div className="kpi">
+              <span className="kpi-label">{t("lotDetail.margin")}</span>
+              <span className="kpi-value">{money(margin.data.margin)}</span>
+            </div>
+          </div>
+        </>
+      )}
 
       <h3>{t("lotDetail.members")}</h3>
       {members.loading && <p className="muted">{t("common.loading")}</p>}
