@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LOCALES, useI18n } from "../i18n/index.js";
 import { useSession } from "../session.js";
+import { TenantSettingsLoader } from "./TenantSettingsLoader.js";
 
 const NAV = [
   { to: "/", key: "nav.dashboard", end: true },
@@ -32,6 +33,7 @@ export function Layout(): JSX.Element {
 
   return (
     <div className="app">
+      <TenantSettingsLoader />
       <header className="topbar">
         <span className="brand">JK Platform</span>
         <nav className="nav">

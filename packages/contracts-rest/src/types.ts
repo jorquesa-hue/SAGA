@@ -28,6 +28,10 @@ export interface Tenant {
   id: string;
   name: string;
   status?: string;
+  /** Tenant base locale (BCP-47, e.g. "pt-BR"). Seeds the console language. */
+  defaultLocale?: string;
+  /** Tenant base currency (ISO 4217, e.g. "BRL"). Drives money formatting. */
+  defaultCurrency?: string;
 }
 
 export interface Farm {

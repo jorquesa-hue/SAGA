@@ -39,6 +39,10 @@ export interface Formatters {
 interface I18nValue {
   locale: Locale;
   setLocale: (l: Locale) => void;
+  /** Active default currency (ISO 4217) used by fmt.currency when no code is passed. */
+  currency: string;
+  /** Set the default currency — the app seeds this from the tenant's configured currency. */
+  setCurrency: (c: string) => void;
   t: TranslateFn;
   td: TranslateDataFn;
   fmt: Formatters;
@@ -52,6 +56,15 @@ function loadLocale(): Locale {
     return raw && LOCALES.some((l) => l.value === raw) ? (raw as Locale) : DEFAULT_LOCALE;
   } catch {
     return DEFAULT_LOCALE;
+  }
+}
+
+/** True when the user has explicitly chosen a locale (so the tenant default must not override it). */
+export function hasStoredLocalePreference(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) !== null;
+  } catch {
+    return false;
   }
 }
 
@@ -82,7 +95,7 @@ function toDate(value: unknown): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function buildFormatters(locale: Locale): Formatters {
+function buildFormatters(locale: Locale, defaultCurrency: string): Formatters {
   const tag = BCP47[locale];
   const dateFmt = new Intl.DateTimeFormat(tag, { dateStyle: "medium" });
   const dateTimeFmt = new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" });
@@ -93,7 +106,7 @@ function buildFormatters(locale: Locale): Formatters {
     return Number.isFinite(n) ? new Intl.NumberFormat(tag, opts).format(n) : String(value);
   };
 
-  const currency = (value: unknown, cur: string = DEFAULT_CURRENCY): string => {
+  const currency = (value: unknown, cur: string = defaultCurrency): string => {
     if (value === null || value === undefined || value === "") return "—";
     const n = typeof value === "number" ? value : Number(value);
     return Number.isFinite(n) ? new Intl.NumberFormat(tag, { style: "currency", currency: cur }).format(n) : String(value);
@@ -124,8 +137,17 @@ function buildFormatters(locale: Locale): Formatters {
   return { number, currency, date, dateTime, auto };
 }
 
-export function I18nProvider({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }): JSX.Element {
+export function I18nProvider({
+  children,
+  initialLocale,
+  initialCurrency,
+}: {
+  children: ReactNode;
+  initialLocale?: Locale;
+  initialCurrency?: string;
+}): JSX.Element {
   const [locale, setLocaleState] = useState<Locale>(() => initialLocale ?? loadLocale());
+  const [currency, setCurrencyState] = useState<string>(() => initialCurrency ?? DEFAULT_CURRENCY);
 
   const value = useMemo<I18nValue>(() => {
     const dict = messages[locale];
@@ -139,13 +161,15 @@ export function I18nProvider({ children, initialLocale }: { children: ReactNode;
         }
         setLocaleState(l);
       },
+      currency,
+      setCurrency: (c) => setCurrencyState(c),
       // Fall back to the pt-BR value, then the key, so a missing translation
       // never renders blank while page bodies are converted incrementally.
       t: (key, vars) => interpolate(dict[key] ?? messages["pt-BR"][key] ?? key, vars),
       td: (v) => translateData(locale, v),
-      fmt: buildFormatters(locale),
+      fmt: buildFormatters(locale, currency),
     };
-  }, [locale]);
+  }, [locale, currency]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
@@ -153,9 +177,11 @@ export function I18nProvider({ children, initialLocale }: { children: ReactNode;
 const DEFAULT_VALUE: I18nValue = {
   locale: DEFAULT_LOCALE,
   setLocale: () => {},
+  currency: DEFAULT_CURRENCY,
+  setCurrency: () => {},
   t: (key, vars) => interpolate(messages[DEFAULT_LOCALE][key] ?? key, vars),
   td: (v) => translateData(DEFAULT_LOCALE, v),
-  fmt: buildFormatters(DEFAULT_LOCALE),
+  fmt: buildFormatters(DEFAULT_LOCALE, DEFAULT_CURRENCY),
 };
 
 /**
