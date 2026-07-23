@@ -12,6 +12,7 @@ export type HerdAction =
   | "start_session"
   | "record_weight"
   | "review_observation"
+  | "manage_lots"
   | "read";
 
 const WRITE_ROLES = new Set(["tenant_owner", "farm_manager", "technician"]);
