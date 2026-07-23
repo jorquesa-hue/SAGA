@@ -41,6 +41,7 @@ const SHARED_TECHNICAL = new Set([
   "@jk/contracts-rest",
   "@jk/contracts-graphql",
   "@jk/contracts-events",
+  "@jk/offline-sync",
 ]);
 
 const violations = [];

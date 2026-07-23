@@ -118,3 +118,6 @@ JK-WEB-LOTS-ENTRY,web,apps/web/src/pages/Lots.tsx,apps/web/tests (render harness
 JK-WEB-FINANCE-ENTRY,web,apps/web/src/pages/Finance.tsx,apps/web/tests/treatments.test.tsx,implemented
 JK-SEARCH-GLOBAL,search,packages/analytics-intelligence/search-service.ts;apps/api/src/routes/search.routes.ts,packages/analytics-intelligence/tests/integration/search.integration.test.ts,implemented
 JK-WEB-SEARCH,web,apps/web/src/pages/SearchResults.tsx;apps/web/src/components/Layout.tsx,apps/web/tests/search.test.tsx,implemented
+JK-CON-008,offline-sync,packages/offline-sync (Outbox;SyncEngine;LocalStore),packages/offline-sync/tests/sync.test.ts,implemented
+JK-SYNC-NOLOSS,offline-sync,packages/offline-sync/sync-engine.ts (never-drop guarantees),packages/offline-sync/tests/sync.test.ts,implemented
+JK-SYNC-IDEMPOTENT,offline-sync,packages/offline-sync/outbox.ts (stable id = idempotency key),packages/offline-sync/tests/sync.test.ts,implemented
