@@ -4,7 +4,15 @@ React + Vite single-page console (Volume V) that consumes the platform API
 through the typed `@jk/contracts-rest` client. First slice covers the app
 shell, a tenant-scoped session, and three real features.
 
-## Features (F2 slice)
+## Features
+
+Operational command screens (F4): **Pesagem** (handling session → weight
+capture → close), **Sanidade** (treatment/vaccination with withdrawal→sale-clear
+hint), **Reprodução** (service → pregnancy check → calving with calf
+registration), **Lotes** (create, add animals, move to paddock), and
+**Financeiro** (expense/revenue/sale). Read & admin screens (F2/F3) below.
+
+## Read & admin screens
 
 - **Session** — dev sign-in (user id + tenant id) matching the API's local dev
   auth; persisted to `localStorage`; the seam an OIDC redirect replaces in

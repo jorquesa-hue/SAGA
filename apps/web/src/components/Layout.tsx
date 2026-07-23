@@ -4,6 +4,11 @@ import { useSession } from "../session.js";
 const NAV = [
   { to: "/", label: "Painel", end: true },
   { to: "/animals", label: "Animais" },
+  { to: "/weighing", label: "Pesagem" },
+  { to: "/treatments", label: "Sanidade" },
+  { to: "/reproduction", label: "Reprodução" },
+  { to: "/lots", label: "Lotes" },
+  { to: "/finance", label: "Financeiro" },
   { to: "/alerts", label: "Alertas" },
   { to: "/recommendations", label: "IA" },
   { to: "/integrations", label: "Integrações" },

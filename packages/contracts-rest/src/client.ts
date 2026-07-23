@@ -37,6 +37,56 @@ export class JkPlatformClient {
     await this.http.request<void>("DELETE", path, undefined, options);
   }
 
+  // -- Herd: handling sessions & weighing --
+  readonly herd = {
+    startSession: (body: { farmId: string; purpose?: string; deviceId?: string; expectedCount?: number }, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>("/api/v1/handling-sessions", body, o),
+    recordObservation: (sessionId: string, body: Record<string, unknown>, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>(`/api/v1/handling-sessions/${sessionId}/observations`, body, o),
+    closeSession: (sessionId: string, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>(`/api/v1/handling-sessions/${sessionId}/close`, undefined, o),
+    exceptions: (sessionId: string, o?: RequestOptions) =>
+      this.get<Page<Record<string, unknown>>>(`/api/v1/handling-sessions/${sessionId}/exceptions`, o),
+  };
+
+  // -- Health commands --
+  readonly healthCommands = {
+    recordTreatment: (animalId: string, body: Record<string, unknown>, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>(`/api/v1/animals/${animalId}/treatments`, body, o),
+  };
+
+  // -- Reproduction commands --
+  readonly reproductionCommands = {
+    recordService: (body: Record<string, unknown>, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>("/api/v1/reproduction/services", body, o),
+    recordPregnancyCheck: (body: Record<string, unknown>, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>("/api/v1/reproduction/pregnancy-checks", body, o),
+    recordCalving: (body: Record<string, unknown>, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>("/api/v1/calvings", body, o),
+  };
+
+  // -- Lots & movements --
+  readonly lots = {
+    create: (body: { farmId: string; name: string; purpose?: string; target?: string }, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>("/api/v1/lots", body, o),
+    addAnimals: (lotId: string, animalIds: string[], o?: RequestOptions) =>
+      this.post<Record<string, unknown>>(`/api/v1/lots/${lotId}/animals`, { animalIds }, o),
+    move: (body: { lotId: string; paddockId: string; headCount?: number }, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>("/api/v1/lot-movements", body, o),
+    members: (lotId: string, o?: RequestOptions) => this.get<Page<Record<string, unknown>>>(`/api/v1/lots/${lotId}/members`, o),
+    currentPaddock: (lotId: string, o?: RequestOptions) => this.get<Record<string, unknown>>(`/api/v1/lots/${lotId}/current-paddock`, o),
+  };
+
+  // -- Finance commands --
+  readonly finance = {
+    recordExpense: (body: Record<string, unknown>, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>("/api/v1/finance/expenses", body, o),
+    recordRevenue: (body: Record<string, unknown>, o?: RequestOptions) =>
+      this.post<Record<string, unknown>>("/api/v1/finance/revenue", body, o),
+    recordSale: (body: Record<string, unknown>, o?: RequestOptions) => this.post<Record<string, unknown>>("/api/v1/sales", body, o),
+    lotMargin: (lotId: string, o?: RequestOptions) => this.get<Record<string, unknown>>(`/api/v1/lots/${lotId}/margin`, o),
+  };
+
   // -- Identity & tenancy --
   readonly tenants = {
     register: (body: { name: string }, o?: RequestOptions) => this.post<Tenant>("/api/v1/tenants", body, o),

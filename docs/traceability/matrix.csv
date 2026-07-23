@@ -111,3 +111,8 @@ JK-API-TYPED-CLIENT,contracts,packages/contracts-rest (JkPlatformClient),package
 JK-WEB-CONSOLE,web,apps/web (React SPA);packages/contracts-rest,apps/web/tests/session.test.tsx;apps/web/tests/animals.test.tsx,implemented
 JK-WEB-AI-REVIEW,web,apps/web/src/pages/Recommendations.tsx,apps/web/tests (session/animals render harness),implemented
 JK-WEB-TRACEABILITY-EXPORT,web,apps/web/src/pages/Animals.tsx (JK-ANI-006 export flow),apps/web/tests/animals.test.tsx,implemented
+JK-WEB-WEIGHING,web,apps/web/src/pages/Weighing.tsx (handling session capture),apps/web/tests (render harness),implemented
+JK-WEB-HEALTH-ENTRY,web,apps/web/src/pages/Treatments.tsx,apps/web/tests/treatments.test.tsx,implemented
+JK-WEB-REPRODUCTION-ENTRY,web,apps/web/src/pages/Reproduction.tsx,apps/web/tests (render harness),implemented
+JK-WEB-LOTS-ENTRY,web,apps/web/src/pages/Lots.tsx,apps/web/tests (render harness),implemented
+JK-WEB-FINANCE-ENTRY,web,apps/web/src/pages/Finance.tsx,apps/web/tests/treatments.test.tsx,implemented
