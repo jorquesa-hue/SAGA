@@ -127,6 +127,22 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@22.20.1)(jsdom@25.0.1(supports-color@7.2.0))(supports-color@7.2.0)
 
+  apps/mobile:
+    dependencies:
+      '@jk/contracts-rest':
+        specifier: workspace:*
+        version: link:../../packages/contracts-rest
+      '@jk/offline-sync':
+        specifier: workspace:*
+        version: link:../../packages/offline-sync
+    devDependencies:
+      typescript:
+        specifier: ^5.6.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.20.1)(jsdom@25.0.1(supports-color@7.2.0))(supports-color@7.2.0)
+
   apps/web:
     dependencies:
       '@jk/contracts-rest':

@@ -121,3 +121,6 @@ JK-WEB-SEARCH,web,apps/web/src/pages/SearchResults.tsx;apps/web/src/components/L
 JK-CON-008,offline-sync,packages/offline-sync (Outbox;SyncEngine;LocalStore),packages/offline-sync/tests/sync.test.ts,implemented
 JK-SYNC-NOLOSS,offline-sync,packages/offline-sync/sync-engine.ts (never-drop guarantees),packages/offline-sync/tests/sync.test.ts,implemented
 JK-SYNC-IDEMPOTENT,offline-sync,packages/offline-sync/outbox.ts (stable id = idempotency key),packages/offline-sync/tests/sync.test.ts,implemented
+JK-MOBILE-CAPTURE,mobile,apps/mobile/src/capture-controller.ts;apps/mobile/ui/CaptureScreen.tsx,apps/mobile/tests/mobile.test.ts,implemented
+JK-MOBILE-LOCALSTORE,mobile,apps/mobile/src/kv-store.ts (AsyncKvLocalStore),apps/mobile/tests/mobile.test.ts,implemented
+JK-MOBILE-TRANSPORT,mobile,apps/mobile/src/http-transport.ts (207 -> outcomes),apps/mobile/tests/mobile.test.ts,implemented

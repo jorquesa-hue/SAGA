@@ -38,6 +38,17 @@ export class JkPlatformClient {
     await this.http.request<void>("DELETE", path, undefined, options);
   }
 
+  // -- Device ingestion (offline sync target) --
+  readonly devices = {
+    /** Idempotent batch ingestion; returns a per-observation result (207). */
+    ingestBatch: (observations: Record<string, unknown>[], o?: RequestOptions) =>
+      this.post<{ results: Array<{ observationId: string; serverObservationId: string | null; status: string; reason?: string }> }>(
+        "/api/v1/device-observations:batch",
+        { observations },
+        o,
+      ),
+  };
+
   // -- Herd: handling sessions & weighing --
   readonly herd = {
     startSession: (body: { farmId: string; purpose?: string; deviceId?: string; expectedCount?: number }, o?: RequestOptions) =>
