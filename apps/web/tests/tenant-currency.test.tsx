@@ -9,22 +9,31 @@ import { SessionProvider, type Session } from "../src/session.js";
 
 const session: Session = { userId: "u1", tenantId: "t-1", platformAdmin: false };
 
-/** Client whose GET /tenants/current returns configured base settings. */
-function client(defaultCurrency: string, defaultLocale: string): JkPlatformClient {
+interface Post {
+  path: string;
+  body: Record<string, unknown>;
+}
+
+/** Client whose GET /tenants/current returns configured base settings; captures POSTs. */
+function client(defaultCurrency: string, defaultLocale: string, posts: Post[]): JkPlatformClient {
   const fetch: FetchLike = async (url, init) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
     if (path === "/api/v1/tenants/current") {
       return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ id: "t-1", name: "Rancho", defaultCurrency, defaultLocale }) };
     }
-    if ((init?.method ?? "GET") === "POST") return { status: 201, headers: { get: () => "c" }, text: async () => JSON.stringify({ id: "x1" }) };
+    if ((init?.method ?? "GET") === "POST") {
+      posts.push({ path, body: JSON.parse(init?.body ?? "{}") as Record<string, unknown> });
+      return { status: 201, headers: { get: () => "c" }, text: async () => JSON.stringify({ id: "x1" }) };
+    }
     return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ items: [] }) };
   };
   return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
 }
 
 function renderWithTenant(defaultCurrency: string, defaultLocale: string) {
-  const c = client(defaultCurrency, defaultLocale);
-  return render(
+  const posts: Post[] = [];
+  const c = client(defaultCurrency, defaultLocale, posts);
+  const utils = render(
     <MemoryRouter>
       <I18nProvider>
         <SessionProvider initialSession={session} clientFactory={() => c}>
@@ -34,6 +43,7 @@ function renderWithTenant(defaultCurrency: string, defaultLocale: string) {
       </I18nProvider>
     </MemoryRouter>,
   );
+  return { ...utils, posts };
 }
 
 afterEach(() => {
@@ -45,8 +55,8 @@ afterEach(() => {
 });
 
 describe("per-tenant currency", () => {
-  it("adopts the tenant's currency and locale (USD / English)", async () => {
-    renderWithTenant("USD", "en");
+  it("adopts the tenant's currency and locale (USD / English) and records in USD", async () => {
+    const { posts } = renderWithTenant("USD", "en");
     // Loader is async: wait until the tenant locale ("en") has been adopted.
     await waitFor(() => expect(screen.getByRole("heading", { name: "Finance" })).toBeInTheDocument());
 
@@ -59,6 +69,11 @@ describe("per-tenant currency", () => {
     // en-US + USD → "$1,250.00"
     expect(msg).toContain("$1,250.00");
     expect(msg).not.toContain("R$");
+
+    // The write carries the tenant currency, not a server-side default.
+    const expense = posts.find((p) => p.path === "/api/v1/finance/expenses");
+    expect(expense?.body.currency).toBe("USD");
+    expect(expense?.body.amount).toBe("1250");
   });
 
   it("keeps BRL when the tenant has no configured currency", async () => {
