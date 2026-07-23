@@ -50,7 +50,26 @@ export class JkPlatformClient {
   readonly animals = {
     list: (o?: RequestOptions) => this.get<Page<Animal>>("/api/v1/animals", o),
     get: (id: string, o?: RequestOptions) => this.get<Animal>(`/api/v1/animals/${id}`, o),
-    timeline: (id: string, o?: RequestOptions) => this.get<Page<Record<string, unknown>>>(`/api/v1/animals/${id}/timeline`, o),
+    timeline: (id: string, o?: RequestOptions) =>
+      this.get<Page<Record<string, unknown>>>(`/api/v1/animals/${id}/timeline`, o),
+    weights: (id: string, o?: RequestOptions) => this.get<Page<Record<string, unknown>>>(`/api/v1/animals/${id}/weights`, o),
+    adg: (id: string, o?: RequestOptions) => this.get<Record<string, unknown>>(`/api/v1/animals/${id}/adg`, o),
+  };
+
+  // -- Health & laboratory --
+  readonly health = {
+    treatments: (animalId: string, o?: RequestOptions) =>
+      this.get<Page<Record<string, unknown>>>(`/api/v1/animals/${animalId}/treatments`, o),
+    restrictions: (animalId: string, o?: RequestOptions) =>
+      this.get<Page<Record<string, unknown>>>(`/api/v1/animals/${animalId}/restrictions`, o),
+    saleClear: (animalId: string, o?: RequestOptions) =>
+      this.get<Record<string, unknown>>(`/api/v1/animals/${animalId}/sale-clear`, o),
+  };
+
+  // -- Reproduction --
+  readonly reproduction = {
+    status: (animalId: string, o?: RequestOptions) =>
+      this.get<Record<string, unknown>>(`/api/v1/animals/${animalId}/reproduction-status`, o),
   };
 
   // -- Governed AI --
@@ -98,8 +117,16 @@ export class JkPlatformClient {
     download: (id: string, o?: RequestOptions) => this.get<unknown>(`/api/v1/exports/${id}/download`, o),
   };
 
-  // -- Analytics --
+  // -- Analytics & alerts --
   readonly analytics = {
-    executiveDashboard: (o?: RequestOptions) => this.get<Record<string, unknown>>("/api/v1/analytics/executive-dashboard", o),
+    executiveDashboard: (o?: RequestOptions) => this.get<Record<string, unknown>>("/api/v1/dashboards/executive", o),
+    farmIntelligenceIndex: (o?: RequestOptions) => this.get<Record<string, unknown>>("/api/v1/reports/farm-intelligence-index", o),
+    monthlyNucleus: (o?: RequestOptions) => this.get<Record<string, unknown>>("/api/v1/reports/monthly-nucleus", o),
+  };
+  readonly alerts = {
+    list: (status?: string, o?: RequestOptions) =>
+      this.get<Page<Record<string, unknown>>>("/api/v1/alerts", { ...o, query: { ...o?.query, status } }),
+    acknowledge: (id: string, o?: RequestOptions) => this.post<void>(`/api/v1/alerts/${id}/acknowledge`, undefined, o),
+    resolve: (id: string, note?: string, o?: RequestOptions) => this.post<void>(`/api/v1/alerts/${id}/resolve`, { note }, o),
   };
 }

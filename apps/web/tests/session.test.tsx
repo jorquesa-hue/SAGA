@@ -22,7 +22,7 @@ const session: Session = { userId: "u1", tenantId: "11111111-2222-3333-4444-5555
 
 function renderApp(initialSession: Session | null, route = "/") {
   const client = fakeClient((path) => {
-    if (path.startsWith("/api/v1/analytics")) return { herd: { activeAnimals: 42 } };
+    if (path.startsWith("/api/v1/dashboards/executive")) return { herd: { activeAnimals: 42 } };
     if (path.startsWith("/api/v1/animals")) return { items: [] };
     if (path.startsWith("/api/v1/recommendations")) return { items: [] };
     return {};

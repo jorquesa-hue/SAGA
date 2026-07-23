@@ -4,7 +4,10 @@ import { useSession } from "../session.js";
 const NAV = [
   { to: "/", label: "Painel", end: true },
   { to: "/animals", label: "Animais" },
-  { to: "/recommendations", label: "IA (recomendações)" },
+  { to: "/alerts", label: "Alertas" },
+  { to: "/recommendations", label: "IA" },
+  { to: "/integrations", label: "Integrações" },
+  { to: "/exports", label: "Exportações" },
 ];
 
 export function Layout(): JSX.Element {

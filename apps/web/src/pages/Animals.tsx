@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { ApiError } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
 import { useAsync } from "../use-async.js";
@@ -53,7 +54,9 @@ export function Animals(): JSX.Element {
           <tbody>
             {data.items.map((a) => (
               <tr key={a.id}>
-                <td>{a.visualId ?? a.id.slice(0, 8)}</td>
+                <td>
+                  <Link to={`/animals/${a.id}`}>{a.visualId ?? a.id.slice(0, 8)}</Link>
+                </td>
                 <td>{a.sex ?? "—"}</td>
                 <td>{a.breedCode ?? "—"}</td>
                 <td>{a.lifecycleStatus ?? "—"}</td>

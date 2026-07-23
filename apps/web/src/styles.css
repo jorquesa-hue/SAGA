@@ -220,3 +220,56 @@ button:disabled {
   padding: 0.5rem;
   color: var(--text);
 }
+
+a {
+  color: #58a6ff;
+}
+.back {
+  font-size: 0.85rem;
+}
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0 1rem;
+}
+.inline-form input,
+.inline-form select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem;
+  color: var(--text);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.chip {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+.chip.on {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.chip input {
+  display: none;
+}
+.secret {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1rem;
+}
