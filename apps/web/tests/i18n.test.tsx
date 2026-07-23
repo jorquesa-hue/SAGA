@@ -43,6 +43,12 @@ describe("i18n", () => {
     expect(screen.getByText("Animals")).toBeInTheDocument();
     expect(screen.getByText("Sign out")).toBeInTheDocument();
     expect(screen.queryByText("Painel executivo")).not.toBeInTheDocument();
+
+    // Toggle to Spanish.
+    fireEvent.click(screen.getByRole("button", { name: "ES" }));
+    await waitFor(() => expect(screen.getByText("Panel ejecutivo")).toBeInTheDocument());
+    expect(screen.getByText("Animales")).toBeInTheDocument();
+    expect(screen.getByText("Salir")).toBeInTheDocument();
   });
 
   it("starts in English when that locale is active", async () => {

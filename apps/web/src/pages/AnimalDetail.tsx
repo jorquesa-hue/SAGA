@@ -13,7 +13,7 @@ import { useAsync } from "../use-async.js";
 export function AnimalDetail(): JSX.Element {
   const { id = "" } = useParams();
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const animal = useAsync(() => client.animals.get(id), [id]);
   const weights = useAsync(() => client.animals.weights(id), [id]);
   const restrictions = useAsync(() => client.health.restrictions(id), [id]);
@@ -50,9 +50,9 @@ export function AnimalDetail(): JSX.Element {
       {animal.error && <p className="error">{animal.error}</p>}
       {animal.data && (
         <div className="kpi-grid">
-          <Tile label={t("animalDetail.sex")} value={animal.data.sex} />
+          <Tile label={t("animalDetail.sex")} value={td(animal.data.sex)} />
           <Tile label={t("animalDetail.breed")} value={animal.data.breedCode} />
-          <Tile label={t("animalDetail.statusLabel")} value={animal.data.lifecycleStatus} />
+          <Tile label={t("animalDetail.statusLabel")} value={td(animal.data.lifecycleStatus)} />
         </div>
       )}
 
@@ -82,8 +82,8 @@ export function AnimalDetail(): JSX.Element {
           <ul className="cards">
             {rows.map((r, i) => (
               <li className="card" key={i}>
-                <strong>{String(r.restrictionType ?? r.restriction_type ?? "—")}</strong>
-                <p className="muted">{String(r.status ?? "—")}</p>
+                <strong>{td(r.restrictionType ?? r.restriction_type)}</strong>
+                <p className="muted">{td(r.status)}</p>
               </li>
             ))}
           </ul>
@@ -111,7 +111,7 @@ export function AnimalDetail(): JSX.Element {
       {repro.data && (
         <div className="kpi-grid">
           {Object.entries(repro.data).map(([k, v]) => (
-            <Tile key={k} label={k} value={v} />
+            <Tile key={k} label={k} value={td(v)} />
           ))}
         </div>
       )}

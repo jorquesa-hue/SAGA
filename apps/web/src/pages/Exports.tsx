@@ -14,7 +14,7 @@ const TYPES: { value: ExportType; labelKey: string; needsAnimal?: boolean }[] = 
 /** Exports center (§27): request, process, and track secure exports. */
 export function Exports(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const jobs = useAsync(() => client.exports.list(), []);
   const [type, setType] = useState<ExportType>("animal_inventory");
   const [animalId, setAnimalId] = useState("");
@@ -86,9 +86,9 @@ export function Exports(): JSX.Element {
           <tbody>
             {jobs.data.items.map((j) => (
               <tr key={j.id}>
-                <td>{j.exportType}</td>
-                <td>{j.format}</td>
-                <td>{j.status}</td>
+                <td>{td(j.exportType)}</td>
+                <td>{td(j.format)}</td>
+                <td>{td(j.status)}</td>
                 <td>{j.byteSize ? `${j.byteSize} B` : "—"}</td>
                 <td>{j.status === "completed" ? <code>{j.resolvableUrl}</code> : "—"}</td>
               </tr>

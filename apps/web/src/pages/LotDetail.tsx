@@ -8,7 +8,7 @@ import { Pagination, usePagination } from "../components/Pagination.js";
 export function LotDetail(): JSX.Element {
   const { id = "" } = useParams();
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const members = useAsync(() => client.lots.members(id), [id]);
   const paddock = useAsync(() => client.lots.currentPaddock(id), [id]);
   const rows = members.data?.items ?? [];
@@ -58,7 +58,7 @@ export function LotDetail(): JSX.Element {
                 return (
                   <tr key={`${animalId}-${i}`}>
                     <td>{animalId ? <Link to={`/animals/${animalId}`}>{animalId.slice(0, 8)}…</Link> : "—"}</td>
-                    <td>{String(m.status ?? t("lotDetail.statusActive"))}</td>
+                    <td>{td(m.status ?? "active")}</td>
                     <td>{String(m.effectiveAt ?? m.effective_at ?? m.joinedAt ?? "—")}</td>
                   </tr>
                 );

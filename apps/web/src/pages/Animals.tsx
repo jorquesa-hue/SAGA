@@ -14,7 +14,7 @@ import { useI18n } from "../i18n/index.js";
  */
 export function Animals(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const { loading, data, error, reload } = useAsync(() => client.animals.list(), []);
   const [exportState, setExportState] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
@@ -34,16 +34,16 @@ export function Animals(): JSX.Element {
   const paged = usePagination(filtered, 20);
 
   const exportPacket = async (animalId: string): Promise<void> => {
-    setExportState((s) => ({ ...s, [animalId]: "Gerando…" }));
+    setExportState((s) => ({ ...s, [animalId]: t("animals.generating") }));
     try {
       const job = await client.exports.request({ exportType: "animal_traceability_packet", format: "json", params: { animalId } });
       const processed = await client.exports.process(job.id);
       setExportState((s) => ({
         ...s,
-        [animalId]: processed.status === "completed" ? `Pronto — ${processed.resolvableUrl}` : `Status: ${processed.status}`,
+        [animalId]: processed.status === "completed" ? t("animals.ready", { url: processed.resolvableUrl }) : t("animals.statusMsg", { status: td(processed.status) }),
       }));
     } catch (e) {
-      setExportState((s) => ({ ...s, [animalId]: `Falha: ${e instanceof ApiError ? e.code : "erro"}` }));
+      setExportState((s) => ({ ...s, [animalId]: t("animals.failCode", { code: e instanceof ApiError ? e.code : "erro" }) }));
     }
   };
 
@@ -62,10 +62,10 @@ export function Animals(): JSX.Element {
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("animals.searchPlaceholder")} style={{ minWidth: 220 }} />
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="all">{t("animals.allStatus")}</option>
-          <option value="active">Ativo</option>
-          <option value="sold">Vendido</option>
-          <option value="deceased">Óbito</option>
-          <option value="quarantined">Quarentena</option>
+          <option value="active">{td("active")}</option>
+          <option value="sold">{td("sold")}</option>
+          <option value="deceased">{td("deceased")}</option>
+          <option value="quarantined">{td("quarantined")}</option>
         </select>
         <span className="muted">{t("animals.count", { shown: filtered.length, total: data?.items.length ?? 0 })}</span>
       </div>
@@ -90,9 +90,9 @@ export function Animals(): JSX.Element {
                 <td>
                   <Link to={`/animals/${a.id}`}>{a.visualId ?? a.id.slice(0, 8)}</Link>
                 </td>
-                <td>{a.sex ?? "—"}</td>
+                <td>{td(a.sex)}</td>
                 <td>{a.breedCode ?? "—"}</td>
-                <td>{a.lifecycleStatus ?? "—"}</td>
+                <td>{td(a.lifecycleStatus)}</td>
                 <td>
                   <button type="button" onClick={() => void exportPacket(a.id)}>
                     {t("animals.export")}
@@ -111,6 +111,7 @@ export function Animals(): JSX.Element {
 
 function RegisterForm({ onDone }: { onDone: () => void }): JSX.Element {
   const client = useClient();
+  const { t } = useI18n();
   const cmd = useCommand();
   const [farmId, setFarmId] = useState("");
   const [visualId, setVisualId] = useState("");
@@ -130,34 +131,34 @@ function RegisterForm({ onDone }: { onDone: () => void }): JSX.Element {
           ...(birthDate ? { birthDate } : {}),
           ...(rfid ? { rfid } : {}),
         }),
-      "Animal registrado",
+      t("animals.registered"),
     );
   };
 
   return (
     <div className="form">
-      <h3>Registrar animal</h3>
-      <Field label="Fazenda ID" value={farmId} onChange={setFarmId} placeholder="farm uuid" />
-      <Field label="ID visual" value={visualId} onChange={setVisualId} placeholder="ex.: BR-0100" />
+      <h3>{t("animals.register")}</h3>
+      <Field label={t("animals.farmId")} value={farmId} onChange={setFarmId} placeholder={t("animals.farmPlaceholder")} />
+      <Field label={t("animals.visualId")} value={visualId} onChange={setVisualId} placeholder={t("animals.visualPlaceholder")} />
       <SelectField
-        label="Sexo"
+        label={t("animals.sex")}
         value={sex}
         onChange={setSex}
         options={[
-          { value: "female", label: "Fêmea" },
-          { value: "male", label: "Macho" },
-          { value: "unknown", label: "Desconhecido" },
+          { value: "female", label: t("repro.sexFemale") },
+          { value: "male", label: t("repro.sexMale") },
+          { value: "unknown", label: t("repro.sexUnknown") },
         ]}
       />
-      <Field label="Raça" value={breedCode} onChange={setBreedCode} />
-      <Field label="Nascimento (YYYY-MM-DD, opcional)" value={birthDate} onChange={setBirthDate} />
-      <Field label="RFID (opcional)" value={rfid} onChange={setRfid} />
+      <Field label={t("animals.breed")} value={breedCode} onChange={setBreedCode} />
+      <Field label={t("animals.birthDate")} value={birthDate} onChange={setBirthDate} />
+      <Field label={t("animals.rfid")} value={rfid} onChange={setRfid} />
       <div className="card-actions">
         <button type="button" disabled={cmd.busy || !farmId || !visualId} onClick={submit}>
-          Registrar
+          {t("animals.submit")}
         </button>
         <button type="button" onClick={onDone}>
-          Concluir
+          {t("animals.done")}
         </button>
       </div>
       <FormMessage state={cmd} />

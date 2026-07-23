@@ -190,7 +190,7 @@ function MapStep({ job, headers, onValidated }: { job: ImportJob; headers: strin
 
 function PreviewStep({ preview, onExecuted }: { preview: ImportPreview; onExecuted: (p: ImportPreview) => void }): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const cmd = useCommand();
   const { job } = preview;
 
@@ -231,7 +231,7 @@ function PreviewStep({ preview, onExecuted }: { preview: ImportPreview; onExecut
               {preview.invalidSample.map((r) => (
                 <tr key={r.rowNumber}>
                   <td>{r.rowNumber}</td>
-                  <td>{r.validationStatus}</td>
+                  <td>{td(r.validationStatus)}</td>
                   <td>{r.errors.map((e) => `${e.field}: ${e.reason}`).join("; ")}</td>
                 </tr>
               ))}
@@ -251,14 +251,14 @@ function PreviewStep({ preview, onExecuted }: { preview: ImportPreview; onExecut
 }
 
 function DoneStep({ preview }: { preview: ImportPreview }): JSX.Element {
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const { job } = preview;
   return (
     <div>
       <div className="counts">
         <span className="badge risk-low">{t("imports.created", { n: job.executedRows })}</span>
         {job.failedRows > 0 && <span className="badge risk-high">{t("imports.failures", { n: job.failedRows })}</span>}
-        <span className="badge">{t("imports.statusBadge", { s: job.status })}</span>
+        <span className="badge">{t("imports.statusBadge", { s: td(job.status) })}</span>
       </div>
       {preview.sample.length > 0 && (
         <>
@@ -272,7 +272,7 @@ function DoneStep({ preview }: { preview: ImportPreview }): JSX.Element {
 }
 
 function RowsTable({ rows, showServerId }: { rows: ImportPreview["sample"]; showServerId?: boolean }): JSX.Element {
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   return (
     <table className="grid">
       <thead>
@@ -289,7 +289,7 @@ function RowsTable({ rows, showServerId }: { rows: ImportPreview["sample"]; show
           <tr key={r.rowNumber}>
             <td>{r.rowNumber}</td>
             <td>{String(r.mapped?.visualId ?? "—")}</td>
-            <td>{String(r.mapped?.sex ?? "—")}</td>
+            <td>{td(r.mapped?.sex)}</td>
             <td>{String(r.mapped?.breedCode ?? "—")}</td>
             {showServerId && <td>{r.serverId ? r.serverId.slice(0, 8) + "…" : "—"}</td>}
           </tr>

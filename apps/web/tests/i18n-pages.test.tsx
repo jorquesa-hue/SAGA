@@ -8,21 +8,22 @@ import { Weighing } from "../src/pages/Weighing.js";
 import { Reproduction } from "../src/pages/Reproduction.js";
 import { Lots } from "../src/pages/Lots.js";
 import { Imports } from "../src/pages/Imports.js";
-import { I18nProvider } from "../src/i18n/index.js";
+import { Animals } from "../src/pages/Animals.js";
+import { I18nProvider, type Locale } from "../src/i18n/index.js";
 import { SessionProvider, type Session } from "../src/session.js";
 
 const session: Session = { userId: "u1", tenantId: "t-1", platformAdmin: false };
 
-function client(): JkPlatformClient {
-  const fetch: FetchLike = async () => ({ status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ items: [] }) });
+function client(items: unknown[] = []): JkPlatformClient {
+  const fetch: FetchLike = async () => ({ status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ items }) });
   return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
 }
 
-function renderPage(node: JSX.Element, locale: "pt-BR" | "en") {
+function renderPage(node: JSX.Element, locale: Locale, c: JkPlatformClient = client()) {
   return render(
     <MemoryRouter>
       <I18nProvider initialLocale={locale}>
-        <SessionProvider initialSession={session} clientFactory={() => client()}>
+        <SessionProvider initialSession={session} clientFactory={() => c}>
           {node}
         </SessionProvider>
       </I18nProvider>
@@ -73,5 +74,38 @@ describe("i18n page bodies", () => {
     renderPage(<Imports />, "en");
     expect(screen.getByText("Import data")).toBeInTheDocument();
     expect(screen.getByText("1. Upload CSV")).toBeInTheDocument();
+  });
+
+  it("translates command screens into Spanish", () => {
+    renderPage(<Finance />, "es");
+    expect(screen.getByText("Finanzas")).toBeInTheDocument();
+    expect(screen.getByText("Registrar venta")).toBeInTheDocument();
+    renderPage(<Lots />, "es");
+    expect(screen.getByText("Lotes y movimientos")).toBeInTheDocument();
+  });
+});
+
+describe("i18n data values", () => {
+  // lifecycleStatus "transferred" is not one of the filter-dropdown options,
+  // so the localized value appears only once (the data cell).
+  const animal = { id: "a-1", visualId: "BR-9", sex: "female", breedCode: "NELORE", lifecycleStatus: "transferred" };
+
+  it("localizes enum data (sex, lifecycle status) per locale", async () => {
+    renderPage(<Animals />, "pt-BR", client([animal]));
+    // pt-BR: female → Fêmea, transferred → Transferido
+    expect(await screen.findByText("Fêmea")).toBeInTheDocument();
+    expect(screen.getByText("Transferido")).toBeInTheDocument();
+    // Free-form data (typed breed code) passes through untranslated.
+    expect(screen.getByText("NELORE")).toBeInTheDocument();
+  });
+
+  it("localizes enum data into English and Spanish", async () => {
+    renderPage(<Animals />, "en", client([animal]));
+    expect(await screen.findByText("Female")).toBeInTheDocument();
+    expect(screen.getByText("Transferred")).toBeInTheDocument();
+
+    renderPage(<Animals />, "es", client([animal]));
+    expect(await screen.findByText("Hembra")).toBeInTheDocument();
+    expect(screen.getByText("Transferido")).toBeInTheDocument();
   });
 });

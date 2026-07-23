@@ -13,7 +13,7 @@ const FAMILIES = ["animal", "weight", "health", "reproduction", "herd", "invento
  */
 export function Integrations(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const subs = useAsync(() => client.webhooks.list(), []);
   const deliveries = useAsync(() => client.webhooks.deliveries(), []);
   const connectors = useAsync(() => client.connectors.list(), []);
@@ -138,7 +138,7 @@ export function Integrations(): JSX.Element {
               <tr key={d.id}>
                 <td>{d.eventType}</td>
                 <td>
-                  <span className={d.status === "dead_letter" ? "error" : ""}>{d.status}</span>
+                  <span className={d.status === "dead_letter" ? "error" : ""}>{td(d.status)}</span>
                 </td>
                 <td>
                   {d.attempts}/{d.maxAttempts}
@@ -165,7 +165,7 @@ export function Integrations(): JSX.Element {
             <li className="card" key={c.id}>
               <strong>{c.name}</strong>
               <p className="muted">
-                {c.connectorType} · {c.status}
+                {td(c.connectorType)} · {td(c.status)}
               </p>
             </li>
           ))}

@@ -7,7 +7,7 @@ import { useAsync } from "../use-async.js";
 /** Operational alert queue (§26): acknowledge and resolve, evidence-linked. */
 export function Alerts(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const { loading, data, error, reload } = useAsync(() => client.alerts.list(), []);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -50,11 +50,11 @@ export function Alerts(): JSX.Element {
               const status = String(a.status ?? "open");
               return (
                 <tr key={id}>
-                  <td>{String(a.alertType ?? a.type ?? "—")}</td>
+                  <td>{td(a.alertType ?? a.type)}</td>
                   <td>
-                    <span className={`badge risk-${String(a.severity ?? "low")}`}>{String(a.severity ?? "—")}</span>
+                    <span className={`badge risk-${String(a.severity ?? "low")}`}>{td(a.severity)}</span>
                   </td>
-                  <td>{status}</td>
+                  <td>{td(status)}</td>
                   <td>
                     <button type="button" disabled={busy === id || status !== "open"} onClick={() => void act(id, () => client.alerts.acknowledge(id))}>
                       {t("alerts.acknowledge")}
