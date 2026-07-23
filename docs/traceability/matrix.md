@@ -86,6 +86,23 @@ Generated for the Phase 0 baseline (foundation and decision closure).
 | JK-HER-003 batch move between paddocks | herd ops | `moveToPaddock` closes prior occupation | lots test (paddock move) | implemented |
 | JK-HER-004 current location as projection | herd ops | `getAnimalLot`/`getCurrentPaddock` | lots integration test | implemented |
 
+## Phase 2 completion + Phase 3 — Pasture, Inventory, Assets
+
+| Requirement | Design area | Source | Verification | Status |
+|---|---|---|---|---|
+| JK-HLT-002 / JK-REP-004 due tasks & alerts | analytics | `@jk/analytics-intelligence` generateAlerts | analytics integration test | implemented |
+| §26 monitoring reports (nucleus, beef lot) | analytics | `ReportService` | analytics integration test | implemented |
+| JK-PAS-002 pasture assessment | land-grazing | `@jk/land-grazing`; migration 0010 | land-grazing integration test | implemented |
+| JK-PAS-004 stocking / grazing days / kg-ha | land-grazing | `getGrazingMetrics` | land-grazing integration test | implemented |
+| JK-INV-001 item master + batches | inventory | `@jk/nutrition-inventory`; migration 0011 | inventory integration test | implemented |
+| JK-INV-002 immutable ledger + balances | inventory | `stock_movement` (append-only) | inventory test (immutability) | implemented |
+| JK-INV-003 consumption linkage | inventory | `consumeStock` (animal/lot/paddock) | inventory integration test | implemented |
+| JK-INV-005 negative-stock block + expiry | inventory | `consumeStock`, `getExpiringBatches` | inventory integration test | implemented |
+| JK-AST-001 asset register | assets | `@jk/assets-maintenance`; migration 0012 | assets integration test | implemented |
+| JK-AST-002 maintenance/calibration schedules | assets | `defineSchedule` | assets integration test | implemented |
+| JK-AST-003 work orders | assets | `createWorkOrder`/`completeWorkOrder` | assets integration test | implemented |
+| JK-AST-004 device calibration status | assets | `recordCalibration`/`getCalibrationStatus` | assets test (valid/expired) | implemented |
+
 ## Architecture fitness functions (§36)
 
 | Requirement | Source | Verification | Status |

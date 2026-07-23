@@ -67,3 +67,13 @@ JK-REP-004-alert,alerts,packages/analytics-intelligence (calving_due),packages/a
 ALERTS-lifecycle,alerts,database/migrations/0009;packages/analytics-intelligence/alert-service.ts,packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
 REPORT-beef-lot,reports,packages/analytics-intelligence (beefLotReport),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
 REPORT-monthly-nucleus,reports,packages/analytics-intelligence (monthlyNucleusReport),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+JK-PAS-002,land-grazing,packages/land-grazing (recordAssessment);database/migrations/0010,packages/land-grazing/tests/integration/land-grazing.integration.test.ts,implemented
+JK-PAS-004,land-grazing,packages/land-grazing (getGrazingMetrics),packages/land-grazing/tests/integration/land-grazing.integration.test.ts,implemented
+JK-INV-001,inventory,database/migrations/0011 (item/item_batch),packages/nutrition-inventory/tests/integration/inventory.integration.test.ts,implemented
+JK-INV-002,inventory,packages/nutrition-inventory (stock ledger),packages/nutrition-inventory/tests/integration/inventory.integration.test.ts,implemented
+JK-INV-003,inventory,packages/nutrition-inventory (consumeStock linkage),packages/nutrition-inventory/tests/integration/inventory.integration.test.ts,implemented
+JK-INV-005,inventory,packages/nutrition-inventory (negative block + expiring),packages/nutrition-inventory/tests/integration/inventory.integration.test.ts,implemented
+JK-AST-001,assets,packages/assets-maintenance (registerAsset);database/migrations/0012,packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
+JK-AST-002,assets,packages/assets-maintenance (defineSchedule),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
+JK-AST-003,assets,packages/assets-maintenance (createWorkOrder/complete),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
+JK-AST-004,assets,packages/assets-maintenance (calibration status),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented

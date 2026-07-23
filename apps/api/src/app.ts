@@ -3,6 +3,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AlertService, ReportService } from "@jk/analytics-intelligence";
 import { AnimalRegistryService } from "@jk/animal-registry";
+import { AssetsMaintenanceService } from "@jk/assets-maintenance";
+import { LandGrazingService } from "@jk/land-grazing";
+import { InventoryService } from "@jk/nutrition-inventory";
 import { HealthService } from "@jk/health-laboratory";
 import { LotsService, WeighingService } from "@jk/herd-operations";
 import { IdentityService } from "@jk/identity-tenancy";
@@ -26,6 +29,7 @@ import { registerHerdRoutes } from "./routes/herd.js";
 import { registerIdentityRoutes } from "./routes/identity.js";
 import { registerAnalyticsRoutes } from "./routes/analytics.routes.js";
 import { registerLotRoutes } from "./routes/lots.routes.js";
+import { registerPhase3Routes } from "./routes/phase3.routes.js";
 import { registerReproductionRoutes } from "./routes/reproduction.routes.js";
 
 declare module "fastify" {
@@ -83,6 +87,9 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   });
   const alertService = new AlertService({ appPool: deps.pools.appPool });
   const reportService = new ReportService({ appPool: deps.pools.appPool });
+  const landService = new LandGrazingService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
+  const inventoryService = new InventoryService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
+  const assetsService = new AssetsMaintenanceService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
 
@@ -155,6 +162,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerHealthRoutes(app, healthService);
   registerReproductionRoutes(app, reproductionService);
   registerAnalyticsRoutes(app, alertService, reportService);
+  registerPhase3Routes(app, landService, inventoryService, assetsService);
 
   // Surface a typed unauthorized when auth decoration is somehow missing.
   app.decorateRequest("principal", null as unknown as AuthenticatedPrincipal);
