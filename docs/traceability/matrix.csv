@@ -134,3 +134,4 @@ JK-IMPORT-CSV,data-import,packages/data-import/csv.ts,packages/data-import/tests
 JK-API-CORS,api,apps/api/src/app.ts (@fastify/cors);apps/api/src/config.ts,apps/api/tests/integration/api.integration.test.ts,implemented
 JK-DEPLOY-IMAGES,infra,infrastructure/docker/Dockerfile.{api,worker,edge-gateway,web,migrate},infrastructure/compose/docker-compose.yml (validated),implemented
 JK-DEPLOY-COMPOSE,infra,infrastructure/compose/docker-compose.yml (app profile);scripts/dev/stack-up.sh,docs/operations/deployment.md,implemented
+JK-WEB-IMPORT-WIZARD,web,apps/web/src/pages/Imports.tsx;packages/contracts-rest (imports),apps/web/tests/imports.test.tsx,implemented

@@ -14,6 +14,7 @@ const NAV = [
   { to: "/recommendations", label: "IA" },
   { to: "/integrations", label: "Integrações" },
   { to: "/exports", label: "Exportações" },
+  { to: "/imports", label: "Importar" },
 ];
 
 export function Layout(): JSX.Element {

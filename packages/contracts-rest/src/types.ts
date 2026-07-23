@@ -137,6 +137,44 @@ export interface Page<T> {
   items: T[];
 }
 
+export interface ImportJob {
+  id: string;
+  importType: string;
+  status: "uploaded" | "parsed" | "mapped" | "validated" | "executed" | "reconciled" | "failed";
+  filename?: string | null;
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  duplicateRows: number;
+  executedRows: number;
+  failedRows: number;
+}
+
+export interface ImportRowView {
+  rowNumber: number;
+  raw: Record<string, unknown>;
+  mapped: Record<string, unknown> | null;
+  validationStatus: "pending" | "valid" | "invalid" | "duplicate";
+  errors: Array<{ field: string; reason: string }>;
+  executionStatus: "pending" | "created" | "failed" | "skipped";
+  serverId: string | null;
+  executionError: string | null;
+}
+
+export interface ImportPreview {
+  job: ImportJob;
+  sample: ImportRowView[];
+  invalidSample: ImportRowView[];
+}
+
+export interface AnimalImportMapping {
+  visualId: string;
+  sex: string;
+  breedCode?: string;
+  birthDate?: string;
+  rfid?: string;
+}
+
 export interface SearchHit {
   type: "animal" | "lot" | "paddock" | "person";
   id: string;

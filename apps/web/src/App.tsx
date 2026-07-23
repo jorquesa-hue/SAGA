@@ -6,6 +6,7 @@ import { Animals } from "./pages/Animals.js";
 import { Dashboard } from "./pages/Dashboard.js";
 import { Exports } from "./pages/Exports.js";
 import { Finance } from "./pages/Finance.js";
+import { Imports } from "./pages/Imports.js";
 import { Integrations } from "./pages/Integrations.js";
 import { Lots } from "./pages/Lots.js";
 import { Recommendations } from "./pages/Recommendations.js";
@@ -39,6 +40,7 @@ export function App(): JSX.Element {
         <Route path="reproduction" element={<Reproduction />} />
         <Route path="lots" element={<Lots />} />
         <Route path="finance" element={<Finance />} />
+        <Route path="imports" element={<Imports />} />
         <Route path="alerts" element={<Alerts />} />
         <Route path="recommendations" element={<Recommendations />} />
         <Route path="integrations" element={<Integrations />} />

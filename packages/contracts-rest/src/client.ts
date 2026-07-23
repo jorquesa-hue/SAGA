@@ -1,7 +1,10 @@
 import { HttpClient, type ClientConfig, type RequestOptions } from "./http.js";
 import type {
+  AnimalImportMapping,
   Animal,
   ConnectorRegistration,
+  ImportJob,
+  ImportPreview,
   CreateRecommendationRequest,
   CreateWebhookSubscriptionRequest,
   ExportJob,
@@ -181,6 +184,20 @@ export class JkPlatformClient {
     process: (id: string, o?: RequestOptions) => this.post<ExportJob>(`/api/v1/exports/${id}/process`, undefined, o),
     /** Raw artifact download (JSON/CSV text). */
     download: (id: string, o?: RequestOptions) => this.get<unknown>(`/api/v1/exports/${id}/download`, o),
+  };
+
+  // -- Staged imports (§27) --
+  readonly imports = {
+    upload: (body: { importType: string; content: string; filename?: string; farmId?: string }, o?: RequestOptions) =>
+      this.post<ImportJob>("/api/v1/imports", body, o),
+    list: (o?: RequestOptions) => this.get<Page<ImportJob>>("/api/v1/imports", o),
+    get: (id: string, o?: RequestOptions) => this.get<ImportJob>(`/api/v1/imports/${id}`, o),
+    parse: (id: string, o?: RequestOptions) => this.post<ImportJob>(`/api/v1/imports/${id}/parse`, undefined, o),
+    map: (id: string, mapping: AnimalImportMapping, o?: RequestOptions) => this.post<ImportJob>(`/api/v1/imports/${id}/map`, mapping, o),
+    validate: (id: string, o?: RequestOptions) => this.post<ImportJob>(`/api/v1/imports/${id}/validate`, undefined, o),
+    preview: (id: string, o?: RequestOptions) => this.get<ImportPreview>(`/api/v1/imports/${id}/preview`, o),
+    execute: (id: string, o?: RequestOptions) => this.post<ImportJob>(`/api/v1/imports/${id}/execute`, undefined, o),
+    reconcile: (id: string, o?: RequestOptions) => this.post<ImportPreview>(`/api/v1/imports/${id}/reconcile`, undefined, o),
   };
 
   // -- Analytics & alerts --
