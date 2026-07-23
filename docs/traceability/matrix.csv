@@ -138,3 +138,4 @@ JK-WEB-IMPORT-WIZARD,web,apps/web/src/pages/Imports.tsx;packages/contracts-rest 
 JK-AI-ORCHESTRATOR,ai-orchestrator,apps/ai-orchestrator/orchestrator.ts;model-provider.ts,apps/ai-orchestrator/tests/integration/orchestrator.integration.test.ts,implemented
 JK-AI-POLICY-GUARD,ai-orchestrator,apps/ai-orchestrator/policy.ts (safe-action allowlist),apps/ai-orchestrator/tests/policy.test.ts,implemented
 JK-AI-EVIDENCE-TOOLS,ai-orchestrator,apps/ai-orchestrator/tools.ts (grounded findings),apps/ai-orchestrator/tests/integration/orchestrator.integration.test.ts,implemented
+JK-E2E-FARM-WORKFLOW,api,apps/api (buildApp in-process),apps/api/tests/integration/e2e-scenario.integration.test.ts,implemented
