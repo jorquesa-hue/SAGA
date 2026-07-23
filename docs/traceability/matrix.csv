@@ -62,3 +62,8 @@ JK-HER-001,herd ops,packages/herd-operations (LotsService);database/migrations/0
 JK-HER-002,herd ops,database/migrations/0008 (lot_membership),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
 JK-HER-003,herd ops,packages/herd-operations (moveToPaddock),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
 JK-HER-004,herd ops,packages/herd-operations (projections),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
+JK-HLT-002,alerts,packages/analytics-intelligence (generateAlerts),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+JK-REP-004-alert,alerts,packages/analytics-intelligence (calving_due),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+ALERTS-lifecycle,alerts,database/migrations/0009;packages/analytics-intelligence/alert-service.ts,packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+REPORT-beef-lot,reports,packages/analytics-intelligence (beefLotReport),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+REPORT-monthly-nucleus,reports,packages/analytics-intelligence (monthlyNucleusReport),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented

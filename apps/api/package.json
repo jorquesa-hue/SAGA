@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@fastify/under-pressure": "^8.5.0",
+    "@jk/analytics-intelligence": "workspace:*",
     "@jk/animal-registry": "workspace:*",
     "@jk/database": "workspace:*",
     "@jk/domain-kernel": "workspace:*",

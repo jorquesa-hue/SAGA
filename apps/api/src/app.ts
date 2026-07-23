@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { AlertService, ReportService } from "@jk/analytics-intelligence";
 import { AnimalRegistryService } from "@jk/animal-registry";
 import { HealthService } from "@jk/health-laboratory";
 import { LotsService, WeighingService } from "@jk/herd-operations";
@@ -23,6 +24,7 @@ import { registerHealthRoutes as registerHealthProbeRoutes } from "./routes/heal
 import { registerHealthRoutes } from "./routes/health.routes.js";
 import { registerHerdRoutes } from "./routes/herd.js";
 import { registerIdentityRoutes } from "./routes/identity.js";
+import { registerAnalyticsRoutes } from "./routes/analytics.routes.js";
 import { registerLotRoutes } from "./routes/lots.routes.js";
 import { registerReproductionRoutes } from "./routes/reproduction.routes.js";
 
@@ -79,6 +81,8 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     appPool: deps.pools.appPool,
     environment: deps.config.APP_ENV,
   });
+  const alertService = new AlertService({ appPool: deps.pools.appPool });
+  const reportService = new ReportService({ appPool: deps.pools.appPool });
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
 
@@ -150,6 +154,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerLotRoutes(app, lotsService);
   registerHealthRoutes(app, healthService);
   registerReproductionRoutes(app, reproductionService);
+  registerAnalyticsRoutes(app, alertService, reportService);
 
   // Surface a typed unauthorized when auth decoration is somehow missing.
   app.decorateRequest("principal", null as unknown as AuthenticatedPrincipal);
