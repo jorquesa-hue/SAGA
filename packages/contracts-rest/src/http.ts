@@ -76,7 +76,11 @@ export class HttpClient {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.auth = config.auth ?? { mode: "none" };
     this.tenantId = config.tenantId;
-    const f = config.fetch ?? (globalThis as { fetch?: FetchLike }).fetch;
+    const nativeFetch = (globalThis as { fetch?: FetchLike }).fetch;
+    // Native fetch must be called with `this === globalThis`, so bind it;
+    // otherwise the browser throws "Illegal invocation". An injected fetch
+    // (tests) is used as-is.
+    const f = config.fetch ?? (nativeFetch ? nativeFetch.bind(globalThis) : undefined);
     if (!f) throw new Error("No fetch implementation available; pass config.fetch");
     this.fetchImpl = f;
     this.newId = config.newId ?? defaultNewId;
