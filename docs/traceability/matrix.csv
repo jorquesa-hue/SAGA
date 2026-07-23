@@ -139,3 +139,5 @@ JK-AI-ORCHESTRATOR,ai-orchestrator,apps/ai-orchestrator/orchestrator.ts;model-pr
 JK-AI-POLICY-GUARD,ai-orchestrator,apps/ai-orchestrator/policy.ts (safe-action allowlist),apps/ai-orchestrator/tests/policy.test.ts,implemented
 JK-AI-EVIDENCE-TOOLS,ai-orchestrator,apps/ai-orchestrator/tools.ts (grounded findings),apps/ai-orchestrator/tests/integration/orchestrator.integration.test.ts,implemented
 JK-E2E-FARM-WORKFLOW,api,apps/api (buildApp in-process),apps/api/tests/integration/e2e-scenario.integration.test.ts,implemented
+JK-WEB-PAGINATION,web,apps/web/src/components/Pagination.tsx;apps/web/src/pages/Animals.tsx,apps/web/tests/polish.test.tsx,implemented
+JK-WEB-LOT-DETAIL,web,apps/web/src/pages/LotDetail.tsx,apps/web/tests/polish.test.tsx,implemented

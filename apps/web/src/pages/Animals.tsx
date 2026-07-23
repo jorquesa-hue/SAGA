@@ -4,6 +4,7 @@ import { ApiError } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
 import { useAsync } from "../use-async.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
+import { Pagination, usePagination } from "../components/Pagination.js";
 
 /**
  * Animal registry: register new animals, filter the list (visual ID / RFID /
@@ -27,6 +28,8 @@ export function Animals(): JSX.Element {
       return matchesStatus && matchesQuery;
     });
   }, [data, query, status]);
+
+  const paged = usePagination(filtered, 20);
 
   const exportPacket = async (animalId: string): Promise<void> => {
     setExportState((s) => ({ ...s, [animalId]: "Gerando…" }));
@@ -80,7 +83,7 @@ export function Animals(): JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((a) => (
+            {paged.pageItems.map((a) => (
               <tr key={a.id}>
                 <td>
                   <Link to={`/animals/${a.id}`}>{a.visualId ?? a.id.slice(0, 8)}</Link>
@@ -99,6 +102,7 @@ export function Animals(): JSX.Element {
           </tbody>
         </table>
       )}
+      <Pagination paged={paged} />
     </section>
   );
 }

@@ -9,6 +9,7 @@ import { Finance } from "./pages/Finance.js";
 import { Imports } from "./pages/Imports.js";
 import { Integrations } from "./pages/Integrations.js";
 import { Lots } from "./pages/Lots.js";
+import { LotDetail } from "./pages/LotDetail.js";
 import { Recommendations } from "./pages/Recommendations.js";
 import { Reproduction } from "./pages/Reproduction.js";
 import { SearchResults } from "./pages/SearchResults.js";
@@ -39,6 +40,7 @@ export function App(): JSX.Element {
         <Route path="treatments" element={<Treatments />} />
         <Route path="reproduction" element={<Reproduction />} />
         <Route path="lots" element={<Lots />} />
+        <Route path="lots/:id" element={<LotDetail />} />
         <Route path="finance" element={<Finance />} />
         <Route path="imports" element={<Imports />} />
         <Route path="alerts" element={<Alerts />} />

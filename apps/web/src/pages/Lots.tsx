@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useClient } from "../session.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 
 /** Lots & paddock movements (§20): create lots, add animals, move to a paddock. */
 export function Lots(): JSX.Element {
   const client = useClient();
+  const navigate = useNavigate();
+  const [lookupId, setLookupId] = useState("");
   const create = useCommand();
   const add = useCommand();
   const move = useCommand();
@@ -46,6 +49,18 @@ export function Lots(): JSX.Element {
     <section>
       <div className="page-head">
         <h2>Lotes e movimentações</h2>
+        <form
+          className="inline-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (lookupId.trim()) navigate(`/lots/${lookupId.trim()}`);
+          }}
+        >
+          <input value={lookupId} onChange={(e) => setLookupId(e.target.value)} placeholder="Consultar lote (ID)" style={{ minWidth: 220 }} />
+          <button type="submit" disabled={!lookupId.trim()}>
+            Abrir
+          </button>
+        </form>
       </div>
 
       <div className="form">
@@ -67,7 +82,11 @@ export function Lots(): JSX.Element {
           Criar
         </button>
         <FormMessage state={create} />
-        {lastLotId && <p className="hint">Lote: {lastLotId}</p>}
+        {lastLotId && (
+          <p className="hint">
+            Lote: <Link to={`/lots/${lastLotId}`}>{lastLotId}</Link>
+          </p>
+        )}
       </div>
 
       <div className="form">
