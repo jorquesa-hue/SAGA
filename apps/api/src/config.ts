@@ -21,6 +21,10 @@ const configSchema = z.object({
   OIDC_ISSUER_URL: z.string().url().optional(),
   OIDC_AUDIENCE: z.string().optional(),
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
+  AI_ENABLED: z
+    .string()
+    .transform((v) => v === "true")
+    .default("false"),
 });
 
 export type ApiConfig = z.infer<typeof configSchema>;

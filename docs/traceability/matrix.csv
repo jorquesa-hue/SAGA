@@ -89,3 +89,9 @@ JK-GEN-005,genetics,packages/reproduction-genetics (rankAnimals),packages/reprod
 JK-GEN-006,genetics,packages/reproduction-genetics (geneticProgress),packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
 FII-index,analytics,packages/analytics-intelligence/farm-intelligence.ts,packages/analytics-intelligence/tests/integration/farm-intelligence.integration.test.ts,implemented
 EXECUTIVE-dashboard,analytics,packages/analytics-intelligence (executiveDashboard),packages/analytics-intelligence/tests/integration/farm-intelligence.integration.test.ts,implemented
+JK-AI-EVIDENCE,ai-governance,packages/analytics-intelligence/recommendation-service.ts;database/migrations/0015,packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-CONFIDENCE,ai-governance,packages/analytics-intelligence/recommendation-service.ts,packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-APPROVAL,ai-governance,packages/analytics-intelligence (approveRecommendation),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-PROHIBITED,ai-governance,packages/analytics-intelligence/ai-safety.ts (assessAction),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-KILLSWITCH,ai-governance,packages/analytics-intelligence/recommendation-service.ts (aiEnabled),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-AUDIT,ai-governance,database/migrations/0015 (ai_action_audit append-only),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented

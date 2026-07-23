@@ -32,6 +32,12 @@ tags:
     description: Animal registry (Phase 1 contract baseline).
   - name: Devices
     description: Edge device ingestion (Phase 1 contract baseline).
+  - name: AI
+    description: >
+      Governed AI recommendations (invariant #6, §190). Every recommendation
+      carries evidence, confidence, and model/prompt provenance; high-impact
+      actions require human approval and prohibited actions can never execute
+      autonomously.
 paths:
   /tenants:
     post:
@@ -353,6 +359,127 @@ paths:
                 type: object
                 properties:
                   items: { type: array, items: { type: object } }
+  /recommendations:
+    post:
+      operationId: createRecommendation
+      summary: Record an AI recommendation with evidence (invariant #6, §190)
+      description: >
+        Agents/services record a recommendation. Evidence event ids,
+        confidence, and model/prompt provenance are mandatory. A proposal for a
+        prohibited action category is accepted (as a proposal) but can never be
+        executed autonomously. Returns 409 (JK-AI-DISABLED) when the tenant AI
+        kill switch is off.
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateRecommendationRequest" }
+      responses:
+        "201":
+          description: Recommendation recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recommendation" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listRecommendations
+      summary: List recommendations for the current tenant
+      tags: [AI]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, rejected, expired, executed]
+      responses:
+        "200":
+          description: Recommendation list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Recommendation" }
+  /recommendations/{recommendationId}:
+    get:
+      operationId: getRecommendation
+      summary: Read one recommendation
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/RecommendationId"
+      responses:
+        "200":
+          description: Recommendation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recommendation" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recommendations/{recommendationId}/approve:
+    post:
+      operationId: approveRecommendation
+      summary: Human approval of a recommendation (JK-AI-APPROVAL)
+      description: >
+        Only a human management role may approve. An agent may not approve its
+        own proposal (human-in-the-loop).
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/RecommendationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "204": { description: Approved }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recommendations/{recommendationId}/reject:
+    post:
+      operationId: rejectRecommendation
+      summary: Reject a recommendation
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/RecommendationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "204": { description: Rejected }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recommendations/{recommendationId}/execute:
+    post:
+      operationId: executeRecommendation
+      summary: Attempt autonomous execution (governed)
+      description: >
+        Blocked with 403 (JK-AI-PROHIBITED) for prohibited action categories and
+        409 (JK-AI-APPROVAL-REQUIRED) when no human approval exists. Both
+        attempts are audited to the append-only ai_action_audit ledger.
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/RecommendationId"
+      responses:
+        "200":
+          description: Executed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executed: { type: boolean }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "404": { $ref: "#/components/responses/NotFound" }
 components:
   securitySchemes:
     oidc:
@@ -369,6 +496,11 @@ components:
       schema: { type: string, minLength: 16, maxLength: 200 }
     AnimalId:
       name: animalId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    RecommendationId:
+      name: recommendationId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -591,6 +723,82 @@ components:
             properties:
               field: { type: string }
               reason: { type: string }
+    CreateRecommendationRequest:
+      type: object
+      required:
+        - agentName
+        - modelProvider
+        - modelVersion
+        - promptVersion
+        - recommendationText
+        - proposedActionCategory
+        - evidenceEventIds
+        - confidence
+        - riskClass
+      properties:
+        agentName: { type: string, minLength: 1 }
+        modelProvider: { type: string, minLength: 1 }
+        modelVersion: { type: string, minLength: 1 }
+        promptVersion: { type: string, minLength: 1 }
+        recommendationText: { type: string, minLength: 1 }
+        proposedActionCategory:
+          type: string
+          description: Action category; prohibited categories can never execute autonomously.
+        proposedAction:
+          type: object
+          additionalProperties: true
+          description: Structured proposed action payload (optional).
+        evidenceEventIds:
+          type: array
+          minItems: 1
+          description: At least one supporting domain event id (invariant #6, §190).
+          items: { type: string }
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        assumptions:
+          type: array
+          items: { type: string }
+        riskClass:
+          type: string
+          enum: [low, medium, high]
+    Recommendation:
+      type: object
+      required:
+        - id
+        - status
+        - proposedActionCategory
+        - evidenceEventIds
+        - confidence
+        - prohibited
+      properties:
+        id: { type: string, format: uuid }
+        agentName: { type: string }
+        modelProvider: { type: string }
+        modelVersion: { type: string }
+        promptVersion: { type: string }
+        recommendationText: { type: string }
+        proposedActionCategory: { type: string }
+        evidenceEventIds:
+          type: array
+          items: { type: string }
+        confidence: { type: number }
+        riskClass:
+          type: string
+          enum: [low, medium, high]
+        prohibited:
+          type: boolean
+          description: True when the proposed category can never execute autonomously.
+        highImpact:
+          type: boolean
+          description: True when execution requires human approval.
+        status:
+          type: string
+          enum: [pending, approved, rejected, expired, executed]
+        approvedBy: { type: string, format: uuid, nullable: true }
+        approvedAt: { type: string, format: date-time, nullable: true }
+        expiresAt: { type: string, format: date-time, nullable: true }
   responses:
     Conflict:
       description: Business conflict

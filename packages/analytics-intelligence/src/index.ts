@@ -3,3 +3,5 @@ export * from "./errors.js";
 export * from "./alert-service.js";
 export * from "./report-service.js";
 export * from "./farm-intelligence.js";
+export * from "./ai-safety.js";
+export * from "./recommendation-service.js";

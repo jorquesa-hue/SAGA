@@ -1,7 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { AlertService, FarmIntelligenceService, ReportService } from "@jk/analytics-intelligence";
+import {
+  AlertService,
+  FarmIntelligenceService,
+  RecommendationService,
+  ReportService,
+} from "@jk/analytics-intelligence";
 import { AnimalRegistryService } from "@jk/animal-registry";
 import { AssetsMaintenanceService } from "@jk/assets-maintenance";
 import { FinanceService } from "@jk/finance-commerce";
@@ -32,6 +37,7 @@ import { registerAnalyticsRoutes } from "./routes/analytics.routes.js";
 import { registerLotRoutes } from "./routes/lots.routes.js";
 import { registerPhase3Routes } from "./routes/phase3.routes.js";
 import { registerPhase4Routes } from "./routes/phase4.routes.js";
+import { registerAiRoutes } from "./routes/ai.routes.js";
 import { registerReproductionRoutes } from "./routes/reproduction.routes.js";
 
 declare module "fastify" {
@@ -95,6 +101,11 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const financeService = new FinanceService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
   const geneticsService = new GeneticsService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
   const farmIntelligenceService = new FarmIntelligenceService({ appPool: deps.pools.appPool });
+  const recommendationService = new RecommendationService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+    aiEnabled: deps.config.AI_ENABLED,
+  });
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
 
@@ -169,6 +180,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerAnalyticsRoutes(app, alertService, reportService);
   registerPhase3Routes(app, landService, inventoryService, assetsService);
   registerPhase4Routes(app, financeService, geneticsService, farmIntelligenceService);
+  registerAiRoutes(app, recommendationService);
 
   // Surface a typed unauthorized when auth decoration is somehow missing.
   app.decorateRequest("principal", null as unknown as AuthenticatedPrincipal);
