@@ -93,6 +93,30 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Tenant" }
         "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateCurrentTenantSettings
+      summary: Update the current tenant's base locale and/or currency
+      description: >
+        Emits identity.tenant_settings_updated.v1. Requires the tenant_owner
+        role (manage_tenant). At least one field must be provided; unspecified
+        fields are left unchanged.
+      tags: [Tenants]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateTenantSettingsRequest" }
+      responses:
+        "200":
+          description: Updated tenant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tenant" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
   /farms:
     post:
       operationId: createFarm
@@ -1017,6 +1041,20 @@ components:
         status: { type: string, enum: [active, suspended] }
         createdAt: { type: string, format: date-time }
         version: { type: integer, minimum: 0 }
+    UpdateTenantSettingsRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: At least one of defaultLocale or defaultCurrency must be present.
+      properties:
+        defaultLocale:
+          type: string
+          pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+          description: BCP 47 language tag, e.g. pt-BR.
+        defaultCurrency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          description: ISO 4217 currency code, e.g. BRL.
     CreateFarmRequest:
       type: object
       additionalProperties: false

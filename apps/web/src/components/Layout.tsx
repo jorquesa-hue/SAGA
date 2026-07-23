@@ -17,6 +17,7 @@ const NAV = [
   { to: "/integrations", key: "nav.integrations" },
   { to: "/exports", key: "nav.exports" },
   { to: "/imports", key: "nav.imports" },
+  { to: "/settings", key: "nav.settings" },
 ];
 
 export function Layout(): JSX.Element {

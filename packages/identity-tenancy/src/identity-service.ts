@@ -30,6 +30,7 @@ import {
   mapTenantRow,
   membershipChangeInputSchema,
   parseInput,
+  updateTenantSettingsInputSchema,
   type CreateFarmInput,
   type CreateTenantInput,
   type Farm,
@@ -37,6 +38,7 @@ import {
   type InviteUserInput,
   type MembershipChangeInput,
   type Tenant,
+  type UpdateTenantSettingsInput,
   type TenantMember,
   type TenantMembership,
   type TenantMembershipRow,
@@ -595,6 +597,69 @@ export class IdentityService {
       }
       return mapTenantRow(result.rows[0]!);
     });
+  }
+
+  /**
+   * Update the active tenant's configurable settings — base locale and/or
+   * currency (manage_tenant: tenant_owner). Appends
+   * identity.tenant_settings_updated.v1 and an audit record so the change is
+   * traceable; unspecified fields are left unchanged.
+   */
+  async updateTenant(context: TenantContext, rawInput: UpdateTenantSettingsInput): Promise<Tenant> {
+    const input = parseInput(updateTenantSettingsInputSchema, rawInput, "updateTenant input");
+    return this.authorized(
+      context,
+      "manage_tenant",
+      { type: "tenant", id: context.tenantId },
+      async (client) => {
+        const result = await client.query<TenantRow>(
+          `UPDATE tenant
+              SET default_locale = COALESCE($2, default_locale),
+                  default_currency = COALESCE($3, default_currency)
+            WHERE id = $1
+            RETURNING id, name, default_locale, default_currency, status, created_at`,
+          [context.tenantId, input.defaultLocale ?? null, input.defaultCurrency ?? null],
+        );
+        if (result.rows.length === 0) {
+          throw new NotFoundError(`Tenant ${context.tenantId} not found`);
+        }
+        const tenant = mapTenantRow(result.rows[0]!);
+
+        const version = await this.nextAggregateVersion(client, context.tenantId, "tenant", context.tenantId);
+        await appendEvent(
+          client,
+          createEventEnvelope({
+            eventType: "identity.tenant_settings_updated.v1",
+            context,
+            farmId: null,
+            aggregateType: "tenant",
+            aggregateId: context.tenantId,
+            aggregateVersion: version,
+            source: { channel: "api" },
+            idempotencyKey: input.idempotencyKey ?? `tenant-settings-${context.tenantId}-${version}`,
+            payload: {
+              tenantId: context.tenantId,
+              defaultLocale: tenant.defaultLocale,
+              defaultCurrency: tenant.defaultCurrency,
+            },
+          }),
+          { environment: this.environment },
+        );
+
+        await writeAuditRecord(client, {
+          tenantId: context.tenantId,
+          actor: context.actor,
+          action: "identity.tenant.settings_updated",
+          resourceType: "tenant",
+          resourceId: context.tenantId,
+          outcome: "success",
+          correlationId: context.correlationId,
+          detail: { defaultLocale: tenant.defaultLocale, defaultCurrency: tenant.defaultCurrency },
+        });
+
+        return tenant;
+      },
+    );
   }
 
   async listFarms(context: TenantContext): Promise<Farm[]> {

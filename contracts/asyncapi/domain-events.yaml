@@ -65,6 +65,14 @@ channels:
     messages:
       membershipRevoked:
         $ref: "#/components/messages/MembershipRevoked"
+  identityTenantSettingsUpdated:
+    address: jk.{environment}.{tenantShard}.identity.tenant.tenant-settings-updated.v1
+    parameters:
+      environment: { description: Deployment environment }
+      tenantShard: { description: Non-sensitive routing shard }
+    messages:
+      tenantSettingsUpdated:
+        $ref: "#/components/messages/TenantSettingsUpdated"
 operations:
   publishWeightRecorded:
     action: send
@@ -96,6 +104,11 @@ operations:
     channel: { $ref: "#/channels/identityMembershipRevoked" }
     messages:
       - { $ref: "#/channels/identityMembershipRevoked/messages/membershipRevoked" }
+  publishTenantSettingsUpdated:
+    action: send
+    channel: { $ref: "#/channels/identityTenantSettingsUpdated" }
+    messages:
+      - { $ref: "#/channels/identityTenantSettingsUpdated/messages/tenantSettingsUpdated" }
 components:
   messages:
     WeightRecorded:
@@ -134,6 +147,12 @@ components:
         location: $message.payload#/correlationId
       payload:
         $ref: "#/components/schemas/MembershipRevokedEnvelope"
+    TenantSettingsUpdated:
+      name: identity.tenant_settings_updated.v1
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        $ref: "#/components/schemas/TenantSettingsUpdatedEnvelope"
   schemas:
     EnvelopeBase:
       type: object
@@ -199,6 +218,20 @@ components:
               required: [name, defaultLocale, defaultCurrency]
               properties:
                 name: { type: string, minLength: 1, maxLength: 200 }
+                defaultLocale: { type: string }
+                defaultCurrency: { type: string, pattern: "^[A-Z]{3}$" }
+    TenantSettingsUpdatedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeBase"
+        - type: object
+          properties:
+            eventType: { const: identity.tenant_settings_updated.v1 }
+            aggregateType: { const: tenant }
+            payload:
+              type: object
+              required: [tenantId, defaultLocale, defaultCurrency]
+              properties:
+                tenantId: { type: string, format: uuid }
                 defaultLocale: { type: string }
                 defaultCurrency: { type: string, pattern: "^[A-Z]{3}$" }
     FarmCreatedEnvelope:

@@ -37,6 +37,9 @@ export class JkPlatformClient {
   private async post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return (await this.http.request<T>("POST", path, body, options)).data;
   }
+  private async patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return (await this.http.request<T>("PATCH", path, body, options)).data;
+  }
   private async del(path: string, options?: RequestOptions): Promise<void> {
     await this.http.request<void>("DELETE", path, undefined, options);
   }
@@ -106,6 +109,8 @@ export class JkPlatformClient {
   readonly tenants = {
     register: (body: { name: string }, o?: RequestOptions) => this.post<Tenant>("/api/v1/tenants", body, o),
     current: (o?: RequestOptions) => this.get<Tenant>("/api/v1/tenants/current", o),
+    updateSettings: (body: { defaultLocale?: string; defaultCurrency?: string }, o?: RequestOptions) =>
+      this.patch<Tenant>("/api/v1/tenants/current", body, o),
   };
   readonly farms = {
     create: (body: { name: string; areaHa?: number }, o?: RequestOptions) => this.post<Farm>("/api/v1/farms", body, o),

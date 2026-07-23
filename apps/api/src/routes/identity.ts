@@ -61,6 +61,21 @@ export function registerIdentityRoutes(
     return service.getTenant(context);
   });
 
+  app.patch("/api/v1/tenants/current", async (request: FastifyRequest) => {
+    const idempotencyKey = requireIdempotencyKey(request);
+    const context = buildTenantContext(
+      request.principal,
+      tenantIdHeader(request),
+      request.correlationId,
+    );
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    return service.updateTenant(context, {
+      defaultLocale: body.defaultLocale as string | undefined,
+      defaultCurrency: body.defaultCurrency as string | undefined,
+      idempotencyKey: `tenant-settings:${idempotencyKey}`,
+    });
+  });
+
   // --- Farms ---------------------------------------------------------------
 
   app.post("/api/v1/farms", async (request: FastifyRequest, reply: FastifyReply) => {

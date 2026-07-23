@@ -1,0 +1,35 @@
+{
+  "eventId": "01J2ZK4G8QTEN4NTCRE4TED019",
+  "eventType": "identity.tenant_settings_updated.v1",
+  "schemaVersion": 1,
+  "tenantId": "0f3a1c2e-7b4d-4e5f-8a9b-1c2d3e4f5a6b",
+  "farmId": null,
+  "aggregateType": "tenant",
+  "aggregateId": "0f3a1c2e-7b4d-4e5f-8a9b-1c2d3e4f5a6b",
+  "aggregateVersion": 2,
+  "occurredAt": "2026-07-23T09:30:00.000Z",
+  "recordedAt": "2026-07-23T09:30:00.084Z",
+  "actor": {
+    "type": "user",
+    "id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+    "display": "Ana Souza"
+  },
+  "source": {
+    "channel": "api",
+    "deviceId": null,
+    "appVersion": "web-console/0.1.0"
+  },
+  "correlationId": "3d2c1b0a-9f8e-4d7c-8b6a-5f4e3d2c1b0a",
+  "causationId": null,
+  "idempotencyKey": "tenant-settings:0f3a1c2e-7b4d-4e5f-8a9b-1c2d3e4f5a6b-2",
+  "payload": {
+    "tenantId": "0f3a1c2e-7b4d-4e5f-8a9b-1c2d3e4f5a6b",
+    "defaultLocale": "en",
+    "defaultCurrency": "USD"
+  },
+  "metadata": {
+    "locale": "pt-BR",
+    "qualityFlags": [],
+    "supersedesEventId": null
+  }
+}

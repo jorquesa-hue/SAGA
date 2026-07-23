@@ -13,6 +13,7 @@ import { LotDetail } from "./pages/LotDetail.js";
 import { Recommendations } from "./pages/Recommendations.js";
 import { Reproduction } from "./pages/Reproduction.js";
 import { SearchResults } from "./pages/SearchResults.js";
+import { Settings } from "./pages/Settings.js";
 import { SignIn } from "./pages/SignIn.js";
 import { Treatments } from "./pages/Treatments.js";
 import { Weighing } from "./pages/Weighing.js";
@@ -47,6 +48,7 @@ export function App(): JSX.Element {
         <Route path="recommendations" element={<Recommendations />} />
         <Route path="integrations" element={<Integrations />} />
         <Route path="exports" element={<Exports />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
