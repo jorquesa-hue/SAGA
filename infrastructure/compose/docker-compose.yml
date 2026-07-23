@@ -2,10 +2,13 @@
 #
 # Usage (from the repository root):
 #
-#   docker compose -f infrastructure/compose/docker-compose.yml up -d postgres redis nats minio keycloak otel-collector
-#   pnpm db:migrate && pnpm db:seed          # migrations + synthetic reference farm
-#   pnpm dev                                  # or run api/worker in containers:
-#   docker compose -f infrastructure/compose/docker-compose.yml up -d --build api worker
+#   # One command — infra + migrate/seed + api + worker + edge-gateway + web:
+#   scripts/dev/stack-up.sh
+#
+#   # Or manually: base infra, then the `app` profile (includes the migrate
+#   # init that api/worker depend on):
+#   docker compose -f infrastructure/compose/docker-compose.yml up -d postgres redis nats minio otel-collector
+#   docker compose -f infrastructure/compose/docker-compose.yml --profile app up -d --build
 #
 # Configuration comes from a git-ignored `.env` at the repository root
 # (see infrastructure/README.md for the variable inventory). All credentials
@@ -153,19 +156,42 @@ services:
     # No Docker healthcheck: the image is shell-less; use the health_check
     # extension endpoint at http://localhost:13133/ instead.
 
+  # One-shot init: applies roles+migrations and seeds the reference farm, then
+  # exits. App services wait for it to complete (service_completed_successfully)
+  # so a single `up` brings the stack to a ready, seeded state. Profile: app.
+  migrate:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.migrate
+    profiles: ["app"]
+    environment:
+      # Owner connection (creates roles, applies migrations, loads seed).
+      DATABASE_URL: postgresql://jk:jk@postgres:5432/jk_platform
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   api:
     build:
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.api
+    profiles: ["app"]
     env_file:
       - path: ../../.env
         required: false
     environment:
       APP_ENV: local
       PORT: "4000"
-      # Application role (RLS-scoped, least privilege) — see
-      # database/policies/application_roles.sql. Synthetic local password.
-      DATABASE_URL: postgresql://jk_app:jk_app_local@postgres:5432/jk_platform
+      # Owner connection for tenant onboarding (system pool).
+      DATABASE_URL: postgresql://jk:jk@postgres:5432/jk_platform
+      # Application role (RLS-scoped, least privilege) for all tenant work —
+      # see database/policies/application_roles.sql. Synthetic local password.
+      APP_DATABASE_URL: postgresql://jk_app:jk_app_local@postgres:5432/jk_platform
+      # Browser origins allowed to call the API directly (the web container
+      # proxies same-origin, so this is only for a separately-hosted console).
+      CORS_ORIGINS: ""
+      AI_ENABLED: "true"
       NATS_URL: nats://nats:4222
       REDIS_URL: redis://redis:6379
       S3_ENDPOINT: http://minio:9000
@@ -176,6 +202,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_healthy
       redis:
@@ -189,6 +217,7 @@ services:
     build:
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.worker
+    profiles: ["app"]
     env_file:
       - path: ../../.env
         required: false
@@ -204,9 +233,48 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       nats:
         condition: service_healthy
       otel-collector:
+        condition: service_started
+
+  # On-farm edge gateway: durable device buffer that batches upstream to the
+  # API. The buffer volume survives restarts (§34). Profile: app.
+  edge-gateway:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.edge-gateway
+    profiles: ["app"]
+    environment:
+      APP_ENV: local
+      PORT: "4200"
+      API_BASE_URL: http://api:4000
+      # Synthetic seed tenant + owner (database/seeds/0001_reference_farm.sql).
+      EDGE_TENANT_ID: "00000000-0000-4000-8000-000000000001"
+      EDGE_DEV_USER_ID: "00000000-0000-4000-8000-000000000021"
+      EDGE_GATEWAY_ID: barn-gateway-1
+      EDGE_DATA_FILE: /data/edge-outbox.json
+    ports:
+      - "4200:4200"
+    volumes:
+      - edge-data:/data
+    depends_on:
+      api:
+        condition: service_started
+
+  # Web console: nginx serving the built SPA and proxying /api to the API
+  # (same-origin, so no CORS needed inside the network). Profile: app.
+  web:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.web
+    profiles: ["app"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
         condition: service_started
 
 volumes:
@@ -215,3 +283,4 @@ volumes:
   nats-data:
   minio-data:
   keycloak-data:
+  edge-data:

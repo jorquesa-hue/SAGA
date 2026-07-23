@@ -25,6 +25,12 @@ const configSchema = z.object({
     .string()
     .transform((v) => v === "true")
     .default("false"),
+  /**
+   * Comma-separated allowed CORS origins for browser clients (§46). Empty in
+   * production means same-origin only (no cross-origin browser access); in
+   * local dev, empty reflects the request origin so the Vite dev server works.
+   */
+  CORS_ORIGINS: z.string().default(""),
 });
 
 export type ApiConfig = z.infer<typeof configSchema>;

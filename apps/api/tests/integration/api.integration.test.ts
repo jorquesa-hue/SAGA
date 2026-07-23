@@ -15,6 +15,8 @@ const config: ApiConfig = {
   DATABASE_URL: "unused-direct-pools",
   APP_DATABASE_URL: "unused-direct-pools",
   LOG_LEVEL: "error",
+  AI_ENABLED: false,
+  CORS_ORIGINS: "https://console.example",
 };
 
 function admin(userId: string) {
@@ -65,6 +67,22 @@ describe.skipIf(!available)("JK API (integration)", () => {
   it("echoes a correlation id header", async () => {
     const res = await app.inject({ method: "GET", url: "/health/live" });
     expect(res.headers["x-correlation-id"]).toMatch(/[0-9a-f-]{36}/);
+  });
+
+  it("allows a configured CORS origin and rejects an unlisted one (§46)", async () => {
+    const allowed = await app.inject({
+      method: "OPTIONS",
+      url: "/api/v1/farms",
+      headers: { origin: "https://console.example", "access-control-request-method": "GET" },
+    });
+    expect(allowed.headers["access-control-allow-origin"]).toBe("https://console.example");
+
+    const denied = await app.inject({
+      method: "OPTIONS",
+      url: "/api/v1/farms",
+      headers: { origin: "https://evil.example", "access-control-request-method": "GET" },
+    });
+    expect(denied.headers["access-control-allow-origin"]).toBeUndefined();
   });
 
   // --- Auth ----------------------------------------------------------------

@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1.7
+#
+# JK Platform — migrate/seed init image. Applies database/policies +
+# database/migrations and loads the synthetic reference farm, then exits. Used
+# as a one-shot init dependency by the app services in the compose stack so a
+# single `up` brings the whole stack to a ready, seeded state.
+#
+# Build from the REPOSITORY ROOT:
+#   docker build -f infrastructure/docker/Dockerfile.migrate -t jk-migrate:local .
+#
+# Standalone: the migrate/seed scripts use only `pg` (+ dotenv), so no workspace
+# build is needed — just the scripts and the SQL.
+
+FROM node:22-bookworm-slim AS runtime
+WORKDIR /migrate
+RUN npm install --no-save pg@8 dotenv@16
+COPY scripts/bootstrap/migrate.mjs scripts/bootstrap/seed.mjs ./scripts/bootstrap/
+COPY database ./database
+ENV NODE_PATH=/migrate/node_modules
+# Apply roles+migrations then seed. DATABASE_URL is the owner connection.
+CMD ["/bin/sh", "-c", "node scripts/bootstrap/migrate.mjs && node scripts/bootstrap/seed.mjs"]

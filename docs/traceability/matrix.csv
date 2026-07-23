@@ -131,3 +131,6 @@ JK-IMPORT-STAGED,data-import,packages/data-import/import-service.ts;database/mig
 JK-IMPORT-EVIDENCE,data-import,database/migrations/0018 (raw_content preserved),packages/data-import/tests/integration/import.integration.test.ts,implemented
 JK-IMPORT-VALIDATE-DEDUP,data-import,packages/data-import/import-service.ts (validate),packages/data-import/tests/integration/import.integration.test.ts,implemented
 JK-IMPORT-CSV,data-import,packages/data-import/csv.ts,packages/data-import/tests/csv.test.ts,implemented
+JK-API-CORS,api,apps/api/src/app.ts (@fastify/cors);apps/api/src/config.ts,apps/api/tests/integration/api.integration.test.ts,implemented
+JK-DEPLOY-IMAGES,infra,infrastructure/docker/Dockerfile.{api,worker,edge-gateway,web,migrate},infrastructure/compose/docker-compose.yml (validated),implemented
+JK-DEPLOY-COMPOSE,infra,infrastructure/compose/docker-compose.yml (app profile);scripts/dev/stack-up.sh,docs/operations/deployment.md,implemented

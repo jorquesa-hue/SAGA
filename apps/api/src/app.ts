@@ -26,6 +26,7 @@ import {
   resolveCorrelationId,
   type Logger,
 } from "@jk/observability";
+import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { ApiConfig } from "./config.js";
 import { createAuthenticator, type AuthenticatedPrincipal, type Authenticator } from "./auth.js";
@@ -121,6 +122,18 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const importService = new ImportService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
+
+  // CORS for browser clients (§46). Explicit allowlist in production; in local
+  // dev with no allowlist, reflect the request origin so the Vite dev server
+  // works. Credentials are never used (the API is token/tenant-header based).
+  const corsOrigins = (deps.config.CORS_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+  await app.register(cors, {
+    origin: corsOrigins.length > 0 ? corsOrigins : deps.config.APP_ENV === "local",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["content-type", "authorization", "x-tenant-id", "idempotency-key", CORRELATION_HEADER, "x-dev-user-id", "x-dev-platform-admin", "x-dev-display-name"],
+    exposedHeaders: [CORRELATION_HEADER, "x-content-checksum-sha256"],
+    maxAge: 600,
+  });
 
   // Correlation id on every request; echoed back for client-side tracing.
   app.addHook("onRequest", async (request, reply) => {

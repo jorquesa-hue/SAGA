@@ -35,6 +35,9 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch
 COPY package.json turbo.json tsconfig.base.json eslint.config.mjs ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/worker/package.json apps/worker/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY apps/mobile/package.json apps/mobile/package.json
+COPY apps/edge-gateway/package.json apps/edge-gateway/package.json
 COPY packages ./packages
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --offline
