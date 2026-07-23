@@ -68,6 +68,9 @@ importers:
       '@jk/domain-kernel':
         specifier: workspace:*
         version: link:../../packages/domain-kernel
+      '@jk/finance-commerce':
+        specifier: workspace:*
+        version: link:../../packages/finance-commerce
       '@jk/health-laboratory':
         specifier: workspace:*
         version: link:../../packages/health-laboratory

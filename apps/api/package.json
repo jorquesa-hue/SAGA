@@ -19,6 +19,7 @@
     "@jk/animal-registry": "workspace:*",
     "@jk/assets-maintenance": "workspace:*",
     "@jk/database": "workspace:*",
+    "@jk/finance-commerce": "workspace:*",
     "@jk/land-grazing": "workspace:*",
     "@jk/nutrition-inventory": "workspace:*",
     "@jk/domain-kernel": "workspace:*",

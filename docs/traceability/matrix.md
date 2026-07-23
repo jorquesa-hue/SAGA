@@ -103,6 +103,23 @@ Generated for the Phase 0 baseline (foundation and decision closure).
 | JK-AST-003 work orders | assets | `createWorkOrder`/`completeWorkOrder` | assets integration test | implemented |
 | JK-AST-004 device calibration status | assets | `recordCalibration`/`getCalibrationStatus` | assets test (valid/expired) | implemented |
 
+## Phase 4 — Finance, Genetics, Executive Intelligence
+
+| Requirement | Design area | Source | Verification | Status |
+|---|---|---|---|---|
+| JK-DOM-008 money: currency + amount + basis | finance | `@jk/domain-kernel/money.ts`; migration 0013 | finance integration test | implemented |
+| JK-FIN-002 split allocation | finance | `@jk/finance-commerce` (lossless allocate) | finance test (split) | implemented |
+| JK-FIN-003 disclosed allocation rule version | finance | `allocation_rule_version` | finance integration test | implemented |
+| JK-FIN-004 monthly budget + variance | finance | `setBudget`/`getBudgetVariance` | finance test (variance) | implemented |
+| JK-FIN-005 animal/lot sale + net receipt | finance | `recordSale` | finance test (net receipt) | implemented |
+| JK-FIN-006 margin + cost per dimension | finance | `getMarginForLot`/`getCostForTarget` | finance test (margin) | implemented |
+| JK-GEN-002 DEP/EBV import with provenance | genetics | `@jk/reproduction-genetics` GeneticsService; migration 0014 | genetics test (provenance) | implemented |
+| JK-GEN-004 versioned selection index | genetics | `defineSelectionIndex` | genetics integration test | implemented |
+| JK-GEN-005 transparent ranking | genetics | `rankAnimals` (inputs/normalization/exclusions) | genetics test (ranking) | implemented |
+| JK-GEN-006 genetic progress by cohort | genetics | `geneticProgress` | genetics integration test | implemented |
+| §60 Farm Intelligence Index (versioned, transparent) | analytics | `@jk/analytics-intelligence` FarmIntelligenceService | FII integration test | implemented |
+| §26 executive dashboard | analytics | `executiveDashboard` | FII integration test | implemented |
+
 ## Architecture fitness functions (§36)
 
 | Requirement | Source | Verification | Status |

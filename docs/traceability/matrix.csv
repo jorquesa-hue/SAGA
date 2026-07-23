@@ -77,3 +77,15 @@ JK-AST-001,assets,packages/assets-maintenance (registerAsset);database/migration
 JK-AST-002,assets,packages/assets-maintenance (defineSchedule),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
 JK-AST-003,assets,packages/assets-maintenance (createWorkOrder/complete),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
 JK-AST-004,assets,packages/assets-maintenance (calibration status),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
+JK-FIN-002,finance,packages/finance-commerce (allocation),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-FIN-003,finance,packages/finance-commerce (allocation_rule_version),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-FIN-004,finance,packages/finance-commerce (budget variance),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-FIN-005,finance,packages/finance-commerce (recordSale),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-FIN-006,finance,packages/finance-commerce (getMarginForLot),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-DOM-008,finance,packages/domain-kernel/money.ts;database/migrations/0013,packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-GEN-002,genetics,packages/reproduction-genetics/genetics-service.ts;database/migrations/0014,packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
+JK-GEN-004,genetics,packages/reproduction-genetics (defineSelectionIndex),packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
+JK-GEN-005,genetics,packages/reproduction-genetics (rankAnimals),packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
+JK-GEN-006,genetics,packages/reproduction-genetics (geneticProgress),packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
+FII-index,analytics,packages/analytics-intelligence/farm-intelligence.ts,packages/analytics-intelligence/tests/integration/farm-intelligence.integration.test.ts,implemented
+EXECUTIVE-dashboard,analytics,packages/analytics-intelligence (executiveDashboard),packages/analytics-intelligence/tests/integration/farm-intelligence.integration.test.ts,implemented
