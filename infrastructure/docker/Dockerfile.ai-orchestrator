@@ -1,11 +1,14 @@
 # syntax=docker/dockerfile:1.7
 #
-# JK Platform — web console image (Volume V). Builds the Vite SPA in the pnpm
-# workspace, then serves the static bundle with nginx and proxies /api to the
-# API service (same-origin → no CORS needed inside the compose network).
+# JK Platform — AI orchestrator image (§62). Governed recommendation runtime.
+# 
 #
 # Build from the REPOSITORY ROOT:
-#   docker build -f infrastructure/docker/Dockerfile.web -t jk-web:local .
+#   docker build -f infrastructure/docker/Dockerfile.ai-orchestrator -t jk-edge-gateway:local .
+#
+# Stages mirror Dockerfile.api; only the filter target and port differ. The
+# durable buffer (EDGE_DATA_FILE) must live on a mounted volume so it survives
+# container restarts.
 
 FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm \
@@ -29,16 +32,20 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --offline
 
 FROM dependencies AS build
-# Relative API base so the browser calls same-origin; nginx proxies /api.
-ENV VITE_API_BASE_URL=""
 COPY . .
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --offline
-RUN pnpm --filter @jk/web... run build
+RUN pnpm --filter @jk/ai-orchestrator... run build
+RUN pnpm --filter @jk/ai-orchestrator deploy --prod /out
 
-FROM nginx:1.27-alpine AS runtime
-COPY infrastructure/docker/web-nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /workspace/apps/web/dist /usr/share/nginx/html
-EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD ["/bin/sh", "-c", "wget -qO- http://127.0.0.1:8080/ >/dev/null 2>&1 || exit 1"]
+FROM node:22-bookworm-slim AS runtime
+ENV NODE_ENV=production \
+    PORT=4300
+RUN useradd --system --uid 10001 --user-group --create-home jk
+WORKDIR /app
+COPY --from=build --chown=10001:10001 /out ./
+USER 10001
+EXPOSE 4300
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT ?? 4300) + '/health/live').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+CMD ["node", "dist/main.js"]

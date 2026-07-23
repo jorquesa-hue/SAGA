@@ -135,3 +135,6 @@ JK-API-CORS,api,apps/api/src/app.ts (@fastify/cors);apps/api/src/config.ts,apps/
 JK-DEPLOY-IMAGES,infra,infrastructure/docker/Dockerfile.{api,worker,edge-gateway,web,migrate},infrastructure/compose/docker-compose.yml (validated),implemented
 JK-DEPLOY-COMPOSE,infra,infrastructure/compose/docker-compose.yml (app profile);scripts/dev/stack-up.sh,docs/operations/deployment.md,implemented
 JK-WEB-IMPORT-WIZARD,web,apps/web/src/pages/Imports.tsx;packages/contracts-rest (imports),apps/web/tests/imports.test.tsx,implemented
+JK-AI-ORCHESTRATOR,ai-orchestrator,apps/ai-orchestrator/orchestrator.ts;model-provider.ts,apps/ai-orchestrator/tests/integration/orchestrator.integration.test.ts,implemented
+JK-AI-POLICY-GUARD,ai-orchestrator,apps/ai-orchestrator/policy.ts (safe-action allowlist),apps/ai-orchestrator/tests/policy.test.ts,implemented
+JK-AI-EVIDENCE-TOOLS,ai-orchestrator,apps/ai-orchestrator/tools.ts (grounded findings),apps/ai-orchestrator/tests/integration/orchestrator.integration.test.ts,implemented

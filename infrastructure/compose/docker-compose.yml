@@ -264,6 +264,28 @@ services:
       api:
         condition: service_started
 
+  # Governed AI orchestrator: per-tenant analysis loop that records evidence-
+  # bound recommendations (kill switch defaults off). Profile: app.
+  ai-orchestrator:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.ai-orchestrator
+    profiles: ["app"]
+    environment:
+      APP_ENV: local
+      PORT: "4300"
+      DATABASE_URL: postgresql://jk:jk@postgres:5432/jk_platform
+      APP_DATABASE_URL: postgresql://jk_app:jk_app_local@postgres:5432/jk_platform
+      # Kill switch — enable per environment once ADR-008 (model providers) is
+      # closed. The deterministic provider is safe to run with it on.
+      AI_ENABLED: "true"
+      ANALYZE_INTERVAL_MS: "300000"
+    ports:
+      - "4300:4300"
+    depends_on:
+      api:
+        condition: service_started
+
   # Web console: nginx serving the built SPA and proxying /api to the API
   # (same-origin, so no CORS needed inside the network). Profile: app.
   web:
