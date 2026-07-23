@@ -9,8 +9,16 @@ import { useI18n } from "../i18n/index.js";
  */
 export function Dashboard(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td, fmt } = useI18n();
   const { loading, data, error, reload } = useAsync(() => client.analytics.executiveDashboard(), []);
+
+  // Render each KPI leaf: arrays → localized count; enums → label; dates/numbers
+  // → locale-formatted; anything else → its string.
+  const show = (value: unknown): string => {
+    if (Array.isArray(value)) return t("dashboard.itemsCount", { n: fmt.number(value.length) });
+    const enumLabel = td(value);
+    return enumLabel !== String(value ?? "—") ? enumLabel : fmt.auto(value);
+  };
 
   return (
     <section>
@@ -27,7 +35,7 @@ export function Dashboard(): JSX.Element {
           {Object.entries(flatten(data)).map(([key, value]) => (
             <div className="kpi" key={key}>
               <span className="kpi-label">{key}</span>
-              <span className="kpi-value">{String(value)}</span>
+              <span className="kpi-value">{show(value)}</span>
             </div>
           ))}
         </div>
@@ -44,7 +52,7 @@ function flatten(obj: Record<string, unknown>, prefix = ""): Record<string, unkn
     if (v && typeof v === "object" && !Array.isArray(v)) {
       Object.assign(out, flatten(v as Record<string, unknown>, key));
     } else {
-      out[key] = Array.isArray(v) ? `${v.length} itens` : v;
+      out[key] = v;
     }
   }
   return out;

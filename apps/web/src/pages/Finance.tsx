@@ -6,7 +6,7 @@ import { Field, FormMessage, SelectField, useCommand } from "../components/Form.
 /** Finance entries (§29): record expenses, revenue, and animal/lot sales. */
 export function Finance(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, fmt } = useI18n();
   const entry = useCommand();
   const sale = useCommand();
 
@@ -23,13 +23,13 @@ export function Finance(): JSX.Element {
     const body = { category, amount, ...(counterparty ? { counterparty } : {}) };
     void entry.run(
       () => (entryType === "expense" ? client.finance.recordExpense(body) : client.finance.recordRevenue(body)),
-      t("finance.entryMsg"),
+      t("finance.entryMsg", { amount: fmt.currency(amount) }),
     );
   };
 
   const submitSale = (): void => {
     const target = saleKind === "animal" ? { animalId: saleTarget } : { lotId: saleTarget };
-    void sale.run(() => client.finance.recordSale({ ...target, gross }), t("finance.saleMsg"));
+    void sale.run(() => client.finance.recordSale({ ...target, gross }), t("finance.saleMsg", { amount: fmt.currency(gross) }));
   };
 
   return (

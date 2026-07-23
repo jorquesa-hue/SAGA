@@ -13,7 +13,7 @@ import { useAsync } from "../use-async.js";
 export function AnimalDetail(): JSX.Element {
   const { id = "" } = useParams();
   const client = useClient();
-  const { t, td } = useI18n();
+  const { t, td, fmt } = useI18n();
   const animal = useAsync(() => client.animals.get(id), [id]);
   const weights = useAsync(() => client.animals.weights(id), [id]);
   const restrictions = useAsync(() => client.health.restrictions(id), [id]);
@@ -68,8 +68,8 @@ export function AnimalDetail(): JSX.Element {
             <tbody>
               {rows.map((w, i) => (
                 <tr key={i}>
-                  <td>{String(w.occurredAt ?? w.occurred_at ?? "—")}</td>
-                  <td>{String(w.weightKg ?? w.weight_kg ?? "—")}</td>
+                  <td>{fmt.date(w.occurredAt ?? w.occurred_at)}</td>
+                  <td>{fmt.number(w.weightKg ?? w.weight_kg)}</td>
                 </tr>
               ))}
             </tbody>
@@ -96,7 +96,7 @@ export function AnimalDetail(): JSX.Element {
             {rows.map((tr, i) => (
               <li className="card" key={i}>
                 <strong>{String(tr.productName ?? tr.product_name ?? tr.treatmentType ?? t("animalDetail.treatmentFallback"))}</strong>
-                <p className="muted">{String(tr.administeredAt ?? tr.administered_at ?? "—")}</p>
+                <p className="muted">{fmt.date(tr.administeredAt ?? tr.administered_at)}</p>
               </li>
             ))}
           </ul>
@@ -110,9 +110,12 @@ export function AnimalDetail(): JSX.Element {
       {repro.error && <p className="muted">{t("animalDetail.noRepro")}</p>}
       {repro.data && (
         <div className="kpi-grid">
-          {Object.entries(repro.data).map(([k, v]) => (
-            <Tile key={k} label={k} value={td(v)} />
-          ))}
+          {Object.entries(repro.data).map(([k, v]) => {
+            // Prefer an enum label; otherwise format dates/numbers.
+            const enumLabel = td(v);
+            const value = enumLabel !== String(v ?? "—") ? enumLabel : fmt.auto(v);
+            return <Tile key={k} label={k} value={value} />;
+          })}
         </div>
       )}
     </section>
