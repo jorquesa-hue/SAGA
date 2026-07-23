@@ -99,6 +99,10 @@ export class JkPlatformClient {
   // -- Animals --
   readonly animals = {
     list: (o?: RequestOptions) => this.get<Page<Animal>>("/api/v1/animals", o),
+    register: (
+      body: { farmId: string; visualId: string; sex: string; breedCode?: string; birthDate?: string; rfid?: string },
+      o?: RequestOptions,
+    ) => this.post<Animal>("/api/v1/animals", body, o),
     get: (id: string, o?: RequestOptions) => this.get<Animal>(`/api/v1/animals/${id}`, o),
     timeline: (id: string, o?: RequestOptions) =>
       this.get<Page<Record<string, unknown>>>(`/api/v1/animals/${id}/timeline`, o),

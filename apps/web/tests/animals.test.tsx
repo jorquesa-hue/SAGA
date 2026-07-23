@@ -53,6 +53,26 @@ describe("Animals page", () => {
   it("shows a friendly empty state", async () => {
     const c = client({ get: () => ({ items: [] }), post: () => ({}) });
     renderAnimals(c);
-    await waitFor(() => expect(screen.getByText("Nenhum animal registrado.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Nenhum animal encontrado.")).toBeInTheDocument());
+  });
+
+  it("filters the list by visual ID (client-side search)", async () => {
+    const c = client({
+      get: (path) =>
+        path === "/api/v1/animals"
+          ? {
+              items: [
+                { id: "a-1", visualId: "BR-0001", sex: "female", breedCode: "BRANGUS", lifecycleStatus: "active" },
+                { id: "a-2", visualId: "BR-0099", sex: "male", breedCode: "BRANGUS", lifecycleStatus: "active" },
+              ],
+            }
+          : {},
+      post: () => ({}),
+    });
+    renderAnimals(c);
+    await waitFor(() => expect(screen.getByText("BR-0001")).toBeInTheDocument());
+    fireEvent.change(screen.getByPlaceholderText("Buscar por ID visual…"), { target: { value: "0099" } });
+    await waitFor(() => expect(screen.queryByText("BR-0001")).not.toBeInTheDocument());
+    expect(screen.getByText("BR-0099")).toBeInTheDocument();
   });
 });
