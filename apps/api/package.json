@@ -18,6 +18,7 @@
     "@jk/analytics-intelligence": "workspace:*",
     "@jk/animal-registry": "workspace:*",
     "@jk/assets-maintenance": "workspace:*",
+    "@jk/automation-integration": "workspace:*",
     "@jk/database": "workspace:*",
     "@jk/finance-commerce": "workspace:*",
     "@jk/land-grazing": "workspace:*",

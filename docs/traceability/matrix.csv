@@ -95,3 +95,10 @@ JK-AI-APPROVAL,ai-governance,packages/analytics-intelligence (approveRecommendat
 JK-AI-PROHIBITED,ai-governance,packages/analytics-intelligence/ai-safety.ts (assessAction),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
 JK-AI-KILLSWITCH,ai-governance,packages/analytics-intelligence/recommendation-service.ts (aiEnabled),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
 JK-AI-AUDIT,ai-governance,database/migrations/0015 (ai_action_audit append-only),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-INT-WEBHOOK-ALLOWLIST,automation-integration,packages/automation-integration/event-families.ts;database/migrations/0016,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-SIGNING,automation-integration,packages/automation-integration/signing.ts,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-ROTATION,automation-integration,packages/automation-integration/webhook-service.ts (rotateSecret),packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-DELIVERY,automation-integration,packages/automation-integration/delivery-dispatcher.ts,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-DEADLETTER,automation-integration,packages/automation-integration/delivery-dispatcher.ts;database/migrations/0016,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-REPLAY,automation-integration,packages/automation-integration/webhook-service.ts (replayDelivery),packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-CONNECTOR-FRAMEWORK,automation-integration,packages/automation-integration/connector-registry.ts;database/migrations/0016,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented

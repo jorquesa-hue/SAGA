@@ -38,6 +38,13 @@ tags:
       carries evidence, confidence, and model/prompt provenance; high-impact
       actions require human approval and prohibited actions can never execute
       autonomously.
+  - name: Webhooks
+    description: >
+      Tenant webhook subscriptions to allowlisted event families with signed,
+      replay-protected delivery, bounded-backoff retries, dead-letter, and
+      manual replay (§51).
+  - name: Connectors
+    description: Connector registrations behind stable domain interfaces (§33).
 paths:
   /tenants:
     post:
@@ -480,6 +487,186 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "409": { $ref: "#/components/responses/Conflict" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /webhooks/subscriptions:
+    post:
+      operationId: createWebhookSubscription
+      summary: Subscribe to allowlisted event families (§51)
+      description: >
+        Creates a webhook subscription. Only allowlisted event families are
+        accepted (422 otherwise). The signing secret is returned ONCE in the
+        response and never again.
+      tags: [Webhooks]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateWebhookSubscriptionRequest" }
+      responses:
+        "201":
+          description: Subscription created; secret returned once
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookSubscriptionWithSecret" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listWebhookSubscriptions
+      summary: List webhook subscriptions
+      tags: [Webhooks]
+      responses:
+        "200":
+          description: Subscriptions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/WebhookSubscription" }
+  /webhooks/subscriptions/{subscriptionId}:
+    get:
+      operationId: getWebhookSubscription
+      summary: Read a webhook subscription
+      tags: [Webhooks]
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionId"
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookSubscription" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deactivateWebhookSubscription
+      summary: Deactivate a webhook subscription
+      tags: [Webhooks]
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "204": { description: Deactivated }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /webhooks/subscriptions/{subscriptionId}/rotate-secret:
+    post:
+      operationId: rotateWebhookSecret
+      summary: Rotate the signing secret with an overlap window (§51)
+      tags: [Webhooks]
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: New secret (previous stays valid until the next rotation)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookSubscriptionWithSecret" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /webhooks/deliveries:
+    get:
+      operationId: listWebhookDeliveries
+      summary: List webhook delivery attempts (delivery log, §51)
+      tags: [Webhooks]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, delivering, delivered, failed, dead_letter]
+        - name: subscriptionId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Deliveries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/WebhookDelivery" }
+  /webhooks/deliveries/{deliveryId}/replay:
+    post:
+      operationId: replayWebhookDelivery
+      summary: Manually replay a failed/dead-letter delivery (§51)
+      tags: [Webhooks]
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Delivery reset to pending
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookDelivery" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+  /connectors:
+    post:
+      operationId: registerConnector
+      summary: Register a connector behind a stable domain interface (§33)
+      tags: [Connectors]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterConnectorRequest" }
+      responses:
+        "201":
+          description: Connector registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConnectorRegistration" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listConnectors
+      summary: List connector registrations
+      tags: [Connectors]
+      responses:
+        "200":
+          description: Connectors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ConnectorRegistration" }
+  /connectors/{connectorId}:
+    get:
+      operationId: getConnector
+      summary: Read a connector registration
+      tags: [Connectors]
+      parameters:
+        - name: connectorId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Connector
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConnectorRegistration" }
+        "404": { $ref: "#/components/responses/NotFound" }
 components:
   securitySchemes:
     oidc:
@@ -501,6 +688,11 @@ components:
       schema: { type: string, format: uuid }
     RecommendationId:
       name: recommendationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SubscriptionId:
+      name: subscriptionId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -799,6 +991,93 @@ components:
         approvedBy: { type: string, format: uuid, nullable: true }
         approvedAt: { type: string, format: date-time, nullable: true }
         expiresAt: { type: string, format: date-time, nullable: true }
+    CreateWebhookSubscriptionRequest:
+      type: object
+      required: [url, eventFamilies]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: HTTPS endpoint that receives signed deliveries.
+        eventFamilies:
+          type: array
+          minItems: 1
+          description: Allowlisted event families (§51).
+          items:
+            type: string
+            enum: [animal, weight, health, reproduction, herd, inventory, finance, genetics, pasture, asset]
+        description: { type: string }
+    WebhookSubscription:
+      type: object
+      required: [id, url, eventFamilies, active]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string, format: uri }
+        eventFamilies:
+          type: array
+          items: { type: string }
+        description: { type: string, nullable: true }
+        active: { type: boolean }
+    WebhookSubscriptionWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/WebhookSubscription"
+        - type: object
+          required: [secret]
+          properties:
+            secret:
+              type: string
+              description: Signing secret — returned only at creation and rotation.
+    WebhookDelivery:
+      type: object
+      required: [id, subscriptionId, deliveryId, eventId, eventType, eventFamily, status, attempts, maxAttempts]
+      properties:
+        id: { type: string, format: uuid }
+        subscriptionId: { type: string, format: uuid }
+        deliveryId: { type: string, format: uuid }
+        eventId: { type: string }
+        eventType: { type: string }
+        eventFamily: { type: string }
+        status:
+          type: string
+          enum: [pending, delivering, delivered, failed, dead_letter]
+        attempts: { type: integer }
+        maxAttempts: { type: integer }
+        lastStatusCode: { type: integer, nullable: true }
+        lastError: { type: string, nullable: true }
+    RegisterConnectorRequest:
+      type: object
+      required: [connectorType, name]
+      properties:
+        connectorType:
+          type: string
+          enum:
+            - rfid_reader
+            - electronic_scale
+            - edge_gateway
+            - csv_xlsx_import
+            - laboratory_result
+            - genetics_evaluation
+            - identity_provider
+            - messaging_provider
+            - accounting_export
+            - geospatial_provider
+            - object_storage
+            - webhook
+        name: { type: string, minLength: 1 }
+        config:
+          type: object
+          additionalProperties: true
+          description: Non-secret configuration; credentials are referenced, never inlined.
+    ConnectorRegistration:
+      type: object
+      required: [id, connectorType, name, status]
+      properties:
+        id: { type: string, format: uuid }
+        connectorType: { type: string }
+        name: { type: string }
+        status:
+          type: string
+          enum: [active, suspended, error]
   responses:
     Conflict:
       description: Business conflict
