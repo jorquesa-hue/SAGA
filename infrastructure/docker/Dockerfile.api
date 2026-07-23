@@ -52,10 +52,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 # This repo intentionally uses plain pnpm filtering, not turbo.
 RUN pnpm --filter @jk/api... run build
 # Produce a pruned, production-only, self-contained deployment tree.
-# Note for pnpm >= 10: `pnpm deploy` may require `inject-workspace-packages=true`
-# in .npmrc or the `--legacy` flag; keep this in sync with the pinned
-# package.json#packageManager version when upgrading.
-RUN pnpm --filter @jk/api deploy --prod /out
+# pnpm >= 10 (this repo pins pnpm 11) refuses a non-injected `pnpm deploy`, so
+# use `--legacy` to produce the classic self-contained tree. Verified locally:
+# the deployed tree resolves all workspace + external deps and boots.
+RUN pnpm --filter @jk/api deploy --prod --legacy /out
 
 FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production \

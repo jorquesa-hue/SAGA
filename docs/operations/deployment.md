@@ -15,8 +15,14 @@ secrets** — configuration is injected at runtime (Appendix G).
 | `jk-migrate` | `Dockerfile.migrate` | one-shot roles+migrations+seed, then exits |
 
 Each long-running image runs as non-root (uid 10001) with a `HEALTHCHECK`.
-The API/worker/edge images use a cached multi-stage pnpm build and a pruned
-`pnpm deploy --prod` runtime tree.
+The API/worker/edge/orchestrator images use a cached multi-stage pnpm build and
+a pruned `pnpm deploy --prod --legacy` runtime tree.
+
+> **pnpm 11 note:** the repo pins pnpm 11, whose `pnpm deploy` refuses a
+> non-injected deploy by default; the Dockerfiles pass `--legacy` to produce
+> the classic self-contained tree. Verified locally — the deployed tree resolves
+> all workspace + external dependencies and the API entrypoint boots. (Building
+> the images themselves requires registry access to pull the base images.)
 
 ## One-command local stack
 
