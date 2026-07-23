@@ -29,6 +29,7 @@ const FEATURE_PACKAGES = new Set([
   "@jk/assets-maintenance",
   "@jk/automation-integration",
   "@jk/analytics-intelligence",
+  "@jk/data-import",
 ]);
 
 const SHARED_TECHNICAL = new Set([

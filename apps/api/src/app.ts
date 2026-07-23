@@ -10,6 +10,7 @@ import {
   ReportService,
 } from "@jk/analytics-intelligence";
 import { AnimalRegistryService } from "@jk/animal-registry";
+import { ImportService } from "@jk/data-import";
 import { AssetsMaintenanceService } from "@jk/assets-maintenance";
 import { ConnectorRegistryService, WebhookService } from "@jk/automation-integration";
 import { FinanceService } from "@jk/finance-commerce";
@@ -44,6 +45,7 @@ import { registerAiRoutes } from "./routes/ai.routes.js";
 import { registerWebhookRoutes } from "./routes/webhooks.routes.js";
 import { registerExportRoutes } from "./routes/exports.routes.js";
 import { registerSearchRoutes } from "./routes/search.routes.js";
+import { registerImportRoutes } from "./routes/imports.routes.js";
 import { registerReproductionRoutes } from "./routes/reproduction.routes.js";
 
 declare module "fastify" {
@@ -116,6 +118,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   const connectorService = new ConnectorRegistryService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
   const exportService = new ExportService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
   const searchService = new SearchService({ appPool: deps.pools.appPool });
+  const importService = new ImportService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
 
@@ -194,6 +197,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerWebhookRoutes(app, webhookService, connectorService);
   registerExportRoutes(app, exportService);
   registerSearchRoutes(app, searchService);
+  registerImportRoutes(app, importService, animalRegistry);
 
   // Surface a typed unauthorized when auth decoration is somehow missing.
   app.decorateRequest("principal", null as unknown as AuthenticatedPrincipal);

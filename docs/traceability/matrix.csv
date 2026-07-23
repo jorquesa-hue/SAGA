@@ -127,3 +127,7 @@ JK-MOBILE-TRANSPORT,mobile,apps/mobile/src/http-transport.ts (207 -> outcomes),a
 JK-EDGE-INGEST,edge-gateway,apps/edge-gateway/src/gateway.ts;src/main.ts,apps/edge-gateway/tests/gateway.test.ts,implemented
 JK-EDGE-DURABLE-BUFFER,edge-gateway,apps/edge-gateway/src/file-store.ts (FileLocalStore),apps/edge-gateway/tests/gateway.test.ts,implemented
 JK-SYNC-HTTP-TRANSPORT,sync-http,packages/sync-http/src/http-transport.ts,apps/mobile/tests/mobile.test.ts,implemented
+JK-IMPORT-STAGED,data-import,packages/data-import/import-service.ts;database/migrations/0018,packages/data-import/tests/integration/import.integration.test.ts,implemented
+JK-IMPORT-EVIDENCE,data-import,database/migrations/0018 (raw_content preserved),packages/data-import/tests/integration/import.integration.test.ts,implemented
+JK-IMPORT-VALIDATE-DEDUP,data-import,packages/data-import/import-service.ts (validate),packages/data-import/tests/integration/import.integration.test.ts,implemented
+JK-IMPORT-CSV,data-import,packages/data-import/csv.ts,packages/data-import/tests/csv.test.ts,implemented

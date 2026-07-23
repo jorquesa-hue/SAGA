@@ -51,6 +51,10 @@ tags:
       traceability packet (§27, JK-ANI-006).
   - name: Search
     description: Global search across animals, lots, paddocks, and people (§27).
+  - name: Imports
+    description: >
+      Staged import workflow — upload, parse, map, validate, preview, execute,
+      reconcile — with preserved raw evidence (§27).
 paths:
   /tenants:
     post:
@@ -793,6 +797,134 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SearchResults" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /imports:
+    post:
+      operationId: uploadImport
+      summary: Upload a file and open a staged import (§27)
+      description: Preserves the raw content as evidence. Returns the import job.
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadImportRequest" }
+      responses:
+        "201":
+          description: Import opened
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listImports
+      summary: List import jobs
+      tags: [Imports]
+      responses:
+        "200":
+          description: Import jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ImportJob" }
+  /imports/{importId}:
+    get:
+      operationId: getImport
+      summary: Read an import job's status
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: Import job
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportJob" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /imports/{importId}/parse:
+    post:
+      operationId: parseImport
+      summary: Parse the uploaded file into staged rows
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200": { description: Parsed, content: { application/json: { schema: { $ref: "#/components/schemas/ImportJob" } } } }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /imports/{importId}/map:
+    post:
+      operationId: mapImport
+      summary: Apply a target-field → source-column mapping
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnimalImportMapping" }
+      responses:
+        "200": { description: Mapped, content: { application/json: { schema: { $ref: "#/components/schemas/ImportJob" } } } }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+  /imports/{importId}/validate:
+    post:
+      operationId: validateImport
+      summary: Validate mapped rows and flag duplicates
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200": { description: Validated, content: { application/json: { schema: { $ref: "#/components/schemas/ImportJob" } } } }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /imports/{importId}/preview:
+    get:
+      operationId: previewImport
+      summary: Preview valid and invalid sample rows before execute
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: Preview
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportPreview" }
+  /imports/{importId}/execute:
+    post:
+      operationId: executeImport
+      summary: Create a domain record for each valid row
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200": { description: Executed, content: { application/json: { schema: { $ref: "#/components/schemas/ImportJob" } } } }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /imports/{importId}/reconcile:
+    post:
+      operationId: reconcileImport
+      summary: Finalize and report the import outcome
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Reconciled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportPreview" }
+        "409": { $ref: "#/components/responses/Conflict" }
 components:
   securitySchemes:
     oidc:
@@ -824,6 +956,11 @@ components:
       schema: { type: string, format: uuid }
     ExportId:
       name: exportId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ImportId:
+      name: importId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -1255,6 +1392,68 @@ components:
         id: { type: string }
         label: { type: string }
         sublabel: { type: string }
+    UploadImportRequest:
+      type: object
+      required: [importType, content]
+      properties:
+        importType: { type: string, enum: [animals] }
+        filename: { type: string }
+        content: { type: string, description: Raw CSV content (preserved as evidence). }
+        farmId: { type: string, format: uuid }
+    AnimalImportMapping:
+      type: object
+      required: [visualId, sex]
+      description: Target field → source CSV column header.
+      properties:
+        visualId: { type: string }
+        sex: { type: string }
+        breedCode: { type: string }
+        birthDate: { type: string }
+        rfid: { type: string }
+    ImportJob:
+      type: object
+      required: [id, importType, status, totalRows, validRows, invalidRows, duplicateRows, executedRows, failedRows]
+      properties:
+        id: { type: string, format: uuid }
+        importType: { type: string }
+        status:
+          type: string
+          enum: [uploaded, parsed, mapped, validated, executed, reconciled, failed]
+        filename: { type: string, nullable: true }
+        totalRows: { type: integer }
+        validRows: { type: integer }
+        invalidRows: { type: integer }
+        duplicateRows: { type: integer }
+        executedRows: { type: integer }
+        failedRows: { type: integer }
+    ImportRowView:
+      type: object
+      properties:
+        rowNumber: { type: integer }
+        raw: { type: object, additionalProperties: true }
+        mapped: { type: object, additionalProperties: true, nullable: true }
+        validationStatus: { type: string, enum: [pending, valid, invalid, duplicate] }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              reason: { type: string }
+        executionStatus: { type: string, enum: [pending, created, failed, skipped] }
+        serverId: { type: string, nullable: true }
+        executionError: { type: string, nullable: true }
+    ImportPreview:
+      type: object
+      required: [job, sample, invalidSample]
+      properties:
+        job: { $ref: "#/components/schemas/ImportJob" }
+        sample:
+          type: array
+          items: { $ref: "#/components/schemas/ImportRowView" }
+        invalidSample:
+          type: array
+          items: { $ref: "#/components/schemas/ImportRowView" }
     SearchResults:
       type: object
       required: [query, animals, lots, paddocks, people]
