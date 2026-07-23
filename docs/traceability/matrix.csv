@@ -108,3 +108,6 @@ JK-EXPORT-TIMELIMIT,exports,database/migrations/0017 (expires_at);packages/analy
 JK-EXPORT-AUDIT,exports,database/migrations/0017 (export_access_log append-only),packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
 JK-EXPORT-CHECKSUM,exports,packages/analytics-intelligence/export-service.ts (sha256),packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
 JK-API-TYPED-CLIENT,contracts,packages/contracts-rest (JkPlatformClient),packages/contracts-rest/tests/client.test.ts,implemented
+JK-WEB-CONSOLE,web,apps/web (React SPA);packages/contracts-rest,apps/web/tests/session.test.tsx;apps/web/tests/animals.test.tsx,implemented
+JK-WEB-AI-REVIEW,web,apps/web/src/pages/Recommendations.tsx,apps/web/tests (session/animals render harness),implemented
+JK-WEB-TRACEABILITY-EXPORT,web,apps/web/src/pages/Animals.tsx (JK-ANI-006 export flow),apps/web/tests/animals.test.tsx,implemented
