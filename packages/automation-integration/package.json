@@ -1,0 +1,33 @@
+{
+  "name": "@jk/automation-integration",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automation and Integration bounded context: connector framework behind stable domain interfaces and tenant webhooks (allowlisted event families, signed delivery with replay protection, bounded-backoff retries, dead-letter, manual replay, secret rotation). §33, §51.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run --exclude '**/*.integration.test.ts' --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
+  },
+  "dependencies": {
+    "@jk/database": "workspace:*",
+    "@jk/domain-kernel": "workspace:*",
+    "pg": "^8.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@jk/testkit": "workspace:*",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.9"
+  }
+}

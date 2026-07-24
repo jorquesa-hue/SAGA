@@ -23,9 +23,9 @@ describe("TenantContext", () => {
     expect(() => createTenantContext({ ...valid, farmId: "f1" })).toThrow(
       ValidationError,
     );
-    expect(() =>
-      createTenantContext({ ...valid, correlationId: "nope" }),
-    ).toThrow(ValidationError);
+    expect(() => createTenantContext({ ...valid, correlationId: "nope" })).toThrow(
+      ValidationError,
+    );
   });
 
   it("rejects empty actor ids", () => {

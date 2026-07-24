@@ -10,7 +10,10 @@ export interface TemporalValidity {
   readonly validTo: Date | null;
 }
 
-export function createValidity(validFrom: Date, validTo: Date | null = null): TemporalValidity {
+export function createValidity(
+  validFrom: Date,
+  validTo: Date | null = null,
+): TemporalValidity {
   if (Number.isNaN(validFrom.getTime())) {
     throw new ValidationError("validFrom must be a valid date");
   }

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.jk.example/json-schema/identity.tenant_settings_updated.v1.payload.schema.json",
+  "title": "identity.tenant_settings_updated.v1 payload",
+  "description": "Payload of identity.tenant_settings_updated.v1 (aggregate: tenant). Records a change to the tenant's configurable base locale and/or currency, carrying the resolved values after the update.",
+  "type": "object",
+  "required": ["tenantId", "defaultLocale", "defaultCurrency"],
+  "additionalProperties": false,
+  "properties": {
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "defaultLocale": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 35,
+      "description": "BCP 47 language tag, e.g. pt-BR."
+    },
+    "defaultCurrency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217 currency code, e.g. BRL."
+    }
+  }
+}

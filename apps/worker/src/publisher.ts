@@ -1,9 +1,5 @@
 import { type DomainEventEnvelope } from "@jk/domain-kernel";
-import {
-  connect,
-  type JetStreamClient,
-  type NatsConnection,
-} from "nats";
+import { connect, type JetStreamClient, type NatsConnection } from "nats";
 import { createLogger, type Logger } from "./logger.js";
 
 /**

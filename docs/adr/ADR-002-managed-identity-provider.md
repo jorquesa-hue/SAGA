@@ -19,8 +19,8 @@ Zitadel, etc.). Rural offline/admin needs and per-MAU pricing differ sharply.
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Standards-based OIDC;
-compare security, cost, offline/admin needs."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Standards-based OIDC;
+compare security, cost, offline/admin needs."_
 
 The repository honors the default today:
 

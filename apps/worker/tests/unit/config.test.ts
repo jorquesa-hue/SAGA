@@ -28,10 +28,12 @@ describe("worker configuration contract (Appendix G)", () => {
   it("fails startup on invalid critical configuration without echoing values", () => {
     expect(() =>
       loadWorkerConfig({ POLL_INTERVAL_MS: "not-a-number", WORKER_DATABASE_URL: "nope" }),
-    ).toThrowError(/Invalid configuration:(?=[\s\S]*POLL_INTERVAL_MS)(?=[\s\S]*WORKER_DATABASE_URL)/);
-    expect(() => loadWorkerConfig({ WORKER_DATABASE_URL: "s3cret-not-a-url" })).not.toThrow(
-      /s3cret/,
+    ).toThrowError(
+      /Invalid configuration:(?=[\s\S]*POLL_INTERVAL_MS)(?=[\s\S]*WORKER_DATABASE_URL)/,
     );
+    expect(() =>
+      loadWorkerConfig({ WORKER_DATABASE_URL: "s3cret-not-a-url" }),
+    ).not.toThrow(/s3cret/);
   });
 
   it("accepts an optional NATS_URL", () => {

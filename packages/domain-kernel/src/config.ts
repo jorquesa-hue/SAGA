@@ -13,7 +13,7 @@ export function loadConfig<TSchema extends z.ZodTypeAny>(
   if (!result.success) {
     const details = result.error.issues
       .map((issue) => `  - ${issue.path.join(".") || "(root)"}: ${issue.message}`)
-    .join("\n");
+      .join("\n");
     // Never echo raw values: only variable names and reasons.
     throw new Error(`Invalid configuration:\n${details}`);
   }

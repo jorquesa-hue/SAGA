@@ -20,8 +20,8 @@ DPA and security review.
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Provider
-abstraction; no production farm data until approved DPA/security review."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Provider
+abstraction; no production farm data until approved DPA/security review."_
 
 The repository honors the default today:
 
@@ -43,10 +43,18 @@ The repository honors the default today:
 
 ## Consequences
 
+Implementation status (provider-abstract, decision still open):
+
+- `apps/ai-orchestrator` is built against a `ModelProvider` interface and ships
+  a `DeterministicProvider` (rule-based, no external model call). Evidence
+  tools, the policy guard, governed recommendation creation, and the safety
+  evals are all in place and provider-independent. When this ADR closes, an
+  LLM-backed provider implements the same interface with no downstream change.
+
 Blocked until this closes:
 
-- `apps/ai-orchestrator` provider wiring (the orchestrator skeleton itself
-  can be built provider-abstract in Phase 5).
+- Replacing the deterministic provider with a real LLM provider (SDK choice,
+  hosting, data-residency, prompt/version governance).
 - Any use of real tenant data in evaluations — synthetic fazenda data only
   (repo rule: pt-BR-flavored synthetic sample data, e.g. Brangus reference
   herd seed).

@@ -54,9 +54,7 @@ describe("event type naming (§39)", () => {
 
   it("extracts schema version from the type name", () => {
     expect(versionFromEventType("animal.weight_recorded.v3")).toBe(3);
-    expect(() => versionFromEventType("animal.weight_recorded")).toThrow(
-      ValidationError,
-    );
+    expect(() => versionFromEventType("animal.weight_recorded")).toThrow(ValidationError);
   });
 });
 
@@ -89,15 +87,15 @@ describe("createEventEnvelope", () => {
   });
 
   it("rejects invalid event types", () => {
-    expect(() =>
-      createEventEnvelope({ ...baseInput(), eventType: "BadName" }),
-    ).toThrow(ValidationError);
+    expect(() => createEventEnvelope({ ...baseInput(), eventType: "BadName" })).toThrow(
+      ValidationError,
+    );
   });
 
   it("rejects non-positive aggregate versions", () => {
-    expect(() =>
-      createEventEnvelope({ ...baseInput(), aggregateVersion: 0 }),
-    ).toThrow(ValidationError);
+    expect(() => createEventEnvelope({ ...baseInput(), aggregateVersion: 0 })).toThrow(
+      ValidationError,
+    );
   });
 });
 

@@ -37,7 +37,9 @@ describe("InMemoryPublisher", () => {
     const envelope = sampleEnvelope();
     await publisher.publish("jk.local.a1.identity.farm.farm-created.v1", envelope);
     expect(publisher.messages).toHaveLength(1);
-    expect(publisher.messages[0]!.subject).toBe("jk.local.a1.identity.farm.farm-created.v1");
+    expect(publisher.messages[0]!.subject).toBe(
+      "jk.local.a1.identity.farm.farm-created.v1",
+    );
     expect(publisher.eventIds()).toEqual([envelope.eventId]);
   });
 });
@@ -45,7 +47,10 @@ describe("InMemoryPublisher", () => {
 describe("LogPublisher (§77 structured logging)", () => {
   it("emits one JSON line per event without payload or raw tenant id", async () => {
     const lines: string[] = [];
-    const logger = createLogger({ service: "jk-worker" }, { write: (l) => lines.push(l) });
+    const logger = createLogger(
+      { service: "jk-worker" },
+      { write: (l) => lines.push(l) },
+    );
     const publisher = new LogPublisher(logger);
     const envelope = sampleEnvelope();
 
@@ -64,7 +69,10 @@ describe("LogPublisher (§77 structured logging)", () => {
 
 describe("NatsJetStreamPublisher", () => {
   it("wraps connection failures with a clear, credential-free error", async () => {
-    const publisher = new NatsJetStreamPublisher("nats://user:hunter2@127.0.0.1:1", 1_000);
+    const publisher = new NatsJetStreamPublisher(
+      "nats://user:hunter2@127.0.0.1:1",
+      1_000,
+    );
     await expect(
       publisher.publish("jk.local.a1.identity.farm.farm-created.v1", sampleEnvelope()),
     ).rejects.toThrow(/Unable to connect to NATS at nats:\/\/127\.0\.0\.1:1/);
@@ -75,7 +83,9 @@ describe("NatsJetStreamPublisher", () => {
   }, 15_000);
 
   it("sanitizes credentials out of NATS urls", () => {
-    expect(sanitizeNatsUrl("nats://user:secret@nats.example:4222")).not.toContain("secret");
+    expect(sanitizeNatsUrl("nats://user:secret@nats.example:4222")).not.toContain(
+      "secret",
+    );
     expect(sanitizeNatsUrl("not a url")).toBe("<invalid nats url>");
   });
 });
@@ -83,7 +93,10 @@ describe("NatsJetStreamPublisher", () => {
 describe("logger", () => {
   it("honours level threshold and child bindings", () => {
     const lines: string[] = [];
-    const logger = createLogger({ service: "jk-worker" }, { level: "info", write: (l) => lines.push(l) });
+    const logger = createLogger(
+      { service: "jk-worker" },
+      { level: "info", write: (l) => lines.push(l) },
+    );
     logger.debug("hidden");
     logger.child({ component: "relay" }).info("visible", { n: 1 });
     expect(lines).toHaveLength(1);

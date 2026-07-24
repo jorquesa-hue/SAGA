@@ -26,7 +26,9 @@ São Paulo, Brazil) with two coordinated verticals: a **genetic nucleus**
 - **Offline-first**: mobile/edge store-and-forward with idempotent replay
   (arrives in later phases per the roadmap).
 
-See `docs/architecture/` and the specification for the full design.
+See **[`docs/PROJECT-SUMMARY.md`](docs/PROJECT-SUMMARY.md)** for the capstone
+map (all packages, invariants, proven scenarios, and how to run the whole
+stack), plus `docs/architecture/` and the specification for the full design.
 
 ## Repository layout
 

@@ -20,8 +20,8 @@ in `database/migrations/0002_identity_and_membership.sql`), and pedigree
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Not adopted
-initially."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Not adopted
+initially."_
 
 The repository honors the default today: no graph database appears in any
 manifest, compose service, or Terraform module; graph-shaped queries are
