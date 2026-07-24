@@ -10,6 +10,8 @@ export default tseslint.config(
       "**/.turbo/**",
       "infrastructure/**",
       "contracts/examples/**",
+      // React Native UI — built with the RN toolchain, not the repo tsc/eslint.
+      "apps/mobile/ui/**",
     ],
   },
   ...tseslint.configs.recommended,

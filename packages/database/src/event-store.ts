@@ -107,7 +107,13 @@ export async function appendEvent(
   await client.query(
     `INSERT INTO outbox_message (message_id, tenant_id, event_id, subject, envelope)
      VALUES ($1, $2, $3, $4, $5)`,
-    [newUlid(), valid.tenantId, valid.eventId, subjectForEvent(valid, environment), JSON.stringify(valid)],
+    [
+      newUlid(),
+      valid.tenantId,
+      valid.eventId,
+      subjectForEvent(valid, environment),
+      JSON.stringify(valid),
+    ],
   );
 
   return { eventId: valid.eventId, deduplicated: false };

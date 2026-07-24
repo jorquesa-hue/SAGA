@@ -21,8 +21,8 @@ maintained by `apps/worker/src/projector.ts`).
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"PostgreSQL
-projections initially; warehouse triggered by scale/use case."*
+OPEN. **Default until decided (spec §93, verbatim):** _"PostgreSQL
+projections initially; warehouse triggered by scale/use case."_
 
 The repository honors the default today: projections are ordinary
 tenant-scoped Postgres tables with `calculated_at` (§42), rebuildable from

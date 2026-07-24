@@ -184,6 +184,7 @@ export class OutboxRelay {
 }
 
 function truncateError(error: unknown, max = 1000): string {
-  const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  const message =
+    error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   return message.length > max ? `${message.slice(0, max)}…` : message;
 }

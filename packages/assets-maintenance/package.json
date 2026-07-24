@@ -1,0 +1,33 @@
+{
+  "name": "@jk/assets-maintenance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Assets and Maintenance bounded context: asset register, maintenance/calibration schedules, work orders, device calibration status. JK-AST-001..005, §15.3, §25.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run --exclude '**/*.integration.test.ts' --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
+  },
+  "dependencies": {
+    "@jk/database": "workspace:*",
+    "@jk/domain-kernel": "workspace:*",
+    "pg": "^8.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@jk/testkit": "workspace:*",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.9"
+  }
+}

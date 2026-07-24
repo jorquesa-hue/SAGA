@@ -32,6 +32,29 @@ tags:
     description: Animal registry (Phase 1 contract baseline).
   - name: Devices
     description: Edge device ingestion (Phase 1 contract baseline).
+  - name: AI
+    description: >
+      Governed AI recommendations (invariant #6, §190). Every recommendation
+      carries evidence, confidence, and model/prompt provenance; high-impact
+      actions require human approval and prohibited actions can never execute
+      autonomously.
+  - name: Webhooks
+    description: >
+      Tenant webhook subscriptions to allowlisted event families with signed,
+      replay-protected delivery, bounded-backoff retries, dead-letter, and
+      manual replay (§51).
+  - name: Connectors
+    description: Connector registrations behind stable domain interfaces (§33).
+  - name: Exports
+    description: >
+      Asynchronous, tenant-scoped, time-limited, audited exports and the animal
+      traceability packet (§27, JK-ANI-006).
+  - name: Search
+    description: Global search across animals, lots, paddocks, and people (§27).
+  - name: Imports
+    description: >
+      Staged import workflow — upload, parse, map, validate, preview, execute,
+      reconcile — with preserved raw evidence (§27).
 paths:
   /tenants:
     post:
@@ -70,6 +93,30 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Tenant" }
         "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateCurrentTenantSettings
+      summary: Update the current tenant's base locale and/or currency
+      description: >
+        Emits identity.tenant_settings_updated.v1. Requires the tenant_owner
+        role (manage_tenant). At least one field must be provided; unspecified
+        fields are left unchanged.
+      tags: [Tenants]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateTenantSettingsRequest" }
+      responses:
+        "200":
+          description: Updated tenant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tenant" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
   /farms:
     post:
       operationId: createFarm
@@ -163,6 +210,26 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Animal" }
         "409": { $ref: "#/components/responses/Conflict" }
+    get:
+      operationId: listAnimals
+      summary: List animals in the tenant (optionally by farm)
+      tags: [Animals]
+      parameters:
+        - name: farmId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Animal list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Animal" }
   /animals/{animalId}:
     get:
       operationId: getAnimal
@@ -193,6 +260,740 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ObservationBatchResult" }
+  /animals/{animalId}/timeline:
+    get:
+      operationId: getAnimalTimeline
+      summary: Cursor/limited chronological event timeline (JK-ANI-004)
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+        - {
+            name: limit,
+            in: query,
+            required: false,
+            schema: { type: integer, minimum: 1, maximum: 500 },
+          }
+        - { name: types, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: Timeline entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { type: object } }
+  /animals/{animalId}/identifiers:
+    post:
+      operationId: assignOrReplaceIdentifier
+      summary: Assign or replace an identifier (JK-ANI-002, JK-DOM-003)
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifierType, identifierValue]
+              properties:
+                identifierType: { type: string, enum: [rfid, visual, official, legacy] }
+                identifierValue: { type: string }
+                replace: { type: boolean, default: false }
+                reason: { type: string }
+      responses:
+        "201": { description: Identifier assigned or replaced }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /animals/{animalId}/weights:
+    get:
+      operationId: getAnimalWeights
+      summary: Validated weight series (§11)
+      tags: [Herd]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+      responses:
+        "200":
+          description: Weight points
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { type: object } }
+  /animals/{animalId}/adg:
+    get:
+      operationId: getAnimalAdg
+      summary: Average daily gain from eligible readings (JK-WGT-006)
+      tags: [Herd]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+      responses:
+        "200":
+          description: ADG result (or null when insufficient data)
+          content:
+            application/json:
+              schema: { type: object }
+  /handling-sessions:
+    post:
+      operationId: startHandlingSession
+      summary: Start a handling session (JK-WGT-001)
+      tags: [Herd]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [farmId]
+              properties:
+                farmId: { type: string, format: uuid }
+                purpose:
+                  {
+                    type: string,
+                    enum:
+                      [
+                        weighing,
+                        vaccination,
+                        pregnancy_check,
+                        treatment,
+                        handling,
+                        other,
+                      ],
+                  }
+                deviceId: { type: string }
+                expectedCount: { type: integer, minimum: 0 }
+      responses:
+        "201": { description: Session started }
+  /handling-sessions/{sessionId}/observations:
+    post:
+      operationId: recordObservation
+      summary: Record one weight observation through the validation pipeline
+      tags: [Herd]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceObservation" }
+      responses:
+        "201": { description: Accepted observation }
+        "202": { description: Observation recorded as exception (pending/rejected) }
+  /handling-sessions/{sessionId}/close:
+    post:
+      operationId: closeHandlingSession
+      summary: Close and summarize a handling session
+      tags: [Herd]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Session closed with counts summary }
+  /handling-sessions/{sessionId}/exceptions:
+    get:
+      operationId: listSessionExceptions
+      summary: Unresolved/rejected observations for a session (JK-WGT-003)
+      tags: [Herd]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Exception queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { type: object } }
+  /recommendations:
+    post:
+      operationId: createRecommendation
+      summary: Record an AI recommendation with evidence (invariant #6, §190)
+      description: >
+        Agents/services record a recommendation. Evidence event ids,
+        confidence, and model/prompt provenance are mandatory. A proposal for a
+        prohibited action category is accepted (as a proposal) but can never be
+        executed autonomously. Returns 409 (JK-AI-DISABLED) when the tenant AI
+        kill switch is off.
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateRecommendationRequest" }
+      responses:
+        "201":
+          description: Recommendation recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recommendation" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listRecommendations
+      summary: List recommendations for the current tenant
+      tags: [AI]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, rejected, expired, executed]
+      responses:
+        "200":
+          description: Recommendation list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Recommendation" }
+  /recommendations/{recommendationId}:
+    get:
+      operationId: getRecommendation
+      summary: Read one recommendation
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/RecommendationId"
+      responses:
+        "200":
+          description: Recommendation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recommendation" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recommendations/{recommendationId}/approve:
+    post:
+      operationId: approveRecommendation
+      summary: Human approval of a recommendation (JK-AI-APPROVAL)
+      description: >
+        Only a human management role may approve. An agent may not approve its
+        own proposal (human-in-the-loop).
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/RecommendationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "204": { description: Approved }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recommendations/{recommendationId}/reject:
+    post:
+      operationId: rejectRecommendation
+      summary: Reject a recommendation
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/RecommendationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "204": { description: Rejected }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recommendations/{recommendationId}/execute:
+    post:
+      operationId: executeRecommendation
+      summary: Attempt autonomous execution (governed)
+      description: >
+        Blocked with 403 (JK-AI-PROHIBITED) for prohibited action categories and
+        409 (JK-AI-APPROVAL-REQUIRED) when no human approval exists. Both
+        attempts are audited to the append-only ai_action_audit ledger.
+      tags: [AI]
+      parameters:
+        - $ref: "#/components/parameters/RecommendationId"
+      responses:
+        "200":
+          description: Executed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executed: { type: boolean }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /webhooks/subscriptions:
+    post:
+      operationId: createWebhookSubscription
+      summary: Subscribe to allowlisted event families (§51)
+      description: >
+        Creates a webhook subscription. Only allowlisted event families are
+        accepted (422 otherwise). The signing secret is returned ONCE in the
+        response and never again.
+      tags: [Webhooks]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateWebhookSubscriptionRequest" }
+      responses:
+        "201":
+          description: Subscription created; secret returned once
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookSubscriptionWithSecret" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listWebhookSubscriptions
+      summary: List webhook subscriptions
+      tags: [Webhooks]
+      responses:
+        "200":
+          description: Subscriptions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/WebhookSubscription" }
+  /webhooks/subscriptions/{subscriptionId}:
+    get:
+      operationId: getWebhookSubscription
+      summary: Read a webhook subscription
+      tags: [Webhooks]
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionId"
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookSubscription" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deactivateWebhookSubscription
+      summary: Deactivate a webhook subscription
+      tags: [Webhooks]
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "204": { description: Deactivated }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /webhooks/subscriptions/{subscriptionId}/rotate-secret:
+    post:
+      operationId: rotateWebhookSecret
+      summary: Rotate the signing secret with an overlap window (§51)
+      tags: [Webhooks]
+      parameters:
+        - $ref: "#/components/parameters/SubscriptionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: New secret (previous stays valid until the next rotation)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookSubscriptionWithSecret" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /webhooks/deliveries:
+    get:
+      operationId: listWebhookDeliveries
+      summary: List webhook delivery attempts (delivery log, §51)
+      tags: [Webhooks]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, delivering, delivered, failed, dead_letter]
+        - name: subscriptionId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Deliveries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/WebhookDelivery" }
+  /webhooks/deliveries/{deliveryId}/replay:
+    post:
+      operationId: replayWebhookDelivery
+      summary: Manually replay a failed/dead-letter delivery (§51)
+      tags: [Webhooks]
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Delivery reset to pending
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WebhookDelivery" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+  /connectors:
+    post:
+      operationId: registerConnector
+      summary: Register a connector behind a stable domain interface (§33)
+      tags: [Connectors]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterConnectorRequest" }
+      responses:
+        "201":
+          description: Connector registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConnectorRegistration" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listConnectors
+      summary: List connector registrations
+      tags: [Connectors]
+      responses:
+        "200":
+          description: Connectors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ConnectorRegistration" }
+  /connectors/{connectorId}:
+    get:
+      operationId: getConnector
+      summary: Read a connector registration
+      tags: [Connectors]
+      parameters:
+        - name: connectorId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Connector
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConnectorRegistration" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /exports:
+    post:
+      operationId: requestExport
+      summary: Start a secure asynchronous export (§27)
+      description: >
+        Creates an export job. Exports are asynchronous, tenant-scoped,
+        time-limited, and audited. The response is 202 with a pending job whose
+        `resolvableUrl` becomes downloadable once processing completes.
+      tags: [Exports]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RequestExportRequest" }
+      responses:
+        "202":
+          description: Export job accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listExports
+      summary: List export jobs
+      tags: [Exports]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, running, completed, failed, expired]
+      responses:
+        "200":
+          description: Export jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ExportJob" }
+  /exports/{exportId}:
+    get:
+      operationId: getExport
+      summary: Read an export job's status
+      tags: [Exports]
+      parameters:
+        - $ref: "#/components/parameters/ExportId"
+      responses:
+        "200":
+          description: Export job
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportJob" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /exports/{exportId}/process:
+    post:
+      operationId: processExport
+      summary: Process a pending export (assemble the artifact)
+      tags: [Exports]
+      parameters:
+        - $ref: "#/components/parameters/ExportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Export processed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /exports/{exportId}/download:
+    get:
+      operationId: downloadExport
+      summary: Download a completed, non-expired export (audited, §27)
+      description: >
+        Returns the artifact body with an `x-content-checksum-sha256` header.
+        A 422 is returned if the export is expired or not yet completed. This
+        path is the QR-resolvable link for the animal traceability packet
+        (JK-ANI-006).
+      tags: [Exports]
+      parameters:
+        - $ref: "#/components/parameters/ExportId"
+      responses:
+        "200":
+          description: Export artifact
+          content:
+            application/json: {}
+            text/csv: {}
+            application/octet-stream: {}
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+  /search:
+    get:
+      operationId: globalSearch
+      summary: Global search across entities within authorization scope (§27)
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search term (matched literally; LIKE wildcards are escaped).
+          schema: { type: string, minLength: 1 }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 25, default: 8 }
+      responses:
+        "200":
+          description: Grouped search results
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SearchResults" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /imports:
+    post:
+      operationId: uploadImport
+      summary: Upload a file and open a staged import (§27)
+      description: Preserves the raw content as evidence. Returns the import job.
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadImportRequest" }
+      responses:
+        "201":
+          description: Import opened
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportJob" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+    get:
+      operationId: listImports
+      summary: List import jobs
+      tags: [Imports]
+      responses:
+        "200":
+          description: Import jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ImportJob" }
+  /imports/{importId}:
+    get:
+      operationId: getImport
+      summary: Read an import job's status
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: Import job
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportJob" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /imports/{importId}/parse:
+    post:
+      operationId: parseImport
+      summary: Parse the uploaded file into staged rows
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          {
+            description: Parsed,
+            content:
+              {
+                application/json: { schema: { $ref: "#/components/schemas/ImportJob" } },
+              },
+          }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /imports/{importId}/map:
+    post:
+      operationId: mapImport
+      summary: Apply a target-field → source-column mapping
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnimalImportMapping" }
+      responses:
+        "200":
+          {
+            description: Mapped,
+            content:
+              {
+                application/json: { schema: { $ref: "#/components/schemas/ImportJob" } },
+              },
+          }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/UnprocessableEntity" }
+  /imports/{importId}/validate:
+    post:
+      operationId: validateImport
+      summary: Validate mapped rows and flag duplicates
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          {
+            description: Validated,
+            content:
+              {
+                application/json: { schema: { $ref: "#/components/schemas/ImportJob" } },
+              },
+          }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /imports/{importId}/preview:
+    get:
+      operationId: previewImport
+      summary: Preview valid and invalid sample rows before execute
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: Preview
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportPreview" }
+  /imports/{importId}/execute:
+    post:
+      operationId: executeImport
+      summary: Create a domain record for each valid row
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          {
+            description: Executed,
+            content:
+              {
+                application/json: { schema: { $ref: "#/components/schemas/ImportJob" } },
+              },
+          }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /imports/{importId}/reconcile:
+    post:
+      operationId: reconcileImport
+      summary: Finalize and report the import outcome
+      tags: [Imports]
+      parameters:
+        - $ref: "#/components/parameters/ImportId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Reconciled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportPreview" }
+        "409": { $ref: "#/components/responses/Conflict" }
 components:
   securitySchemes:
     oidc:
@@ -209,6 +1010,26 @@ components:
       schema: { type: string, minLength: 16, maxLength: 200 }
     AnimalId:
       name: animalId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    RecommendationId:
+      name: recommendationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SubscriptionId:
+      name: subscriptionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ExportId:
+      name: exportId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ImportId:
+      name: importId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -265,6 +1086,20 @@ components:
         status: { type: string, enum: [active, suspended] }
         createdAt: { type: string, format: date-time }
         version: { type: integer, minimum: 0 }
+    UpdateTenantSettingsRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: At least one of defaultLocale or defaultCurrency must be present.
+      properties:
+        defaultLocale:
+          type: string
+          pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+          description: BCP 47 language tag, e.g. pt-BR.
+        defaultCurrency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          description: ISO 4217 currency code, e.g. BRL.
     CreateFarmRequest:
       type: object
       additionalProperties: false
@@ -431,6 +1266,329 @@ components:
             properties:
               field: { type: string }
               reason: { type: string }
+    CreateRecommendationRequest:
+      type: object
+      required:
+        - agentName
+        - modelProvider
+        - modelVersion
+        - promptVersion
+        - recommendationText
+        - proposedActionCategory
+        - evidenceEventIds
+        - confidence
+        - riskClass
+      properties:
+        agentName: { type: string, minLength: 1 }
+        modelProvider: { type: string, minLength: 1 }
+        modelVersion: { type: string, minLength: 1 }
+        promptVersion: { type: string, minLength: 1 }
+        recommendationText: { type: string, minLength: 1 }
+        proposedActionCategory:
+          type: string
+          description: Action category; prohibited categories can never execute autonomously.
+        proposedAction:
+          type: object
+          additionalProperties: true
+          description: Structured proposed action payload (optional).
+        evidenceEventIds:
+          type: array
+          minItems: 1
+          description: At least one supporting domain event id (invariant #6, §190).
+          items: { type: string }
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        assumptions:
+          type: array
+          items: { type: string }
+        riskClass:
+          type: string
+          enum: [low, medium, high]
+    Recommendation:
+      type: object
+      required:
+        - id
+        - status
+        - proposedActionCategory
+        - evidenceEventIds
+        - confidence
+        - prohibited
+      properties:
+        id: { type: string, format: uuid }
+        agentName: { type: string }
+        modelProvider: { type: string }
+        modelVersion: { type: string }
+        promptVersion: { type: string }
+        recommendationText: { type: string }
+        proposedActionCategory: { type: string }
+        evidenceEventIds:
+          type: array
+          items: { type: string }
+        confidence: { type: number }
+        riskClass:
+          type: string
+          enum: [low, medium, high]
+        prohibited:
+          type: boolean
+          description: True when the proposed category can never execute autonomously.
+        highImpact:
+          type: boolean
+          description: True when execution requires human approval.
+        status:
+          type: string
+          enum: [pending, approved, rejected, expired, executed]
+        approvedBy: { type: string, format: uuid, nullable: true }
+        approvedAt: { type: string, format: date-time, nullable: true }
+        expiresAt: { type: string, format: date-time, nullable: true }
+    CreateWebhookSubscriptionRequest:
+      type: object
+      required: [url, eventFamilies]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: HTTPS endpoint that receives signed deliveries.
+        eventFamilies:
+          type: array
+          minItems: 1
+          description: Allowlisted event families (§51).
+          items:
+            type: string
+            enum:
+              [
+                animal,
+                weight,
+                health,
+                reproduction,
+                herd,
+                inventory,
+                finance,
+                genetics,
+                pasture,
+                asset,
+              ]
+        description: { type: string }
+    WebhookSubscription:
+      type: object
+      required: [id, url, eventFamilies, active]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string, format: uri }
+        eventFamilies:
+          type: array
+          items: { type: string }
+        description: { type: string, nullable: true }
+        active: { type: boolean }
+    WebhookSubscriptionWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/WebhookSubscription"
+        - type: object
+          required: [secret]
+          properties:
+            secret:
+              type: string
+              description: Signing secret — returned only at creation and rotation.
+    WebhookDelivery:
+      type: object
+      required:
+        [
+          id,
+          subscriptionId,
+          deliveryId,
+          eventId,
+          eventType,
+          eventFamily,
+          status,
+          attempts,
+          maxAttempts,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        subscriptionId: { type: string, format: uuid }
+        deliveryId: { type: string, format: uuid }
+        eventId: { type: string }
+        eventType: { type: string }
+        eventFamily: { type: string }
+        status:
+          type: string
+          enum: [pending, delivering, delivered, failed, dead_letter]
+        attempts: { type: integer }
+        maxAttempts: { type: integer }
+        lastStatusCode: { type: integer, nullable: true }
+        lastError: { type: string, nullable: true }
+    RegisterConnectorRequest:
+      type: object
+      required: [connectorType, name]
+      properties:
+        connectorType:
+          type: string
+          enum:
+            - rfid_reader
+            - electronic_scale
+            - edge_gateway
+            - csv_xlsx_import
+            - laboratory_result
+            - genetics_evaluation
+            - identity_provider
+            - messaging_provider
+            - accounting_export
+            - geospatial_provider
+            - object_storage
+            - webhook
+        name: { type: string, minLength: 1 }
+        config:
+          type: object
+          additionalProperties: true
+          description: Non-secret configuration; credentials are referenced, never inlined.
+    ConnectorRegistration:
+      type: object
+      required: [id, connectorType, name, status]
+      properties:
+        id: { type: string, format: uuid }
+        connectorType: { type: string }
+        name: { type: string }
+        status:
+          type: string
+          enum: [active, suspended, error]
+    RequestExportRequest:
+      type: object
+      required: [exportType]
+      properties:
+        exportType:
+          type: string
+          enum:
+            [animal_traceability_packet, animal_inventory, herd_weights, finance_ledger]
+        format:
+          type: string
+          enum: [json, csv, xlsx, pdf, geojson, zip]
+          default: json
+        params:
+          type: object
+          additionalProperties: true
+          description: >
+            Export-specific parameters. animal_traceability_packet requires
+            params.animalId.
+    ExportJob:
+      type: object
+      required: [id, exportType, format, status, resolvableUrl]
+      properties:
+        id: { type: string, format: uuid }
+        exportType: { type: string }
+        format: { type: string }
+        status:
+          type: string
+          enum: [pending, running, completed, failed, expired]
+        byteSize: { type: integer, nullable: true }
+        checksum:
+          type: string
+          nullable: true
+          description: SHA-256 of the artifact.
+        expiresAt: { type: string, format: date-time, nullable: true }
+        resolvableUrl:
+          type: string
+          description: QR-resolvable download path (JK-ANI-006).
+    SearchHit:
+      type: object
+      required: [type, id, label]
+      properties:
+        type:
+          type: string
+          enum: [animal, lot, paddock, person]
+        id: { type: string }
+        label: { type: string }
+        sublabel: { type: string }
+    UploadImportRequest:
+      type: object
+      required: [importType, content]
+      properties:
+        importType: { type: string, enum: [animals] }
+        filename: { type: string }
+        content: { type: string, description: Raw CSV content (preserved as evidence). }
+        farmId: { type: string, format: uuid }
+    AnimalImportMapping:
+      type: object
+      required: [visualId, sex]
+      description: Target field → source CSV column header.
+      properties:
+        visualId: { type: string }
+        sex: { type: string }
+        breedCode: { type: string }
+        birthDate: { type: string }
+        rfid: { type: string }
+    ImportJob:
+      type: object
+      required:
+        [
+          id,
+          importType,
+          status,
+          totalRows,
+          validRows,
+          invalidRows,
+          duplicateRows,
+          executedRows,
+          failedRows,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        importType: { type: string }
+        status:
+          type: string
+          enum: [uploaded, parsed, mapped, validated, executed, reconciled, failed]
+        filename: { type: string, nullable: true }
+        totalRows: { type: integer }
+        validRows: { type: integer }
+        invalidRows: { type: integer }
+        duplicateRows: { type: integer }
+        executedRows: { type: integer }
+        failedRows: { type: integer }
+    ImportRowView:
+      type: object
+      properties:
+        rowNumber: { type: integer }
+        raw: { type: object, additionalProperties: true }
+        mapped: { type: object, additionalProperties: true, nullable: true }
+        validationStatus: { type: string, enum: [pending, valid, invalid, duplicate] }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              reason: { type: string }
+        executionStatus: { type: string, enum: [pending, created, failed, skipped] }
+        serverId: { type: string, nullable: true }
+        executionError: { type: string, nullable: true }
+    ImportPreview:
+      type: object
+      required: [job, sample, invalidSample]
+      properties:
+        job: { $ref: "#/components/schemas/ImportJob" }
+        sample:
+          type: array
+          items: { $ref: "#/components/schemas/ImportRowView" }
+        invalidSample:
+          type: array
+          items: { $ref: "#/components/schemas/ImportRowView" }
+    SearchResults:
+      type: object
+      required: [query, animals, lots, paddocks, people]
+      properties:
+        query: { type: string }
+        animals:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
+        lots:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
+        paddocks:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
+        people:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
   responses:
     Conflict:
       description: Business conflict

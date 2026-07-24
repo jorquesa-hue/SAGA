@@ -1,0 +1,29 @@
+{
+  "name": "@jk/sync-http",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HTTP SyncTransport bridging @jk/offline-sync to the platform API's idempotent device-observations:batch endpoint. Shared by the mobile app and the edge gateway so the 207-result → outcome mapping lives in one place.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
+  },
+  "dependencies": {
+    "@jk/contracts-rest": "workspace:*",
+    "@jk/offline-sync": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.9"
+  }
+}

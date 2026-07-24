@@ -27,9 +27,7 @@ describe("Measurement", () => {
   it("rejects unknown units and non-finite values", () => {
     expect(() => Measurement.of(1, "stone" as never)).toThrow(ValidationError);
     expect(() => Measurement.of(Number.NaN, "kg")).toThrow(ValidationError);
-    expect(() => Measurement.of(Number.POSITIVE_INFINITY, "kg")).toThrow(
-      ValidationError,
-    );
+    expect(() => Measurement.of(Number.POSITIVE_INFINITY, "kg")).toThrow(ValidationError);
   });
 
   it("serializes source and canonical values (JK-DOM-007)", () => {

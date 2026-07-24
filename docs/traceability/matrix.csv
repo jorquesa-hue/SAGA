@@ -1,0 +1,148 @@
+requirement_id,design_area,source,verification,status
+JK-CON-003,event ledger / corrections,database/migrations/0001;packages/domain-kernel/event-envelope.ts,packages/database/tests/integration/migrator.integration.test.ts,implemented
+JK-CON-008,mobile/sync/edge,,,planned
+JK-DOM-001,schema + RLS,database/migrations/0001-0004,packages/testkit/tests/tenant-isolation,implemented
+JK-DOM-002,animal schema,database/migrations/0001,database/seeds/0001_reference_farm.sql,partial
+JK-DOM-003,animal identifiers,database/migrations/0001 (animal_identifier_active_unique),database/seeds/0001_reference_farm.sql,implemented
+JK-DOM-004,schema design,database/migrations/0001,,partial
+JK-DOM-005,event envelope,packages/domain-kernel/event-envelope.ts;packages/database/event-store.ts,packages/domain-kernel/tests/event-envelope.test.ts,implemented
+JK-DOM-006,ledger trigger,database/migrations/0001 (domain_event_no_update),packages/database/tests/integration/migrator.integration.test.ts,implemented
+JK-DOM-007,measurement VO,packages/domain-kernel/measurement.ts,packages/domain-kernel/tests/measurement.test.ts,implemented
+JK-DOM-008,money VO,packages/domain-kernel/money.ts,packages/domain-kernel/tests/money.test.ts,implemented
+JK-DOM-009,ingestion,,,planned
+JK-DOM-010,lifecycle status,database/migrations/0001,,partial
+JK-DOM-011,health,,,planned
+JK-DOM-012,governed AI,,,planned
+JK-IAM-001,identity-tenancy,packages/identity-tenancy;database/migrations/0001-0002,packages/identity-tenancy/tests/integration/identity-service.integration.test.ts,implemented
+JK-IAM-002,API auth,apps/api/src/auth.ts,apps/api/tests/integration/api.integration.test.ts,partial
+JK-IAM-003,authorization policy,packages/identity-tenancy/authorization.ts,packages/identity-tenancy/tests/unit/authorization.test.ts,implemented
+JK-IAM-004,admin,,,planned
+JK-IAM-005,membership lifecycle,packages/identity-tenancy/identity-service.ts (revokeMembership),packages/identity-tenancy/tests/integration/identity-service.integration.test.ts,implemented
+JK-IAM-006,DB roles,database/policies/application_roles.sql,packages/testkit/tests/tenant-isolation,implemented
+JK-SEC-004,API + services,apps/api/src/request-context.ts;packages/identity-tenancy/identity-service.ts,packages/testkit/tests/tenant-isolation,implemented
+JK-SEC-005,migrations,database/migrations (RLS FORCE),packages/testkit/tests/tenant-isolation,implemented
+JK-SEC-006,observability,packages/observability/logger.ts,packages/observability/tests/observability.test.ts,implemented
+JK-SEC-009,audit stream,database/migrations/0002 (audit_record),packages/identity-tenancy/tests/integration/identity-service.integration.test.ts,implemented
+FITNESS-architecture,scripts/validate/architecture-check.mjs,scripts/validate/architecture-check.mjs,pnpm architecture:check,implemented
+FITNESS-contracts,contracts/,scripts/validate/contracts-validate.mjs,pnpm contracts:validate,implemented
+FITNESS-migrations,packages/database/migrator.ts,packages/database/migrator.ts,packages/database/tests/integration/migrator.integration.test.ts,implemented
+FITNESS-tenant-isolation,packages/testkit,packages/testkit/tests/tenant-isolation,pnpm test:tenant-isolation,implemented
+DELIVERABLE-3-openapi,contracts/openapi/jk-platform.yaml,contracts/openapi/jk-platform.yaml,pnpm contracts:validate,implemented
+DELIVERABLE-4-graphql,contracts/graphql/schema.graphql,contracts/graphql/schema.graphql,pnpm contracts:validate,implemented
+DELIVERABLE-5-asyncapi,contracts/asyncapi;contracts/json-schema,contracts/asyncapi/domain-events.yaml,pnpm contracts:validate,implemented
+DELIVERABLE-6-migrations,database/migrations,database/migrations/0001-0004,packages/database/tests/integration,implemented
+DELIVERABLE-16-tests,package tests,packages/*/tests;apps/*/tests,pnpm test,implemented
+DELIVERABLE-19-traceability,docs/traceability,docs/traceability/matrix.md,manual review,implemented
+JK-ANI-001,animal registry,packages/animal-registry,packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-ANI-002,identifiers,packages/animal-registry/animal-registry-service.ts,packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-ANI-004,timeline,packages/animal-registry (getTimeline),packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-ANI-008,identifier history,packages/animal-registry (replaceIdentifier),packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-DOM-002,animal aggregate,packages/animal-registry;database/migrations/0001,packages/animal-registry/tests/integration,implemented
+JK-DOM-003,identifier index,database/migrations/0001,packages/animal-registry/tests/integration,implemented
+JK-DOM-009,observation ledger,database/migrations/0005 (device_observation),packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-001,herd ops,packages/herd-operations (startSession),packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-002,validation pipeline,packages/herd-operations/observation-pipeline.ts,packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-003,exception queue,packages/herd-operations;database/migrations/0005,packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-004,observation,database/migrations/0005,packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-006,analytics,packages/herd-operations (computeAdg),packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented
+JK-WGT-008,ingestion,packages/herd-operations (ingestBatch),devices/simulators/tests/integration/handling-session-500.integration.test.ts,implemented
+PHASE1-EXIT-500,e2e,devices/simulators,devices/simulators/tests/integration/handling-session-500.integration.test.ts,implemented
+JK-HLT-001,health,packages/health-laboratory;database/migrations/0006,packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-HLT-003,health,packages/health-laboratory (batchTreatment),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-HLT-004,health,database/migrations/0006 (treatment),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-HLT-005,health,packages/health-laboratory (checkSaleClear/overrideRestriction),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-HLT-006,health,packages/health-laboratory (openCase/resolveCase),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-DOM-011,health,database/migrations/0006 (animal_restriction),packages/health-laboratory/tests/integration/health.integration.test.ts,implemented
+JK-REP-003,reproduction,packages/reproduction-genetics (recordService),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-REP-004,reproduction,packages/reproduction-genetics (recordPregnancyCheck),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-REP-005,reproduction,packages/reproduction-genetics (recordPregnancyCheck),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-REP-006,reproduction,packages/reproduction-genetics (recordCalving+CalfRegistrar),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-GEN-001,genetics,database/migrations/0007 (animal_parentage),packages/reproduction-genetics/tests/integration/reproduction.integration.test.ts,implemented
+JK-HER-001,herd ops,packages/herd-operations (LotsService);database/migrations/0008,packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
+JK-HER-002,herd ops,database/migrations/0008 (lot_membership),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
+JK-HER-003,herd ops,packages/herd-operations (moveToPaddock),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
+JK-HER-004,herd ops,packages/herd-operations (projections),packages/herd-operations/tests/integration/lots.integration.test.ts,implemented
+JK-HLT-002,alerts,packages/analytics-intelligence (generateAlerts),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+JK-REP-004-alert,alerts,packages/analytics-intelligence (calving_due),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+ALERTS-lifecycle,alerts,database/migrations/0009;packages/analytics-intelligence/alert-service.ts,packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+REPORT-beef-lot,reports,packages/analytics-intelligence (beefLotReport),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+REPORT-monthly-nucleus,reports,packages/analytics-intelligence (monthlyNucleusReport),packages/analytics-intelligence/tests/integration/analytics.integration.test.ts,implemented
+JK-PAS-002,land-grazing,packages/land-grazing (recordAssessment);database/migrations/0010,packages/land-grazing/tests/integration/land-grazing.integration.test.ts,implemented
+JK-PAS-004,land-grazing,packages/land-grazing (getGrazingMetrics),packages/land-grazing/tests/integration/land-grazing.integration.test.ts,implemented
+JK-INV-001,inventory,database/migrations/0011 (item/item_batch),packages/nutrition-inventory/tests/integration/inventory.integration.test.ts,implemented
+JK-INV-002,inventory,packages/nutrition-inventory (stock ledger),packages/nutrition-inventory/tests/integration/inventory.integration.test.ts,implemented
+JK-INV-003,inventory,packages/nutrition-inventory (consumeStock linkage),packages/nutrition-inventory/tests/integration/inventory.integration.test.ts,implemented
+JK-INV-005,inventory,packages/nutrition-inventory (negative block + expiring),packages/nutrition-inventory/tests/integration/inventory.integration.test.ts,implemented
+JK-AST-001,assets,packages/assets-maintenance (registerAsset);database/migrations/0012,packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
+JK-AST-002,assets,packages/assets-maintenance (defineSchedule),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
+JK-AST-003,assets,packages/assets-maintenance (createWorkOrder/complete),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
+JK-AST-004,assets,packages/assets-maintenance (calibration status),packages/assets-maintenance/tests/integration/assets.integration.test.ts,implemented
+JK-FIN-002,finance,packages/finance-commerce (allocation),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-FIN-003,finance,packages/finance-commerce (allocation_rule_version),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-FIN-004,finance,packages/finance-commerce (budget variance),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-FIN-005,finance,packages/finance-commerce (recordSale),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-FIN-006,finance,packages/finance-commerce (getMarginForLot),packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-DOM-008,finance,packages/domain-kernel/money.ts;database/migrations/0013,packages/finance-commerce/tests/integration/finance.integration.test.ts,implemented
+JK-GEN-002,genetics,packages/reproduction-genetics/genetics-service.ts;database/migrations/0014,packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
+JK-GEN-004,genetics,packages/reproduction-genetics (defineSelectionIndex),packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
+JK-GEN-005,genetics,packages/reproduction-genetics (rankAnimals),packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
+JK-GEN-006,genetics,packages/reproduction-genetics (geneticProgress),packages/reproduction-genetics/tests/integration/genetics.integration.test.ts,implemented
+FII-index,analytics,packages/analytics-intelligence/farm-intelligence.ts,packages/analytics-intelligence/tests/integration/farm-intelligence.integration.test.ts,implemented
+EXECUTIVE-dashboard,analytics,packages/analytics-intelligence (executiveDashboard),packages/analytics-intelligence/tests/integration/farm-intelligence.integration.test.ts,implemented
+JK-AI-EVIDENCE,ai-governance,packages/analytics-intelligence/recommendation-service.ts;database/migrations/0015,packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-CONFIDENCE,ai-governance,packages/analytics-intelligence/recommendation-service.ts,packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-APPROVAL,ai-governance,packages/analytics-intelligence (approveRecommendation),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-PROHIBITED,ai-governance,packages/analytics-intelligence/ai-safety.ts (assessAction),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-KILLSWITCH,ai-governance,packages/analytics-intelligence/recommendation-service.ts (aiEnabled),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-AI-AUDIT,ai-governance,database/migrations/0015 (ai_action_audit append-only),packages/analytics-intelligence/tests/integration/recommendations.integration.test.ts,implemented
+JK-INT-WEBHOOK-ALLOWLIST,automation-integration,packages/automation-integration/event-families.ts;database/migrations/0016,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-SIGNING,automation-integration,packages/automation-integration/signing.ts,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-ROTATION,automation-integration,packages/automation-integration/webhook-service.ts (rotateSecret),packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-DELIVERY,automation-integration,packages/automation-integration/delivery-dispatcher.ts,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-DEADLETTER,automation-integration,packages/automation-integration/delivery-dispatcher.ts;database/migrations/0016,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-WEBHOOK-REPLAY,automation-integration,packages/automation-integration/webhook-service.ts (replayDelivery),packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-INT-CONNECTOR-FRAMEWORK,automation-integration,packages/automation-integration/connector-registry.ts;database/migrations/0016,packages/automation-integration/tests/integration/webhooks.integration.test.ts,implemented
+JK-ANI-006,exports,packages/analytics-intelligence/export-service.ts (buildAnimalTraceabilityPacket);database/migrations/0017,packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-EXPORT-ASYNC,exports,packages/analytics-intelligence/export-service.ts;database/migrations/0017,packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-EXPORT-TIMELIMIT,exports,database/migrations/0017 (expires_at);packages/analytics-intelligence/export-service.ts,packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-EXPORT-AUDIT,exports,database/migrations/0017 (export_access_log append-only),packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-EXPORT-CHECKSUM,exports,packages/analytics-intelligence/export-service.ts (sha256),packages/analytics-intelligence/tests/integration/exports.integration.test.ts,implemented
+JK-API-TYPED-CLIENT,contracts,packages/contracts-rest (JkPlatformClient),packages/contracts-rest/tests/client.test.ts,implemented
+JK-WEB-CONSOLE,web,apps/web (React SPA);packages/contracts-rest,apps/web/tests/session.test.tsx;apps/web/tests/animals.test.tsx,implemented
+JK-WEB-AI-REVIEW,web,apps/web/src/pages/Recommendations.tsx,apps/web/tests (session/animals render harness),implemented
+JK-WEB-TRACEABILITY-EXPORT,web,apps/web/src/pages/Animals.tsx (JK-ANI-006 export flow),apps/web/tests/animals.test.tsx,implemented
+JK-WEB-WEIGHING,web,apps/web/src/pages/Weighing.tsx (handling session capture),apps/web/tests (render harness),implemented
+JK-WEB-HEALTH-ENTRY,web,apps/web/src/pages/Treatments.tsx,apps/web/tests/treatments.test.tsx,implemented
+JK-WEB-REPRODUCTION-ENTRY,web,apps/web/src/pages/Reproduction.tsx,apps/web/tests (render harness),implemented
+JK-WEB-LOTS-ENTRY,web,apps/web/src/pages/Lots.tsx,apps/web/tests (render harness),implemented
+JK-WEB-FINANCE-ENTRY,web,apps/web/src/pages/Finance.tsx,apps/web/tests/treatments.test.tsx,implemented
+JK-SEARCH-GLOBAL,search,packages/analytics-intelligence/search-service.ts;apps/api/src/routes/search.routes.ts,packages/analytics-intelligence/tests/integration/search.integration.test.ts,implemented
+JK-WEB-SEARCH,web,apps/web/src/pages/SearchResults.tsx;apps/web/src/components/Layout.tsx,apps/web/tests/search.test.tsx,implemented
+JK-CON-008,offline-sync,packages/offline-sync (Outbox;SyncEngine;LocalStore),packages/offline-sync/tests/sync.test.ts,implemented
+JK-SYNC-NOLOSS,offline-sync,packages/offline-sync/sync-engine.ts (never-drop guarantees),packages/offline-sync/tests/sync.test.ts,implemented
+JK-SYNC-IDEMPOTENT,offline-sync,packages/offline-sync/outbox.ts (stable id = idempotency key),packages/offline-sync/tests/sync.test.ts,implemented
+JK-MOBILE-CAPTURE,mobile,apps/mobile/src/capture-controller.ts;apps/mobile/ui/CaptureScreen.tsx,apps/mobile/tests/mobile.test.ts,implemented
+JK-MOBILE-LOCALSTORE,mobile,apps/mobile/src/kv-store.ts (AsyncKvLocalStore),apps/mobile/tests/mobile.test.ts,implemented
+JK-MOBILE-TRANSPORT,mobile,apps/mobile/src/http-transport.ts (207 -> outcomes),apps/mobile/tests/mobile.test.ts,implemented
+JK-EDGE-INGEST,edge-gateway,apps/edge-gateway/src/gateway.ts;src/main.ts,apps/edge-gateway/tests/gateway.test.ts,implemented
+JK-EDGE-DURABLE-BUFFER,edge-gateway,apps/edge-gateway/src/file-store.ts (FileLocalStore),apps/edge-gateway/tests/gateway.test.ts,implemented
+JK-SYNC-HTTP-TRANSPORT,sync-http,packages/sync-http/src/http-transport.ts,apps/mobile/tests/mobile.test.ts,implemented
+JK-IMPORT-STAGED,data-import,packages/data-import/import-service.ts;database/migrations/0018,packages/data-import/tests/integration/import.integration.test.ts,implemented
+JK-IMPORT-EVIDENCE,data-import,database/migrations/0018 (raw_content preserved),packages/data-import/tests/integration/import.integration.test.ts,implemented
+JK-IMPORT-VALIDATE-DEDUP,data-import,packages/data-import/import-service.ts (validate),packages/data-import/tests/integration/import.integration.test.ts,implemented
+JK-IMPORT-CSV,data-import,packages/data-import/csv.ts,packages/data-import/tests/csv.test.ts,implemented
+JK-API-CORS,api,apps/api/src/app.ts (@fastify/cors);apps/api/src/config.ts,apps/api/tests/integration/api.integration.test.ts,implemented
+JK-DEPLOY-IMAGES,infra,infrastructure/docker/Dockerfile.{api,worker,edge-gateway,web,migrate},infrastructure/compose/docker-compose.yml (validated),implemented
+JK-DEPLOY-COMPOSE,infra,infrastructure/compose/docker-compose.yml (app profile);scripts/dev/stack-up.sh,docs/operations/deployment.md,implemented
+JK-WEB-IMPORT-WIZARD,web,apps/web/src/pages/Imports.tsx;packages/contracts-rest (imports),apps/web/tests/imports.test.tsx,implemented
+JK-AI-ORCHESTRATOR,ai-orchestrator,apps/ai-orchestrator/orchestrator.ts;model-provider.ts,apps/ai-orchestrator/tests/integration/orchestrator.integration.test.ts,implemented
+JK-AI-POLICY-GUARD,ai-orchestrator,apps/ai-orchestrator/policy.ts (safe-action allowlist),apps/ai-orchestrator/tests/policy.test.ts,implemented
+JK-AI-EVIDENCE-TOOLS,ai-orchestrator,apps/ai-orchestrator/tools.ts (grounded findings),apps/ai-orchestrator/tests/integration/orchestrator.integration.test.ts,implemented
+JK-E2E-FARM-WORKFLOW,api,apps/api (buildApp in-process),apps/api/tests/integration/e2e-scenario.integration.test.ts,implemented
+JK-WEB-PAGINATION,web,apps/web/src/components/Pagination.tsx;apps/web/src/pages/Animals.tsx,apps/web/tests/polish.test.tsx,implemented
+JK-WEB-LOT-DETAIL,web,apps/web/src/pages/LotDetail.tsx,apps/web/tests/polish.test.tsx,implemented
+JK-WEB-I18N,web,apps/web/src/i18n (I18nProvider;messages PT/EN/ES;t;enums+td data catalog from DB CHECK vocabularies;fmt Intl date/number/currency per locale);apps/web/src/pages/*.tsx,apps/web/tests/i18n.test.tsx;apps/web/tests/i18n-pages.test.tsx;apps/web/tests/i18n-format.test.tsx,implemented
+JK-WEB-TENANT-CFG,web,apps/web/src/components/TenantSettingsLoader.tsx (adopts tenant default_currency/default_locale from GET /api/v1/tenants/current);packages/contracts-rest/src/types.ts (Tenant.defaultCurrency/defaultLocale);apps/web/src/i18n (currency state feeds fmt.currency);apps/web/src/pages/Finance.tsx (writes carry the active currency → financial_entry/sale.currency, JK-DOM-008),apps/web/tests/tenant-currency.test.tsx,implemented
+JK-IAM-TENANT-SETTINGS,identity,packages/identity-tenancy/src/identity-service.ts (updateTenant: manage_tenant→tenant_owner; appends identity.tenant_settings_updated.v1 + audit);packages/identity-tenancy/src/authorization.ts (manage_tenant);apps/api/src/routes/identity.ts (PATCH /api/v1/tenants/current);database/migrations/0019_tenant_settings_update.sql (GRANT UPDATE ON tenant TO jk_app);contracts/openapi+asyncapi+json-schema (updateCurrentTenantSettings;tenant_settings_updated.v1);apps/web/src/pages/Settings.tsx,packages/identity-tenancy/tests/unit/authorization.test.ts;packages/identity-tenancy/tests/integration/identity-service.integration.test.ts;apps/web/tests/settings.test.tsx,implemented
+JK-FIN-CURRENCY-GUARD,finance,apps/api/src/routes/phase4.routes.ts (finance writes must match tenant base currency → 422 else default; margin/budget-variance report tenant currency);apps/api/src/errors.ts (CurrencyMismatchError 422);apps/web/src/pages/LotDetail.tsx (lot revenue/cost/margin in tenant currency),apps/api/tests/integration/e2e-scenario.integration.test.ts;apps/web/tests/lot-financials.test.tsx,implemented
+JK-WEB-BUDGETS,web,apps/web/src/pages/Budgets.tsx (set monthly budget by category; planned/actual/variance in tenant currency);packages/contracts-rest/src/client.ts (finance.setBudget/budgetVariance),apps/web/tests/budgets.test.tsx,implemented
