@@ -252,6 +252,39 @@ describe.skipIf(!available)("IdentityService (real PostgreSQL)", () => {
     expect(tenant.name).toBe("Fazenda Aurora");
   });
 
+  it("lets the tenant_owner update settings (currency/locale) with event + audit; denies a non-owner", async () => {
+    const before = await service.getTenant(contextFor(tenantAId, anaId));
+    const updated = await service.updateTenant(contextFor(tenantAId, anaId), {
+      defaultCurrency: "USD",
+      defaultLocale: "en",
+    });
+    expect(updated.defaultCurrency).toBe("USD");
+    expect(updated.defaultLocale).toBe("en");
+    expect(updated.name).toBe(before.name); // name untouched
+
+    const persisted = await service.getTenant(contextFor(tenantAId, anaId));
+    expect(persisted.defaultCurrency).toBe("USD");
+
+    const event = await db.adminPool.query(
+      `SELECT count(*)::int AS n FROM domain_event
+       WHERE tenant_id = $1 AND event_type = 'identity.tenant_settings_updated.v1'`,
+      [tenantAId],
+    );
+    expect(event.rows[0].n).toBeGreaterThanOrEqual(1);
+
+    const audit = await db.adminPool.query(
+      `SELECT count(*)::int AS n FROM audit_record
+       WHERE tenant_id = $1 AND action = 'identity.tenant.settings_updated' AND outcome = 'success'`,
+      [tenantAId],
+    );
+    expect(audit.rows[0].n).toBeGreaterThanOrEqual(1);
+
+    // An active technician (non-owner) is denied the settings write.
+    await expect(
+      service.updateTenant(contextFor(tenantAId, carlosId), { defaultCurrency: "EUR" }),
+    ).rejects.toThrow(/tenant_owner/);
+  });
+
   it("denies invite_users to a non-owner and audits the denial with a reason (§66, §68)", async () => {
     await expect(
       service.inviteUser(contextFor(tenantAId, carlosId), {
@@ -433,6 +466,7 @@ describe.skipIf(!available)("IdentityService (real PostgreSQL)", () => {
       "identity.membership_activated.v1",
       "identity.membership_revoked.v1",
       "identity.tenant_created.v1",
+      "identity.tenant_settings_updated.v1",
       "identity.user_invited.v1",
     ]);
   });

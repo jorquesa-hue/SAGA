@@ -1,0 +1,26 @@
+{
+  "name": "@jk/offline-sync",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Platform-agnostic offline-first sync engine for the mobile and edge clients (§34): a durable local outbox, at-least-once idempotent sync with backoff and partial-success handling, and sync checkpoints. Zero runtime dependencies so it runs unchanged in React Native, on the edge gateway, and in Node tests.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.9"
+  }
+}

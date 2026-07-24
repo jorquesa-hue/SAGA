@@ -21,8 +21,8 @@ not the broker, is the source of truth — streams are reproducible by replay.
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Managed or
-operator-managed based on reliability/cost."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Managed or
+operator-managed based on reliability/cost."_
 
 The repository honors the default today:
 

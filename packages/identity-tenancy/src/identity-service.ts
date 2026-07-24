@@ -30,6 +30,7 @@ import {
   mapTenantRow,
   membershipChangeInputSchema,
   parseInput,
+  updateTenantSettingsInputSchema,
   type CreateFarmInput,
   type CreateTenantInput,
   type Farm,
@@ -37,6 +38,7 @@ import {
   type InviteUserInput,
   type MembershipChangeInput,
   type Tenant,
+  type UpdateTenantSettingsInput,
   type TenantMember,
   type TenantMembership,
   type TenantMembershipRow,
@@ -88,8 +90,7 @@ export interface InviteUserResult {
 }
 
 type AuthorizedOutcome<T> =
-  | { ok: true; value: T }
-  | { ok: false; decision: AuthorizationDecision };
+  { ok: true; value: T } | { ok: false; decision: AuthorizationDecision };
 
 export class IdentityService {
   private readonly systemPool: pg.Pool;
@@ -130,7 +131,12 @@ export class IdentityService {
         `INSERT INTO tenant (id, name, default_locale, default_currency, status)
          VALUES ($1, $2, COALESCE($3, 'pt-BR'), COALESCE($4, 'BRL'), 'active')
          RETURNING id, name, default_locale, default_currency, status, created_at`,
-        [tenantId, input.name, input.defaultLocale ?? null, input.defaultCurrency ?? null],
+        [
+          tenantId,
+          input.name,
+          input.defaultLocale ?? null,
+          input.defaultCurrency ?? null,
+        ],
       );
       const tenant = mapTenantRow(inserted.rows[0]!);
 
@@ -168,7 +174,12 @@ export class IdentityService {
         );
       }
 
-      const version = await this.nextAggregateVersion(client, tenantId, "tenant", tenantId);
+      const version = await this.nextAggregateVersion(
+        client,
+        tenantId,
+        "tenant",
+        tenantId,
+      );
       await appendEvent(
         client,
         createEventEnvelope({
@@ -249,7 +260,13 @@ export class IdentityService {
             `INSERT INTO farm (id, tenant_id, name, timezone, area_ha)
              VALUES ($1, $2, $3, COALESCE($4, 'America/Sao_Paulo'), $5)
              RETURNING id, tenant_id, name, timezone, area_ha, created_at`,
-            [farmId, context.tenantId, input.name, input.timezone ?? null, input.areaHa ?? null],
+            [
+              farmId,
+              context.tenantId,
+              input.name,
+              input.timezone ?? null,
+              input.areaHa ?? null,
+            ],
           );
           row = inserted.rows[0]!;
         } catch (error) {
@@ -322,107 +339,103 @@ export class IdentityService {
     rawInput: InviteUserInput,
   ): Promise<InviteUserResult> {
     const input = parseInput(inviteUserInputSchema, rawInput, "inviteUser input");
-    return this.authorized(
-      context,
-      "invite_users",
-      { type: "user" },
-      async (client) => {
-        const existing = await client.query<{ id: string; status: UserAccountStatus }>(
-          `SELECT id, status FROM user_account WHERE lower(email) = lower($1)`,
-          [input.email],
-        );
+    return this.authorized(context, "invite_users", { type: "user" }, async (client) => {
+      const existing = await client.query<{ id: string; status: UserAccountStatus }>(
+        `SELECT id, status FROM user_account WHERE lower(email) = lower($1)`,
+        [input.email],
+      );
 
-        let userId: Uuid;
-        let userStatus: UserAccountStatus;
-        if (existing.rows.length > 0) {
-          userId = existing.rows[0]!.id;
-          userStatus = existing.rows[0]!.status;
-        } else {
-          // Plain INSERT with an app-generated id. ON CONFLICT / RETURNING
-          // are unusable here: under FORCE RLS they enforce the SELECT
-          // policy against the new row, and a user has no membership yet.
-          // A unique violation therefore means the email exists platform-
-          // wide but is invisible in this tenant (see doc above).
-          userId = newUuid();
-          userStatus = "invited";
-          try {
-            await client.query(
-              `INSERT INTO user_account (id, email, display_name, status)
+      let userId: Uuid;
+      let userStatus: UserAccountStatus;
+      if (existing.rows.length > 0) {
+        userId = existing.rows[0]!.id;
+        userStatus = existing.rows[0]!.status;
+      } else {
+        // Plain INSERT with an app-generated id. ON CONFLICT / RETURNING
+        // are unusable here: under FORCE RLS they enforce the SELECT
+        // policy against the new row, and a user has no membership yet.
+        // A unique violation therefore means the email exists platform-
+        // wide but is invisible in this tenant (see doc above).
+        userId = newUuid();
+        userStatus = "invited";
+        try {
+          await client.query(
+            `INSERT INTO user_account (id, email, display_name, status)
                VALUES ($1, $2, $3, 'invited')`,
-              [userId, input.email, input.displayName],
-            );
-          } catch (error) {
-            if ((error as { code?: string }).code === "23505") {
-              throw new ConflictError(
-                "A platform user with this email already exists outside this tenant; " +
-                  "cross-tenant linking requires a platform-level operation",
-              );
-            }
-            throw error;
-          }
-        }
-
-        const duplicate = await client.query(
-          `SELECT 1 FROM tenant_membership
-           WHERE tenant_id = $1 AND user_id = $2 AND role = $3 AND valid_to IS NULL`,
-          [context.tenantId, userId, input.role],
-        );
-        if (duplicate.rows.length > 0) {
-          throw new ConflictError(
-            `User already holds an open '${input.role}' membership in this tenant`,
+            [userId, input.email, input.displayName],
           );
+        } catch (error) {
+          if ((error as { code?: string }).code === "23505") {
+            throw new ConflictError(
+              "A platform user with this email already exists outside this tenant; " +
+                "cross-tenant linking requires a platform-level operation",
+            );
+          }
+          throw error;
         }
+      }
 
-        const membershipId = newUuid();
-        await client.query(
-          `INSERT INTO tenant_membership (id, tenant_id, user_id, role, status)
+      const duplicate = await client.query(
+        `SELECT 1 FROM tenant_membership
+           WHERE tenant_id = $1 AND user_id = $2 AND role = $3 AND valid_to IS NULL`,
+        [context.tenantId, userId, input.role],
+      );
+      if (duplicate.rows.length > 0) {
+        throw new ConflictError(
+          `User already holds an open '${input.role}' membership in this tenant`,
+        );
+      }
+
+      const membershipId = newUuid();
+      await client.query(
+        `INSERT INTO tenant_membership (id, tenant_id, user_id, role, status)
            VALUES ($1, $2, $3, $4, 'invited')`,
-          [membershipId, context.tenantId, userId, input.role],
-        );
+        [membershipId, context.tenantId, userId, input.role],
+      );
 
-        const version = await this.nextAggregateVersion(
-          client,
-          context.tenantId,
-          "user",
-          userId,
-        );
-        await appendEvent(
-          client,
-          createEventEnvelope({
-            eventType: "identity.user_invited.v1",
-            context,
-            farmId: null,
-            aggregateType: "user",
-            aggregateId: userId,
-            aggregateVersion: version,
-            source: { channel: "api" },
-            idempotencyKey:
-              input.idempotencyKey ?? `user-invite-${context.tenantId}-${userId}-${input.role}`,
-            payload: {
-              userId,
-              email: input.email,
-              displayName: input.displayName,
-              role: input.role,
-              membershipId,
-            },
-          }),
-          { environment: this.environment },
-        );
+      const version = await this.nextAggregateVersion(
+        client,
+        context.tenantId,
+        "user",
+        userId,
+      );
+      await appendEvent(
+        client,
+        createEventEnvelope({
+          eventType: "identity.user_invited.v1",
+          context,
+          farmId: null,
+          aggregateType: "user",
+          aggregateId: userId,
+          aggregateVersion: version,
+          source: { channel: "api" },
+          idempotencyKey:
+            input.idempotencyKey ??
+            `user-invite-${context.tenantId}-${userId}-${input.role}`,
+          payload: {
+            userId,
+            email: input.email,
+            displayName: input.displayName,
+            role: input.role,
+            membershipId,
+          },
+        }),
+        { environment: this.environment },
+      );
 
-        await writeAuditRecord(client, {
-          tenantId: context.tenantId,
-          actor: context.actor,
-          action: "identity.user.invited",
-          resourceType: "user",
-          resourceId: userId,
-          outcome: "success",
-          correlationId: context.correlationId,
-          detail: { role: input.role, membershipId },
-        });
+      await writeAuditRecord(client, {
+        tenantId: context.tenantId,
+        actor: context.actor,
+        action: "identity.user.invited",
+        resourceType: "user",
+        resourceId: userId,
+        outcome: "success",
+        correlationId: context.correlationId,
+        detail: { role: input.role, membershipId },
+      });
 
-        return { userId, membershipId, role: input.role, status: "invited", userStatus };
-      },
-    );
+      return { userId, membershipId, role: input.role, status: "invited", userStatus };
+    });
   }
 
   /** Activate an invited membership (manage_members: tenant_owner). */
@@ -480,7 +493,11 @@ export class IdentityService {
             idempotencyKey:
               input.idempotencyKey ??
               `membership-activate-${context.tenantId}-${input.userId}-${input.role}`,
-            payload: { userId: input.userId, role: input.role, membershipId: membership.id },
+            payload: {
+              userId: input.userId,
+              role: input.role,
+              membershipId: membership.id,
+            },
           }),
           { environment: this.environment },
         );
@@ -584,17 +601,101 @@ export class IdentityService {
   // -------------------------------------------------------------------------
 
   async getTenant(context: TenantContext): Promise<Tenant> {
-    return this.authorized(context, "read", { type: "tenant", id: context.tenantId }, async (client) => {
-      const result = await client.query<TenantRow>(
-        `SELECT id, name, default_locale, default_currency, status, created_at
+    return this.authorized(
+      context,
+      "read",
+      { type: "tenant", id: context.tenantId },
+      async (client) => {
+        const result = await client.query<TenantRow>(
+          `SELECT id, name, default_locale, default_currency, status, created_at
          FROM tenant WHERE id = $1`,
-        [context.tenantId],
-      );
-      if (result.rows.length === 0) {
-        throw new NotFoundError(`Tenant ${context.tenantId} not found`);
-      }
-      return mapTenantRow(result.rows[0]!);
-    });
+          [context.tenantId],
+        );
+        if (result.rows.length === 0) {
+          throw new NotFoundError(`Tenant ${context.tenantId} not found`);
+        }
+        return mapTenantRow(result.rows[0]!);
+      },
+    );
+  }
+
+  /**
+   * Update the active tenant's configurable settings — base locale and/or
+   * currency (manage_tenant: tenant_owner). Appends
+   * identity.tenant_settings_updated.v1 and an audit record so the change is
+   * traceable; unspecified fields are left unchanged.
+   */
+  async updateTenant(
+    context: TenantContext,
+    rawInput: UpdateTenantSettingsInput,
+  ): Promise<Tenant> {
+    const input = parseInput(
+      updateTenantSettingsInputSchema,
+      rawInput,
+      "updateTenant input",
+    );
+    return this.authorized(
+      context,
+      "manage_tenant",
+      { type: "tenant", id: context.tenantId },
+      async (client) => {
+        const result = await client.query<TenantRow>(
+          `UPDATE tenant
+              SET default_locale = COALESCE($2, default_locale),
+                  default_currency = COALESCE($3, default_currency)
+            WHERE id = $1
+            RETURNING id, name, default_locale, default_currency, status, created_at`,
+          [context.tenantId, input.defaultLocale ?? null, input.defaultCurrency ?? null],
+        );
+        if (result.rows.length === 0) {
+          throw new NotFoundError(`Tenant ${context.tenantId} not found`);
+        }
+        const tenant = mapTenantRow(result.rows[0]!);
+
+        const version = await this.nextAggregateVersion(
+          client,
+          context.tenantId,
+          "tenant",
+          context.tenantId,
+        );
+        await appendEvent(
+          client,
+          createEventEnvelope({
+            eventType: "identity.tenant_settings_updated.v1",
+            context,
+            farmId: null,
+            aggregateType: "tenant",
+            aggregateId: context.tenantId,
+            aggregateVersion: version,
+            source: { channel: "api" },
+            idempotencyKey:
+              input.idempotencyKey ?? `tenant-settings-${context.tenantId}-${version}`,
+            payload: {
+              tenantId: context.tenantId,
+              defaultLocale: tenant.defaultLocale,
+              defaultCurrency: tenant.defaultCurrency,
+            },
+          }),
+          { environment: this.environment },
+        );
+
+        await writeAuditRecord(client, {
+          tenantId: context.tenantId,
+          actor: context.actor,
+          action: "identity.tenant.settings_updated",
+          resourceType: "tenant",
+          resourceId: context.tenantId,
+          outcome: "success",
+          correlationId: context.correlationId,
+          detail: {
+            defaultLocale: tenant.defaultLocale,
+            defaultCurrency: tenant.defaultCurrency,
+          },
+        });
+
+        return tenant;
+      },
+    );
   }
 
   async listFarms(context: TenantContext): Promise<Farm[]> {
