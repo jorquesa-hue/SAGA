@@ -14,7 +14,15 @@ import { Orchestrator } from "./orchestrator.js";
  * the governed recommendation service (evidence, kill switch, prohibited block).
  */
 function log(level: string, msg: string, extra: Record<string, unknown> = {}): void {
-  process.stdout.write(JSON.stringify({ level, time: new Date().toISOString(), service: "jk-ai-orchestrator", msg, ...extra }) + "\n");
+  process.stdout.write(
+    JSON.stringify({
+      level,
+      time: new Date().toISOString(),
+      service: "jk-ai-orchestrator",
+      msg,
+      ...extra,
+    }) + "\n",
+  );
 }
 
 function agentContext(tenantId: Uuid): TenantContext {
@@ -27,13 +35,29 @@ function agentContext(tenantId: Uuid): TenantContext {
 
 async function main(): Promise<void> {
   const config = loadOrchestratorConfig();
-  const systemPool = createPool({ connectionString: config.DATABASE_URL, applicationName: "jk-ai-orchestrator-sys" });
-  const appPool = createPool({ connectionString: config.APP_DATABASE_URL, applicationName: "jk-ai-orchestrator" });
-  const recommendations = new RecommendationService({ appPool, environment: config.APP_ENV, aiEnabled: config.AI_ENABLED });
-  const orchestrator = new Orchestrator({ appPool, recommendations, environment: config.APP_ENV });
+  const systemPool = createPool({
+    connectionString: config.DATABASE_URL,
+    applicationName: "jk-ai-orchestrator-sys",
+  });
+  const appPool = createPool({
+    connectionString: config.APP_DATABASE_URL,
+    applicationName: "jk-ai-orchestrator",
+  });
+  const recommendations = new RecommendationService({
+    appPool,
+    environment: config.APP_ENV,
+    aiEnabled: config.AI_ENABLED,
+  });
+  const orchestrator = new Orchestrator({
+    appPool,
+    recommendations,
+    environment: config.APP_ENV,
+  });
 
   async function activeTenants(): Promise<Uuid[]> {
-    const r = await systemPool.query<{ id: Uuid }>(`SELECT id FROM tenant WHERE status = 'active'`);
+    const r = await systemPool.query<{ id: Uuid }>(
+      `SELECT id FROM tenant WHERE status = 'active'`,
+    );
     return r.rows.map((row) => row.id);
   }
 
@@ -51,12 +75,16 @@ async function main(): Promise<void> {
     }
   }
 
-  const timer = setInterval(() => void analyzeAll().catch(() => undefined), config.ANALYZE_INTERVAL_MS);
+  const timer = setInterval(
+    () => void analyzeAll().catch(() => undefined),
+    config.ANALYZE_INTERVAL_MS,
+  );
 
   const server = createServer((req, res) => void handle(req, res));
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = req.url?.split("?")[0] ?? "/";
-    if (req.method === "GET" && url === "/health/live") return json(res, 200, { status: "live", aiEnabled: config.AI_ENABLED });
+    if (req.method === "GET" && url === "/health/live")
+      return json(res, 200, { status: "live", aiEnabled: config.AI_ENABLED });
     if (req.method === "GET" && url === "/health/ready") {
       try {
         await appPool.query("SELECT 1");
@@ -73,7 +101,12 @@ async function main(): Promise<void> {
     json(res, 404, { status: "not_found" });
   }
 
-  server.listen(config.PORT, () => log("info", "ai_orchestrator_started", { port: config.PORT, aiEnabled: config.AI_ENABLED }));
+  server.listen(config.PORT, () =>
+    log("info", "ai_orchestrator_started", {
+      port: config.PORT,
+      aiEnabled: config.AI_ENABLED,
+    }),
+  );
 
   let stopping = false;
   const shutdown = async (signal: string): Promise<void> => {

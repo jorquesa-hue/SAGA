@@ -29,7 +29,11 @@ import {
 import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { ApiConfig } from "./config.js";
-import { createAuthenticator, type AuthenticatedPrincipal, type Authenticator } from "./auth.js";
+import {
+  createAuthenticator,
+  type AuthenticatedPrincipal,
+  type Authenticator,
+} from "./auth.js";
 import { RouteNotFoundError, UnauthorizedError } from "./errors.js";
 import type { DatabasePools } from "./pools.js";
 import { PROBLEM_CONTENT_TYPE, toProblem } from "./problem.js";
@@ -73,7 +77,12 @@ const __dir = dirname(fileURLToPath(import.meta.url));
  */
 export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
   const logger =
-    deps.logger ?? createLogger({ service: "jk-api", environment: deps.config.APP_ENV, level: deps.config.LOG_LEVEL });
+    deps.logger ??
+    createLogger({
+      service: "jk-api",
+      environment: deps.config.APP_ENV,
+      level: deps.config.LOG_LEVEL,
+    });
   const authenticator = deps.authenticator ?? createAuthenticator(deps.config);
   const identityService =
     deps.identityService ??
@@ -104,33 +113,74 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   });
   const alertService = new AlertService({ appPool: deps.pools.appPool });
   const reportService = new ReportService({ appPool: deps.pools.appPool });
-  const landService = new LandGrazingService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
-  const inventoryService = new InventoryService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
-  const assetsService = new AssetsMaintenanceService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
-  const financeService = new FinanceService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
-  const geneticsService = new GeneticsService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
-  const farmIntelligenceService = new FarmIntelligenceService({ appPool: deps.pools.appPool });
+  const landService = new LandGrazingService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const inventoryService = new InventoryService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const assetsService = new AssetsMaintenanceService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const financeService = new FinanceService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const geneticsService = new GeneticsService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const farmIntelligenceService = new FarmIntelligenceService({
+    appPool: deps.pools.appPool,
+  });
   const recommendationService = new RecommendationService({
     appPool: deps.pools.appPool,
     environment: deps.config.APP_ENV,
     aiEnabled: deps.config.AI_ENABLED,
   });
-  const webhookService = new WebhookService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
-  const connectorService = new ConnectorRegistryService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
-  const exportService = new ExportService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
+  const webhookService = new WebhookService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const connectorService = new ConnectorRegistryService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
+  const exportService = new ExportService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
   const searchService = new SearchService({ appPool: deps.pools.appPool });
-  const importService = new ImportService({ appPool: deps.pools.appPool, environment: deps.config.APP_ENV });
+  const importService = new ImportService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
 
   // CORS for browser clients (§46). Explicit allowlist in production; in local
   // dev with no allowlist, reflect the request origin so the Vite dev server
   // works. Credentials are never used (the API is token/tenant-header based).
-  const corsOrigins = (deps.config.CORS_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+  const corsOrigins = (deps.config.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
   await app.register(cors, {
     origin: corsOrigins.length > 0 ? corsOrigins : deps.config.APP_ENV === "local",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["content-type", "authorization", "x-tenant-id", "idempotency-key", CORRELATION_HEADER, "x-dev-user-id", "x-dev-platform-admin", "x-dev-display-name"],
+    allowedHeaders: [
+      "content-type",
+      "authorization",
+      "x-tenant-id",
+      "idempotency-key",
+      CORRELATION_HEADER,
+      "x-dev-user-id",
+      "x-dev-platform-admin",
+      "x-dev-display-name",
+    ],
     exposedHeaders: [CORRELATION_HEADER, "x-content-checksum-sha256"],
     maxAge: 600,
   });
@@ -190,9 +240,10 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       const yaml = await readFile(openapiPath, "utf8");
       reply.type("application/yaml").send(yaml);
     } catch {
-      reply.status(404).type(PROBLEM_CONTENT_TYPE).send(
-        toProblem(new RouteNotFoundError("OpenAPI document not found"), "n/a"),
-      );
+      reply
+        .status(404)
+        .type(PROBLEM_CONTENT_TYPE)
+        .send(toProblem(new RouteNotFoundError("OpenAPI document not found"), "n/a"));
     }
   });
 
@@ -205,7 +256,13 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerReproductionRoutes(app, reproductionService);
   registerAnalyticsRoutes(app, alertService, reportService);
   registerPhase3Routes(app, landService, inventoryService, assetsService);
-  registerPhase4Routes(app, financeService, geneticsService, farmIntelligenceService, identityService);
+  registerPhase4Routes(
+    app,
+    financeService,
+    geneticsService,
+    farmIntelligenceService,
+    identityService,
+  );
   registerAiRoutes(app, recommendationService);
   registerWebhookRoutes(app, webhookService, connectorService);
   registerExportRoutes(app, exportService);

@@ -12,7 +12,8 @@ import { buildTenantContext } from "../request-context.js";
 function idem(request: FastifyRequest): string {
   const v = request.headers["idempotency-key"];
   const key = Array.isArray(v) ? v[0] : v;
-  if (!key) throw new MissingHeaderError("Idempotency-Key header is required for this command");
+  if (!key)
+    throw new MissingHeaderError("Idempotency-Key header is required for this command");
   return key;
 }
 function tenant(request: FastifyRequest): string | undefined {
@@ -20,18 +21,30 @@ function tenant(request: FastifyRequest): string | undefined {
   return Array.isArray(raw) ? raw[0] : raw;
 }
 
-export function registerImportRoutes(app: FastifyInstance, imports: ImportService, animals: AnimalRegistryService): void {
-  const ctx = (r: FastifyRequest) => buildTenantContext(r.principal, tenant(r), r.correlationId);
+export function registerImportRoutes(
+  app: FastifyInstance,
+  imports: ImportService,
+  animals: AnimalRegistryService,
+): void {
+  const ctx = (r: FastifyRequest) =>
+    buildTenantContext(r.principal, tenant(r), r.correlationId);
 
   app.post("/api/v1/imports", async (r: FastifyRequest, reply: FastifyReply) => {
     const key = idem(r);
-    const job = await imports.upload(ctx(r), { ...(r.body as object), idempotencyKey: `import:${key}` } as never);
+    const job = await imports.upload(ctx(r), {
+      ...(r.body as object),
+      idempotencyKey: `import:${key}`,
+    } as never);
     reply.status(201);
     return job;
   });
 
-  app.get("/api/v1/imports", async (r: FastifyRequest) => ({ items: await imports.listJobs(ctx(r)) }));
-  app.get("/api/v1/imports/:id", async (r: FastifyRequest) => imports.getJob(ctx(r), (r.params as { id: string }).id));
+  app.get("/api/v1/imports", async (r: FastifyRequest) => ({
+    items: await imports.listJobs(ctx(r)),
+  }));
+  app.get("/api/v1/imports/:id", async (r: FastifyRequest) =>
+    imports.getJob(ctx(r), (r.params as { id: string }).id),
+  );
 
   app.post("/api/v1/imports/:id/parse", async (r: FastifyRequest) => {
     idem(r);
@@ -45,7 +58,9 @@ export function registerImportRoutes(app: FastifyInstance, imports: ImportServic
     idem(r);
     return imports.validate(ctx(r), (r.params as { id: string }).id);
   });
-  app.get("/api/v1/imports/:id/preview", async (r: FastifyRequest) => imports.preview(ctx(r), (r.params as { id: string }).id));
+  app.get("/api/v1/imports/:id/preview", async (r: FastifyRequest) =>
+    imports.preview(ctx(r), (r.params as { id: string }).id),
+  );
 
   app.post("/api/v1/imports/:id/execute", async (r: FastifyRequest) => {
     idem(r);

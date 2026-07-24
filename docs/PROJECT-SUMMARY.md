@@ -56,20 +56,20 @@ deployment see [`docs/operations/deployment.md`](operations/deployment.md).
 
 ### Bounded-context (feature) packages
 
-| package | context |
-| --- | --- |
-| `@jk/identity-tenancy` | tenants, farms, users, memberships, RLS onboarding |
-| `@jk/animal-registry` | animal identity, identifiers, timeline |
-| `@jk/herd-operations` | weighing/handling sessions, lots, paddock movements |
-| `@jk/health-laboratory` | protocols, treatments, withdrawal → sale-clear block |
-| `@jk/reproduction-genetics` | service → pregnancy → calving, DEP/EBV, selection index |
-| `@jk/land-grazing` | paddocks, grazing occupation, pasture assessment (kg/ha) |
-| `@jk/nutrition-inventory` | item master, stock ledger, batches, expiry |
-| `@jk/finance-commerce` | expenses/revenue/allocation, sales, margin, budgets |
-| `@jk/assets-maintenance` | assets, schedules, calibration, work orders |
+| package                      | context                                                                |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `@jk/identity-tenancy`       | tenants, farms, users, memberships, RLS onboarding                     |
+| `@jk/animal-registry`        | animal identity, identifiers, timeline                                 |
+| `@jk/herd-operations`        | weighing/handling sessions, lots, paddock movements                    |
+| `@jk/health-laboratory`      | protocols, treatments, withdrawal → sale-clear block                   |
+| `@jk/reproduction-genetics`  | service → pregnancy → calving, DEP/EBV, selection index                |
+| `@jk/land-grazing`           | paddocks, grazing occupation, pasture assessment (kg/ha)               |
+| `@jk/nutrition-inventory`    | item master, stock ledger, batches, expiry                             |
+| `@jk/finance-commerce`       | expenses/revenue/allocation, sales, margin, budgets                    |
+| `@jk/assets-maintenance`     | assets, schedules, calibration, work orders                            |
 | `@jk/analytics-intelligence` | alerts, reports, Farm Intelligence Index, governed AI, exports, search |
-| `@jk/automation-integration` | connector framework + tenant webhooks |
-| `@jk/data-import` | staged CSV import (upload→…→reconcile) |
+| `@jk/automation-integration` | connector framework + tenant webhooks                                  |
+| `@jk/data-import`            | staged CSV import (upload→…→reconcile)                                 |
 
 Feature packages never import each other — cross-context collaboration is via
 application ports (the API composition root) or domain events.
@@ -83,13 +83,13 @@ errors, config), `@jk/database` (migrator, RLS client, event store/outbox),
 
 ### Applications
 
-| app | role |
-| --- | --- |
-| `apps/api` | Fastify REST API over all contexts; auth, RFC 9457, CORS |
-| `apps/worker` | transactional-outbox relay + projections |
-| `apps/web` | React/Vite console — 14 screens over the whole surface |
-| `apps/mobile` | React Native field app (offline-first) on `@jk/offline-sync` |
-| `apps/edge-gateway` | on-farm durable device ingestion + upstream batch sync |
+| app                    | role                                                              |
+| ---------------------- | ----------------------------------------------------------------- |
+| `apps/api`             | Fastify REST API over all contexts; auth, RFC 9457, CORS          |
+| `apps/worker`          | transactional-outbox relay + projections                          |
+| `apps/web`             | React/Vite console — 14 screens over the whole surface            |
+| `apps/mobile`          | React Native field app (offline-first) on `@jk/offline-sync`      |
+| `apps/edge-gateway`    | on-farm durable device ingestion + upstream batch sync            |
 | `apps/ai-orchestrator` | governed AI runtime (tools, policy guard, deterministic provider) |
 
 ## Mandatory scenarios proven (executable)

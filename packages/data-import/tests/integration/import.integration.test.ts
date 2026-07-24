@@ -38,7 +38,11 @@ describe.skipIf(!available)("ImportService staged workflow (integration)", () =>
     db = await createTestDatabase("jk_import");
     identity = makeIdentityService(db);
     imports = new ImportService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Import", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Import",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -65,7 +69,12 @@ describe.skipIf(!available)("ImportService staged workflow (integration)", () =>
       return { status: "created", serverId };
     };
 
-    const uploaded = await imports.upload(owner, { importType: "animals", filename: "herd.csv", content: CSV, farmId });
+    const uploaded = await imports.upload(owner, {
+      importType: "animals",
+      filename: "herd.csv",
+      content: CSV,
+      farmId,
+    });
     expect(uploaded.status).toBe("uploaded");
 
     await imports.parse(owner, uploaded.id);
@@ -92,22 +101,40 @@ describe.skipIf(!available)("ImportService staged workflow (integration)", () =>
     expect(reconciled.sample[0]!.executionStatus).toBe("created");
 
     // Raw upload preserved verbatim as evidence (§27).
-    const evidence = await db.adminPool.query(`SELECT raw_content, raw_checksum FROM import_job WHERE id = $1`, [uploaded.id]);
+    const evidence = await db.adminPool.query(
+      `SELECT raw_content, raw_checksum FROM import_job WHERE id = $1`,
+      [uploaded.id],
+    );
     expect(evidence.rows[0].raw_content).toBe(CSV);
     expect(evidence.rows[0].raw_checksum).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("refuses to execute before validation (stage order)", async () => {
-    const uploaded = await imports.upload(owner, { importType: "animals", content: "tag,gender\nBR-8000,female", farmId });
+    const uploaded = await imports.upload(owner, {
+      importType: "animals",
+      content: "tag,gender\nBR-8000,female",
+      farmId,
+    });
     await imports.parse(owner, uploaded.id);
-    await expect(imports.execute(owner, uploaded.id, async () => ({ status: "created" }))).rejects.toBeInstanceOf(ImportStateError);
+    await expect(
+      imports.execute(owner, uploaded.id, async () => ({ status: "created" })),
+    ).rejects.toBeInstanceOf(ImportStateError);
   });
 
   it("denies import to a non-management role (finance_user)", async () => {
-    const invite = await identity.inviteUser(owner, { email: "fin@example.com", displayName: "Fin", role: "finance_user" });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "finance_user" });
+    const invite = await identity.inviteUser(owner, {
+      email: "fin@example.com",
+      displayName: "Fin",
+      role: "finance_user",
+    });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "finance_user",
+    });
     const fin = makeTenantContext(tenantId, invite.userId);
-    await expect(imports.upload(fin, { importType: "animals", content: "tag\nX" })).rejects.toBeInstanceOf(ImportForbiddenError);
+    await expect(
+      imports.upload(fin, { importType: "animals", content: "tag\nX" }),
+    ).rejects.toBeInstanceOf(ImportForbiddenError);
   });
 
   it("does not leak imports across tenants", async () => {

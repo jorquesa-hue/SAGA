@@ -1,4 +1,9 @@
-import { createEventEnvelope, newUuid, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  createEventEnvelope,
+  newUuid,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import { appendEvent } from "@jk/database";
 import type pg from "pg";
 import { CALF_REGISTERED } from "./events.js";
@@ -43,7 +48,14 @@ export const defaultCalfRegistrar: CalfRegistrar = {
          (id, tenant_id, farm_id, visual_id, species_code, breed_code, sex,
           birth_date, birth_date_precision, lifecycle_status, version)
        VALUES ($1,$2,$3,$4,'BOVINE','BRANGUS',$5,$6,'exact','active',1)`,
-      [calfId, context.tenantId, input.farmId, input.visualId, input.sex, input.birthDate],
+      [
+        calfId,
+        context.tenantId,
+        input.farmId,
+        input.visualId,
+        input.sex,
+        input.birthDate,
+      ],
     );
     // Visual identifier.
     await client.query(

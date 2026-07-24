@@ -11,7 +11,13 @@ import { FarmIntelligenceService } from "../../src/farm-intelligence.js";
 
 const available = databaseAvailable();
 
-async function makeAnimal(db: TestDatabase, tenantId: Uuid, farmId: Uuid, visualId: string, rfid?: string): Promise<Uuid> {
+async function makeAnimal(
+  db: TestDatabase,
+  tenantId: Uuid,
+  farmId: Uuid,
+  visualId: string,
+  rfid?: string,
+): Promise<Uuid> {
   const id = newUuid();
   await db.adminPool.query(
     `INSERT INTO animal (id, tenant_id, farm_id, visual_id, sex, version) VALUES ($1,$2,$3,$4,'female',0)`,
@@ -44,7 +50,11 @@ describe.skipIf(!available)("FarmIntelligenceService (integration)", () => {
     db = await createTestDatabase("jk_fii");
     identity = makeIdentityService(db);
     fii = new FarmIntelligenceService({ appPool: db.appPool });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda FII", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda FII",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -74,7 +84,9 @@ describe.skipIf(!available)("FarmIntelligenceService (integration)", () => {
 
     // The composite equals the weighted sum / total weight * 100.
     const totalWeight = index.components.reduce((s, c) => s + c.weight, 0);
-    const expected = (100 * index.components.reduce((s, c) => s + c.weightedContribution, 0)) / totalWeight;
+    const expected =
+      (100 * index.components.reduce((s, c) => s + c.weightedContribution, 0)) /
+      totalWeight;
     expect(index.score).toBeCloseTo(Math.round(expected * 10) / 10, 1);
   });
 

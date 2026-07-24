@@ -21,8 +21,8 @@ tests.
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Simulator plus
-adapter interface; no vendor code in domain layer."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Simulator plus
+adapter interface; no vendor code in domain layer."_
 
 The repository honors the default today:
 

@@ -130,7 +130,10 @@ export class ConnectorRegistryService {
     this.environment = options.environment ?? "local";
   }
 
-  async registerConnector(context: TenantContext, rawInput: RegisterConnectorInput): Promise<ConnectorRegistration> {
+  async registerConnector(
+    context: TenantContext,
+    rawInput: RegisterConnectorInput,
+  ): Promise<ConnectorRegistration> {
     const input = parse(registerConnectorInputSchema, rawInput);
     return this.manage(context, async (client) => {
       const id = newUuid();
@@ -144,59 +147,103 @@ export class ConnectorRegistryService {
           aggregateVersion: 1,
           source: { channel: "system" },
           idempotencyKey: input.idempotencyKey ?? `connector-${id}`,
-          payload: { connectorId: id, connectorType: input.connectorType, name: input.name },
+          payload: {
+            connectorId: id,
+            connectorType: input.connectorType,
+            name: input.name,
+          },
         }),
         { environment: this.environment },
       );
       await client.query(
         `INSERT INTO connector_registration (id, tenant_id, connector_type, name, config, status, event_id)
          VALUES ($1,$2,$3,$4,$5,'active',$6)`,
-        [id, context.tenantId, input.connectorType, input.name, JSON.stringify(input.config), append.eventId],
+        [
+          id,
+          context.tenantId,
+          input.connectorType,
+          input.name,
+          JSON.stringify(input.config),
+          append.eventId,
+        ],
       );
-      return { id, connectorType: input.connectorType, name: input.name, status: "active" };
+      return {
+        id,
+        connectorType: input.connectorType,
+        name: input.name,
+        status: "active",
+      };
     });
   }
 
   async listConnectors(context: TenantContext): Promise<ConnectorRegistration[]> {
     return this.read(context, async (client) => {
-      const result = await client.query<{ id: Uuid; connector_type: string; name: string; status: string }>(
+      const result = await client.query<{
+        id: Uuid;
+        connector_type: string;
+        name: string;
+        status: string;
+      }>(
         `SELECT id, connector_type, name, status FROM connector_registration ORDER BY created_at DESC`,
       );
-      return result.rows.map((r) => ({ id: r.id, connectorType: r.connector_type, name: r.name, status: r.status }));
+      return result.rows.map((r) => ({
+        id: r.id,
+        connectorType: r.connector_type,
+        name: r.name,
+        status: r.status,
+      }));
     });
   }
 
   async getConnector(context: TenantContext, id: Uuid): Promise<ConnectorRegistration> {
     return this.read(context, async (client) => {
-      const result = await client.query<{ id: Uuid; connector_type: string; name: string; status: string }>(
+      const result = await client.query<{
+        id: Uuid;
+        connector_type: string;
+        name: string;
+        status: string;
+      }>(
         `SELECT id, connector_type, name, status FROM connector_registration WHERE id = $1`,
         [id],
       );
       if (result.rows.length === 0) throw new NotFoundError(`Connector ${id} not found`);
       const r = result.rows[0]!;
-      return { id: r.id, connectorType: r.connector_type, name: r.name, status: r.status };
+      return {
+        id: r.id,
+        connectorType: r.connector_type,
+        name: r.name,
+        status: r.status,
+      };
     });
   }
 
-  private async manage<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async manage<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships = await loadCallerMemberships(client, context);
       const decision = decide("manage_integrations", context, memberships);
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new IntegrationForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new IntegrationForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 
-  private async read<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async read<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships = await loadCallerMemberships(client, context);
       const decision = decide("read", context, memberships);
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new IntegrationForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new IntegrationForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

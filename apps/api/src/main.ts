@@ -34,7 +34,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-   
   console.error("fatal startup error:", error instanceof Error ? error.message : error);
   process.exit(1);
 });

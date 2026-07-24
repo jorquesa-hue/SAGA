@@ -3,6 +3,7 @@ import { Layout } from "./components/Layout.js";
 import { Alerts } from "./pages/Alerts.js";
 import { AnimalDetail } from "./pages/AnimalDetail.js";
 import { Animals } from "./pages/Animals.js";
+import { Budgets } from "./pages/Budgets.js";
 import { Dashboard } from "./pages/Dashboard.js";
 import { Exports } from "./pages/Exports.js";
 import { Finance } from "./pages/Finance.js";
@@ -43,6 +44,7 @@ export function App(): JSX.Element {
         <Route path="lots" element={<Lots />} />
         <Route path="lots/:id" element={<LotDetail />} />
         <Route path="finance" element={<Finance />} />
+        <Route path="budgets" element={<Budgets />} />
         <Route path="imports" element={<Imports />} />
         <Route path="alerts" element={<Alerts />} />
         <Route path="recommendations" element={<Recommendations />} />

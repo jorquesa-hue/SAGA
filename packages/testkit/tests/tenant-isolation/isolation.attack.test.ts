@@ -10,7 +10,11 @@ import {
 import { appendEvent, withTenantTransaction } from "@jk/database";
 import { ForbiddenError, type IdentityService } from "@jk/identity-tenancy";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestDatabase, databaseAvailable, type TestDatabase } from "../../src/pg-harness.js";
+import {
+  createTestDatabase,
+  databaseAvailable,
+  type TestDatabase,
+} from "../../src/pg-harness.js";
 import {
   makeIdentityService,
   makeTenantContext,
@@ -47,7 +51,10 @@ describe.skipIf(!available)("cross-tenant isolation attack suite", () => {
     tenantB = await seedTenantWithOwner(service, "Rancho Boa Vista", "bruno@example.com");
     // Give tenant A a farm to try to steal.
     await service.createFarm(tenantA.ownerContext, { name: "Sede Aurora", areaHa: 100 });
-    await service.createFarm(tenantB.ownerContext, { name: "Sede Boa Vista", areaHa: 80 });
+    await service.createFarm(tenantB.ownerContext, {
+      name: "Sede Boa Vista",
+      areaHa: 80,
+    });
   }, 90_000);
 
   afterAll(async () => {
@@ -57,12 +64,21 @@ describe.skipIf(!available)("cross-tenant isolation attack suite", () => {
   // --- SQL / RLS layer (jk_app role) ---------------------------------------
 
   describe("SQL / RLS layer (jk_app)", () => {
-    const tables = ["farm", "animal", "paddock", "domain_event", "outbox_message", "tenant_membership"];
+    const tables = [
+      "farm",
+      "animal",
+      "paddock",
+      "domain_event",
+      "outbox_message",
+      "tenant_membership",
+    ];
 
     it("a correctly-scoped B context sees none of A's rows", async () => {
       for (const table of tables) {
-        const rows = await withTenantTransaction(db.appPool, tenantB.ownerContext, (client) =>
-          client.query(`SELECT * FROM ${table}`),
+        const rows = await withTenantTransaction(
+          db.appPool,
+          tenantB.ownerContext,
+          (client) => client.query(`SELECT * FROM ${table}`),
         );
         const foreign = rows.rows.filter(
           (r: Record<string, unknown>) => r.tenant_id === tenantA.tenantId,
@@ -82,8 +98,13 @@ describe.skipIf(!available)("cross-tenant isolation attack suite", () => {
     });
 
     it("B cannot UPDATE A's farm (0 rows affected under B's scope)", async () => {
-      const result = await withTenantTransaction(db.appPool, tenantB.ownerContext, (client) =>
-        client.query(`UPDATE farm SET name = 'Roubada' WHERE tenant_id = $1`, [tenantA.tenantId]),
+      const result = await withTenantTransaction(
+        db.appPool,
+        tenantB.ownerContext,
+        (client) =>
+          client.query(`UPDATE farm SET name = 'Roubada' WHERE tenant_id = $1`, [
+            tenantA.tenantId,
+          ]),
       );
       expect(result.rowCount).toBe(0);
     });
@@ -112,7 +133,10 @@ describe.skipIf(!available)("cross-tenant isolation attack suite", () => {
 
     it("B's user selecting tenant A is denied (no membership → 403)", async () => {
       // Simulate a client forging x-tenant-id: A's tenant id, B's user identity.
-      const forged: TenantContext = makeTenantContext(tenantA.tenantId, tenantB.ownerUserId);
+      const forged: TenantContext = makeTenantContext(
+        tenantA.tenantId,
+        tenantB.ownerUserId,
+      );
       await expect(service.listFarms(forged)).rejects.toBeInstanceOf(ForbiddenError);
       await expect(service.getTenant(forged)).rejects.toBeInstanceOf(ForbiddenError);
       await expect(
@@ -124,10 +148,13 @@ describe.skipIf(!available)("cross-tenant isolation attack suite", () => {
       const forged = makeTenantContext(tenantA.tenantId, tenantB.ownerUserId);
       await service.listFarms(forged).catch(() => {});
       // Audit rows for tenant A are visible only under A's scope.
-      const audits = await withTenantTransaction(db.appPool, tenantA.ownerContext, (client) =>
-        client.query<{ outcome: string; detail: { reason?: string } }>(
-          `SELECT outcome, detail FROM audit_record WHERE outcome = 'denied'`,
-        ),
+      const audits = await withTenantTransaction(
+        db.appPool,
+        tenantA.ownerContext,
+        (client) =>
+          client.query<{ outcome: string; detail: { reason?: string } }>(
+            `SELECT outcome, detail FROM audit_record WHERE outcome = 'denied'`,
+          ),
       );
       expect(audits.rows.length).toBeGreaterThan(0);
       expect(audits.rows.some((r) => typeof r.detail?.reason === "string")).toBe(true);
@@ -176,11 +203,15 @@ describe.skipIf(!available)("cross-tenant isolation attack suite", () => {
       } finally {
         workerClient.release();
       }
-      const visibleToB = await withTenantTransaction(db.appPool, tenantB.ownerContext, (client) =>
-        client.query(`SELECT * FROM projection_event_stats`),
+      const visibleToB = await withTenantTransaction(
+        db.appPool,
+        tenantB.ownerContext,
+        (client) => client.query(`SELECT * FROM projection_event_stats`),
       );
       expect(
-        visibleToB.rows.some((r: Record<string, unknown>) => r.tenant_id === tenantA.tenantId),
+        visibleToB.rows.some(
+          (r: Record<string, unknown>) => r.tenant_id === tenantA.tenantId,
+        ),
       ).toBe(false);
     });
   });
@@ -202,8 +233,11 @@ describe.skipIf(!available)("cross-tenant isolation attack suite", () => {
   });
 });
 
-describe.skipIf(available)("cross-tenant isolation attack suite (PostgreSQL unavailable)", () => {
-  it("skips when no database is reachable", () => {
-    expect(true).toBe(true);
-  });
-});
+describe.skipIf(available)(
+  "cross-tenant isolation attack suite (PostgreSQL unavailable)",
+  () => {
+    it("skips when no database is reachable", () => {
+      expect(true).toBe(true);
+    });
+  },
+);

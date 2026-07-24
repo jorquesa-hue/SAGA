@@ -8,15 +8,10 @@ import { z } from "zod";
  */
 
 export type Sex = "female" | "male" | "unknown";
-export type BirthDatePrecision = "exact" | "estimated_month" | "estimated_year" | "unknown";
+export type BirthDatePrecision =
+  "exact" | "estimated_month" | "estimated_year" | "unknown";
 export type LifecycleStatus =
-  | "planned"
-  | "active"
-  | "quarantined"
-  | "sold"
-  | "deceased"
-  | "missing"
-  | "transferred";
+  "planned" | "active" | "quarantined" | "sold" | "deceased" | "missing" | "transferred";
 export type IdentifierType = "rfid" | "visual" | "official" | "legacy";
 
 export interface Animal {

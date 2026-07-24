@@ -12,6 +12,7 @@ const NAV = [
   { to: "/reproduction", key: "nav.reproduction" },
   { to: "/lots", key: "nav.lots" },
   { to: "/finance", key: "nav.finance" },
+  { to: "/budgets", key: "nav.budgets" },
   { to: "/alerts", key: "nav.alerts" },
   { to: "/recommendations", key: "nav.ai" },
   { to: "/integrations", key: "nav.integrations" },

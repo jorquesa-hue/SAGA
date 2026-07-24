@@ -1,4 +1,10 @@
-import { Outbox, SyncEngine, type LocalStore, type SyncReport, type SyncTransport } from "@jk/offline-sync";
+import {
+  Outbox,
+  SyncEngine,
+  type LocalStore,
+  type SyncReport,
+  type SyncTransport,
+} from "@jk/offline-sync";
 
 export interface QueueStatus {
   pending: number;
@@ -25,7 +31,11 @@ export class CaptureController {
   private readonly outbox: Outbox;
   private readonly engine: SyncEngine;
 
-  constructor(private readonly store: LocalStore, transport: SyncTransport, options: { gatewayId?: string } = {}) {
+  constructor(
+    private readonly store: LocalStore,
+    transport: SyncTransport,
+    options: { gatewayId?: string } = {},
+  ) {
     this.outbox = new Outbox({ store });
     this.engine = new SyncEngine({ store, transport });
     this.gatewayId = options.gatewayId ?? "mobile";

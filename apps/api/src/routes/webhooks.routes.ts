@@ -1,4 +1,7 @@
-import type { ConnectorRegistryService, WebhookService } from "@jk/automation-integration";
+import type {
+  ConnectorRegistryService,
+  WebhookService,
+} from "@jk/automation-integration";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { MissingHeaderError } from "../errors.js";
 import { buildTenantContext } from "../request-context.js";
@@ -7,7 +10,8 @@ import { buildTenantContext } from "../request-context.js";
 function idem(request: FastifyRequest): string {
   const v = request.headers["idempotency-key"];
   const key = Array.isArray(v) ? v[0] : v;
-  if (!key) throw new MissingHeaderError("Idempotency-Key header is required for this command");
+  if (!key)
+    throw new MissingHeaderError("Idempotency-Key header is required for this command");
   return key;
 }
 function tenant(request: FastifyRequest): string | undefined {
@@ -20,15 +24,22 @@ export function registerWebhookRoutes(
   webhooks: WebhookService,
   connectors: ConnectorRegistryService,
 ): void {
-  const ctx = (r: FastifyRequest) => buildTenantContext(r.principal, tenant(r), r.correlationId);
+  const ctx = (r: FastifyRequest) =>
+    buildTenantContext(r.principal, tenant(r), r.correlationId);
 
   // -- Webhook subscriptions --
-  app.post("/api/v1/webhooks/subscriptions", async (r: FastifyRequest, reply: FastifyReply) => {
-    const key = idem(r);
-    const sub = await webhooks.subscribe(ctx(r), { ...(r.body as object), idempotencyKey: `whsub:${key}` } as never);
-    reply.status(201);
-    return sub;
-  });
+  app.post(
+    "/api/v1/webhooks/subscriptions",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      const key = idem(r);
+      const sub = await webhooks.subscribe(ctx(r), {
+        ...(r.body as object),
+        idempotencyKey: `whsub:${key}`,
+      } as never);
+      reply.status(201);
+      return sub;
+    },
+  );
 
   app.get("/api/v1/webhooks/subscriptions", async (r: FastifyRequest) => {
     return { items: await webhooks.listSubscriptions(ctx(r)) };
@@ -39,19 +50,25 @@ export function registerWebhookRoutes(
     return webhooks.getSubscription(ctx(r), id);
   });
 
-  app.post("/api/v1/webhooks/subscriptions/:id/rotate-secret", async (r: FastifyRequest, reply: FastifyReply) => {
-    idem(r);
-    const { id } = r.params as { id: string };
-    reply.status(200);
-    return webhooks.rotateSecret(ctx(r), id);
-  });
+  app.post(
+    "/api/v1/webhooks/subscriptions/:id/rotate-secret",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      idem(r);
+      const { id } = r.params as { id: string };
+      reply.status(200);
+      return webhooks.rotateSecret(ctx(r), id);
+    },
+  );
 
-  app.delete("/api/v1/webhooks/subscriptions/:id", async (r: FastifyRequest, reply: FastifyReply) => {
-    idem(r);
-    const { id } = r.params as { id: string };
-    await webhooks.deactivate(ctx(r), id);
-    reply.status(204);
-  });
+  app.delete(
+    "/api/v1/webhooks/subscriptions/:id",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      idem(r);
+      const { id } = r.params as { id: string };
+      await webhooks.deactivate(ctx(r), id);
+      reply.status(204);
+    },
+  );
 
   // -- Deliveries --
   app.get("/api/v1/webhooks/deliveries", async (r: FastifyRequest) => {
@@ -59,12 +76,15 @@ export function registerWebhookRoutes(
     return { items: await webhooks.listDeliveries(ctx(r), q) };
   });
 
-  app.post("/api/v1/webhooks/deliveries/:id/replay", async (r: FastifyRequest, reply: FastifyReply) => {
-    idem(r);
-    const { id } = r.params as { id: string };
-    reply.status(200);
-    return webhooks.replayDelivery(ctx(r), id);
-  });
+  app.post(
+    "/api/v1/webhooks/deliveries/:id/replay",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      idem(r);
+      const { id } = r.params as { id: string };
+      reply.status(200);
+      return webhooks.replayDelivery(ctx(r), id);
+    },
+  );
 
   // -- Connector registrations (§33) --
   app.post("/api/v1/connectors", async (r: FastifyRequest, reply: FastifyReply) => {

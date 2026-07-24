@@ -7,7 +7,7 @@ tenant webhooks (§51) and the connector framework (§33).
 
 - **Subscriptions** to an allowlisted set of event families
   (`animal, weight, health, reproduction, herd, inventory, finance, genetics,
-  pasture, asset`). Sensitive contexts (identity/security, AI governance,
+pasture, asset`). Sensitive contexts (identity/security, AI governance,
   device credentials) are never webhook-exposable.
 - **Signed delivery**: HMAC-SHA256 over `timestamp.deliveryId.body`. Consumers
   recompute the signature and reject stale timestamps (default replay window
@@ -35,7 +35,7 @@ decision:
 
 ```ts
 const scheduler = createDispatchScheduler({
-  appPool,                                  // jk_app (RLS-enforced)
+  appPool, // jk_app (RLS-enforced)
   transport: new FetchWebhookTransport(),
   listTenantIds: async () => activeTenantIds(), // system-pool query in prod
 });

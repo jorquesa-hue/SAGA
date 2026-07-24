@@ -2,7 +2,11 @@ import type { RecommendationService } from "@jk/analytics-intelligence";
 import { withTenantTransaction } from "@jk/database";
 import type { TenantContext } from "@jk/domain-kernel";
 import type pg from "pg";
-import { DeterministicProvider, type Finding, type ModelProvider } from "./model-provider.js";
+import {
+  DeterministicProvider,
+  type Finding,
+  type ModelProvider,
+} from "./model-provider.js";
 import { applyPolicy } from "./policy.js";
 import { DEFAULT_TOOLS, type EvidenceTool } from "./tools.js";
 
@@ -45,11 +49,15 @@ export class Orchestrator {
 
   async analyzeTenant(context: TenantContext): Promise<OrchestratorReport> {
     // 1. Gather grounded evidence (read-only, one RLS transaction).
-    const findings = await withTenantTransaction(this.appPool, context, async (client) => {
-      const all: Finding[] = [];
-      for (const tool of this.tools) all.push(...(await tool(client, context)));
-      return all;
-    });
+    const findings = await withTenantTransaction(
+      this.appPool,
+      context,
+      async (client) => {
+        const all: Finding[] = [];
+        for (const tool of this.tools) all.push(...(await tool(client, context)));
+        return all;
+      },
+    );
 
     // 2. Provider proposes; 3. policy guard filters.
     const drafts = this.provider.propose(findings);
@@ -78,7 +86,10 @@ export class Orchestrator {
     return {
       findings: findings.length,
       proposed: drafts.length,
-      blockedByPolicy: blocked.map((b) => ({ category: b.draft.proposedActionCategory, reason: b.reason })),
+      blockedByPolicy: blocked.map((b) => ({
+        category: b.draft.proposedActionCategory,
+        reason: b.reason,
+      })),
       created,
     };
   }

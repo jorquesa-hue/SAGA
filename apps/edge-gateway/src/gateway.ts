@@ -1,4 +1,10 @@
-import { Outbox, SyncEngine, type LocalStore, type SyncReport, type SyncTransport } from "@jk/offline-sync";
+import {
+  Outbox,
+  SyncEngine,
+  type LocalStore,
+  type SyncReport,
+  type SyncTransport,
+} from "@jk/offline-sync";
 
 export interface DeviceReading {
   /** RFID that links the reading to an animal server-side. */
@@ -28,10 +34,19 @@ export class EdgeGateway {
   private readonly engine: SyncEngine;
   private readonly gatewayId: string;
 
-  constructor(options: { store: LocalStore; transport: SyncTransport; gatewayId: string; batchSize?: number }) {
+  constructor(options: {
+    store: LocalStore;
+    transport: SyncTransport;
+    gatewayId: string;
+    batchSize?: number;
+  }) {
     this.gatewayId = options.gatewayId;
     this.outbox = new Outbox({ store: options.store });
-    this.engine = new SyncEngine({ store: options.store, transport: options.transport, batchSize: options.batchSize });
+    this.engine = new SyncEngine({
+      store: options.store,
+      transport: options.transport,
+      batchSize: options.batchSize,
+    });
   }
 
   /** Buffer a single device reading. Returns immediately (offline-safe). */

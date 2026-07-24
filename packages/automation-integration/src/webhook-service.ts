@@ -88,7 +88,10 @@ export class WebhookService {
   }
 
   /** Create a subscription to allowlisted families. Returns the secret once. */
-  async subscribe(context: TenantContext, rawInput: SubscribeInput): Promise<WebhookSubscriptionWithSecret> {
+  async subscribe(
+    context: TenantContext,
+    rawInput: SubscribeInput,
+  ): Promise<WebhookSubscriptionWithSecret> {
     const input = parse(subscribeInputSchema, rawInput);
     const families = [...new Set(input.eventFamilies)];
     const rejected = families.filter((f) => !isAllowedFamily(f));
@@ -118,9 +121,24 @@ export class WebhookService {
       await client.query(
         `INSERT INTO webhook_subscription (id, tenant_id, url, event_families, description, secret, active, event_id)
          VALUES ($1,$2,$3,$4,$5,$6,true,$7)`,
-        [id, context.tenantId, input.url, families, input.description ?? null, secret, append.eventId],
+        [
+          id,
+          context.tenantId,
+          input.url,
+          families,
+          input.description ?? null,
+          secret,
+          append.eventId,
+        ],
       );
-      return { id, url: input.url, eventFamilies: families, description: input.description ?? null, active: true, secret };
+      return {
+        id,
+        url: input.url,
+        eventFamilies: families,
+        description: input.description ?? null,
+        active: true,
+        secret,
+      };
     });
   }
 
@@ -141,7 +159,10 @@ export class WebhookService {
   }
 
   /** Rotate the signing secret (§51). Old secret becomes the overlap secret. */
-  async rotateSecret(context: TenantContext, id: Uuid): Promise<WebhookSubscriptionWithSecret> {
+  async rotateSecret(
+    context: TenantContext,
+    id: Uuid,
+  ): Promise<WebhookSubscriptionWithSecret> {
     return this.manage(context, async (client) => {
       const row = await this.loadSubscription(client, id);
       const secret = newSecret();
@@ -171,7 +192,10 @@ export class WebhookService {
 
   async deactivate(context: TenantContext, id: Uuid): Promise<void> {
     await this.manage(context, async (client) => {
-      const result = await client.query(`UPDATE webhook_subscription SET active = false WHERE id = $1`, [id]);
+      const result = await client.query(
+        `UPDATE webhook_subscription SET active = false WHERE id = $1`,
+        [id],
+      );
       if (result.rowCount === 0) throw new NotFoundError(`Subscription ${id} not found`);
     });
   }
@@ -182,7 +206,10 @@ export class WebhookService {
    * are never enqueued (familyOf returns a non-allowlisted family → skipped).
    * Returns the number of deliveries newly enqueued.
    */
-  async enqueueForEvent(context: TenantContext, event: EnqueueEventInput): Promise<number> {
+  async enqueueForEvent(
+    context: TenantContext,
+    event: EnqueueEventInput,
+  ): Promise<number> {
     const family = familyOf(event.eventType);
     if (!isAllowedFamily(family)) return 0;
     const body = projectPayload(family, event.payload);
@@ -201,7 +228,14 @@ export class WebhookService {
              (tenant_id, subscription_id, event_id, event_family, event_type, payload, status, next_attempt_at)
            VALUES ($1,$2,$3,$4,$5,$6,'pending', now())
            ON CONFLICT (subscription_id, event_id) DO NOTHING`,
-          [context.tenantId, sub.id, event.eventId, family, event.eventType, JSON.stringify(body)],
+          [
+            context.tenantId,
+            sub.id,
+            event.eventId,
+            family,
+            event.eventType,
+            JSON.stringify(body),
+          ],
         );
         enqueued += result.rowCount ?? 0;
       }
@@ -239,7 +273,9 @@ export class WebhookService {
       if (result.rows.length === 0) throw new NotFoundError(`Delivery ${id} not found`);
       const row = result.rows[0]!;
       if (row.status !== "failed" && row.status !== "dead_letter") {
-        throw new ValidationError(`Delivery ${id} is not in a replayable state (${row.status})`);
+        throw new ValidationError(
+          `Delivery ${id} is not in a replayable state (${row.status})`,
+        );
       }
       await client.query(
         `UPDATE webhook_delivery
@@ -252,12 +288,21 @@ export class WebhookService {
          VALUES ($1,$2,$3,'replayed')`,
         [context.tenantId, id, row.attempts],
       );
-      return toDelivery({ ...row, status: "pending", attempts: 0, last_status_code: null, last_error: null });
+      return toDelivery({
+        ...row,
+        status: "pending",
+        attempts: 0,
+        last_status_code: null,
+        last_error: null,
+      });
     });
   }
 
   // -- internals --
-  private async loadSubscription(client: pg.PoolClient, id: string): Promise<SubscriptionRow> {
+  private async loadSubscription(
+    client: pg.PoolClient,
+    id: string,
+  ): Promise<SubscriptionRow> {
     const result = await client.query<SubscriptionRow>(
       `SELECT id, url, event_families, description, active FROM webhook_subscription WHERE id = $1`,
       [id],
@@ -266,25 +311,33 @@ export class WebhookService {
     return result.rows[0]!;
   }
 
-  private async manage<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async manage<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships = await loadCallerMemberships(client, context);
       const decision = decide("manage_integrations", context, memberships);
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new IntegrationForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new IntegrationForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 
-  private async read<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async read<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships = await loadCallerMemberships(client, context);
       const decision = decide("read", context, memberships);
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new IntegrationForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new IntegrationForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

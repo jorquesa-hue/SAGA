@@ -32,8 +32,16 @@ export const registerAssetInputSchema = z
   .object({
     name: z.string().trim().min(1).max(200),
     assetType: z.enum([
-      "scale", "rfid_reader", "gateway", "vehicle", "machinery",
-      "pump", "fence", "water_system", "corral", "other",
+      "scale",
+      "rfid_reader",
+      "gateway",
+      "vehicle",
+      "machinery",
+      "pump",
+      "fence",
+      "water_system",
+      "corral",
+      "other",
     ]),
     farmId: z.string().uuid().optional(),
     model: z.string().max(200).optional(),
@@ -86,26 +94,53 @@ export class AssetsMaintenanceService {
     this.environment = options.environment ?? "local";
   }
 
-  async registerAsset(context: TenantContext, rawInput: RegisterAssetInput): Promise<Asset> {
+  async registerAsset(
+    context: TenantContext,
+    rawInput: RegisterAssetInput,
+  ): Promise<Asset> {
     const input = this.parse(registerAssetInputSchema, rawInput);
     return this.authorized(context, true, async (client) => {
       const inserted = await client.query(
         `INSERT INTO asset (tenant_id, farm_id, name, asset_type, model, serial, location)
          VALUES ($1,$2,$3,$4,$5,$6,$7)
          RETURNING id, name, asset_type, status, calibration_valid_until`,
-        [context.tenantId, input.farmId ?? null, input.name, input.assetType, input.model ?? null, input.serial ?? null, input.location ?? null],
+        [
+          context.tenantId,
+          input.farmId ?? null,
+          input.name,
+          input.assetType,
+          input.model ?? null,
+          input.serial ?? null,
+          input.location ?? null,
+        ],
       );
       const r = inserted.rows[0]!;
-      await this.emit(client, context, ASSET_REGISTERED, r.id, input.idempotencyKey ?? `asset-${r.id}`, {
-        assetId: r.id,
-        assetType: input.assetType,
-        name: input.name,
-      });
-      return { id: r.id, name: r.name, assetType: r.asset_type, status: r.status, calibrationValidUntil: r.calibration_valid_until };
+      await this.emit(
+        client,
+        context,
+        ASSET_REGISTERED,
+        r.id,
+        input.idempotencyKey ?? `asset-${r.id}`,
+        {
+          assetId: r.id,
+          assetType: input.assetType,
+          name: input.name,
+        },
+      );
+      return {
+        id: r.id,
+        name: r.name,
+        assetType: r.asset_type,
+        status: r.status,
+        calibrationValidUntil: r.calibration_valid_until,
+      };
     });
   }
 
-  async defineSchedule(context: TenantContext, rawInput: ScheduleInput): Promise<{ scheduleId: Uuid; nextDueAt: Date }> {
+  async defineSchedule(
+    context: TenantContext,
+    rawInput: ScheduleInput,
+  ): Promise<{ scheduleId: Uuid; nextDueAt: Date }> {
     const input = this.parse(scheduleInputSchema, rawInput);
     return this.authorized(context, true, async (client) => {
       await this.assertAsset(client, input.assetId);
@@ -115,28 +150,56 @@ export class AssetsMaintenanceService {
       const inserted = await client.query(
         `INSERT INTO maintenance_schedule (tenant_id, asset_id, kind, interval_days, next_due_at)
          VALUES ($1,$2,$3,$4,$5) RETURNING id, next_due_at`,
-        [context.tenantId, input.assetId, input.kind, input.intervalDays, nextDue.toISOString()],
+        [
+          context.tenantId,
+          input.assetId,
+          input.kind,
+          input.intervalDays,
+          nextDue.toISOString(),
+        ],
       );
-      return { scheduleId: inserted.rows[0]!.id, nextDueAt: inserted.rows[0]!.next_due_at };
+      return {
+        scheduleId: inserted.rows[0]!.id,
+        nextDueAt: inserted.rows[0]!.next_due_at,
+      };
     });
   }
 
-  async createWorkOrder(context: TenantContext, rawInput: WorkOrderInput): Promise<{ workOrderId: Uuid }> {
+  async createWorkOrder(
+    context: TenantContext,
+    rawInput: WorkOrderInput,
+  ): Promise<{ workOrderId: Uuid }> {
     const input = this.parse(workOrderInputSchema, rawInput);
     return this.authorized(context, true, async (client) => {
       await this.assertAsset(client, input.assetId);
       const inserted = await client.query(
         `INSERT INTO work_order (tenant_id, asset_id, priority, description, opened_by)
          VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-        [context.tenantId, input.assetId, input.priority, input.description, context.actor.type === "user" ? context.actor.id : null],
+        [
+          context.tenantId,
+          input.assetId,
+          input.priority,
+          input.description,
+          context.actor.type === "user" ? context.actor.id : null,
+        ],
       );
       const id = inserted.rows[0]!.id;
-      await client.query(`UPDATE asset SET status = 'maintenance' WHERE id = $1 AND status = 'active'`, [input.assetId]);
-      await this.emit(client, context, WORK_ORDER_OPENED, input.assetId, input.idempotencyKey ?? `wo-${id}`, {
-        workOrderId: id,
-        assetId: input.assetId,
-        priority: input.priority,
-      });
+      await client.query(
+        `UPDATE asset SET status = 'maintenance' WHERE id = $1 AND status = 'active'`,
+        [input.assetId],
+      );
+      await this.emit(
+        client,
+        context,
+        WORK_ORDER_OPENED,
+        input.assetId,
+        input.idempotencyKey ?? `wo-${id}`,
+        {
+          workOrderId: id,
+          assetId: input.assetId,
+          priority: input.priority,
+        },
+      );
       return { workOrderId: id };
     });
   }
@@ -152,9 +215,15 @@ export class AssetsMaintenanceService {
          SET status = 'done', closed_at = now(), labor_cost = $2, parts_cost = $3, downtime_hours = $4
          WHERE id = $1 AND status <> 'done'
          RETURNING asset_id`,
-        [workOrderId, costs.laborCost ?? null, costs.partsCost ?? null, costs.downtimeHours ?? null],
+        [
+          workOrderId,
+          costs.laborCost ?? null,
+          costs.partsCost ?? null,
+          costs.downtimeHours ?? null,
+        ],
       );
-      if (updated.rows.length === 0) throw new NotFoundError(`Open work order ${workOrderId} not found`);
+      if (updated.rows.length === 0)
+        throw new NotFoundError(`Open work order ${workOrderId} not found`);
       const assetId = updated.rows[0]!.asset_id;
       // Return the asset to active only if no other open work orders remain.
       await client.query(
@@ -164,28 +233,49 @@ export class AssetsMaintenanceService {
          )`,
         [assetId],
       );
-      await this.emit(client, context, WORK_ORDER_COMPLETED, assetId, `wo-complete-${workOrderId}`, {
-        workOrderId,
+      await this.emit(
+        client,
+        context,
+        WORK_ORDER_COMPLETED,
         assetId,
-      });
+        `wo-complete-${workOrderId}`,
+        {
+          workOrderId,
+          assetId,
+        },
+      );
     });
   }
 
   /** Record a calibration and set the asset's validity window (JK-AST-004). */
-  async recordCalibration(context: TenantContext, assetId: Uuid, validUntil: string): Promise<void> {
+  async recordCalibration(
+    context: TenantContext,
+    assetId: Uuid,
+    validUntil: string,
+  ): Promise<void> {
     await this.authorized(context, true, async (client) => {
       await this.assertAsset(client, assetId);
-      await client.query(`UPDATE asset SET calibration_valid_until = $2 WHERE id = $1`, [assetId, validUntil]);
+      await client.query(`UPDATE asset SET calibration_valid_until = $2 WHERE id = $1`, [
+        assetId,
+        validUntil,
+      ]);
       await client.query(
         `UPDATE maintenance_schedule
          SET last_done_at = now(), next_due_at = now() + (interval_days * interval '1 day')
          WHERE asset_id = $1 AND kind = 'calibration'`,
         [assetId],
       );
-      await this.emit(client, context, CALIBRATION_RECORDED, assetId, `calib-${assetId}-${validUntil}`, {
+      await this.emit(
+        client,
+        context,
+        CALIBRATION_RECORDED,
         assetId,
-        validUntil,
-      });
+        `calib-${assetId}-${validUntil}`,
+        {
+          assetId,
+          validUntil,
+        },
+      );
     });
   }
 
@@ -201,7 +291,11 @@ export class AssetsMaintenanceService {
       );
       if (r.rows.length === 0) throw new NotFoundError(`Asset ${assetId} not found`);
       const validUntil = r.rows[0]!.calibration_valid_until;
-      return { assetId, valid: validUntil != null && validUntil.getTime() > Date.now(), validUntil };
+      return {
+        assetId,
+        valid: validUntil != null && validUntil.getTime() > Date.now(),
+        validUntil,
+      };
     });
   }
 
@@ -216,7 +310,11 @@ export class AssetsMaintenanceService {
          ORDER BY next_due_at`,
         [withinDays],
       );
-      return result.rows.map((r) => ({ assetId: r.asset_id, kind: r.kind, nextDueAt: r.next_due_at }));
+      return result.rows.map((r) => ({
+        assetId: r.asset_id,
+        kind: r.kind,
+        nextDueAt: r.next_due_at,
+      }));
     });
   }
 
@@ -250,7 +348,11 @@ export class AssetsMaintenanceService {
     if (r.rows.length === 0) throw new NotFoundError(`Asset ${assetId} not found`);
   }
 
-  private async nextVersion(client: pg.PoolClient, tenantId: string, assetId: string): Promise<number> {
+  private async nextVersion(
+    client: pg.PoolClient,
+    tenantId: string,
+    assetId: string,
+  ): Promise<number> {
     const result = await client.query<{ next: number }>(
       `SELECT COALESCE(MAX(aggregate_version), 0)::int + 1 AS next
        FROM domain_event WHERE tenant_id = $1 AND aggregate_type = 'asset' AND aggregate_id = $2`,
@@ -286,7 +388,8 @@ export class AssetsMaintenanceService {
             ).rows
           : [];
       const active = memberships.filter((m) => m.status === "active");
-      if (active.length === 0) return { ok: false as const, reason: "no_active_membership" };
+      if (active.length === 0)
+        return { ok: false as const, reason: "no_active_membership" };
       if (write && !active.some((m) => WRITE_ROLES.has(m.role))) {
         return { ok: false as const, reason: "role not permitted for asset changes" };
       }

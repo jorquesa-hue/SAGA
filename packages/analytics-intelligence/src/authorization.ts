@@ -49,7 +49,8 @@ export function decide(
     return { allowed: true, reason: "scheduled_actor", action };
   }
   const active = memberships.filter((m) => m.status === "active");
-  if (active.length === 0) return { allowed: false, reason: "no_active_membership", action };
+  if (active.length === 0)
+    return { allowed: false, reason: "no_active_membership", action };
   if (action === "read") return { allowed: true, reason: "active_member", action };
   const ok = active.some((m) => WRITE_ROLES.has(m.role));
   return ok

@@ -83,11 +83,15 @@ export class WeighingService {
     this.weightConfig = options.weightConfig;
   }
 
-  async startSession(context: TenantContext, rawInput: StartSessionInput): Promise<HandlingSession> {
+  async startSession(
+    context: TenantContext,
+    rawInput: StartSessionInput,
+  ): Promise<HandlingSession> {
     const input = parseInput(startSessionInputSchema, rawInput, "startSession input");
     return this.authorized(context, "start_session", async (client) => {
       const farm = await client.query(`SELECT 1 FROM farm WHERE id = $1`, [input.farmId]);
-      if (farm.rows.length === 0) throw new NotFoundError(`Farm ${input.farmId} not found`);
+      if (farm.rows.length === 0)
+        throw new NotFoundError(`Farm ${input.farmId} not found`);
 
       const inserted = await client.query<SessionRow>(
         `INSERT INTO handling_session
@@ -170,7 +174,8 @@ export class WeighingService {
         const parsed = observationInputSchema.safeParse(raw);
         if (!parsed.success) {
           results.push({
-            observationId: (raw as { observationId?: string })?.observationId ?? "unknown",
+            observationId:
+              (raw as { observationId?: string })?.observationId ?? "unknown",
             serverObservationId: null,
             status: "rejected_validation",
             animalId: null,
@@ -212,7 +217,10 @@ export class WeighingService {
   }
 
   /** Exception queue: unresolved / rejected observations (JK-WGT-003). */
-  async listExceptions(context: TenantContext, handlingSessionId?: Uuid): Promise<
+  async listExceptions(
+    context: TenantContext,
+    handlingSessionId?: Uuid,
+  ): Promise<
     Array<{
       serverObservationId: Uuid;
       observationId: string;
@@ -255,7 +263,8 @@ export class WeighingService {
         `SELECT * FROM handling_session WHERE id = $1`,
         [sessionId],
       );
-      if (session.rows.length === 0) throw new NotFoundError(`Handling session ${sessionId} not found`);
+      if (session.rows.length === 0)
+        throw new NotFoundError(`Handling session ${sessionId} not found`);
       if (session.rows[0]!.status === "closed") {
         return mapSession(session.rows[0]!);
       }
@@ -266,7 +275,8 @@ export class WeighingService {
          GROUP BY resolution_status`,
         [sessionId],
       );
-      const by = (s: string) => Number(counts.rows.find((r) => r.resolution_status === s)?.n ?? 0);
+      const by = (s: string) =>
+        Number(counts.rows.find((r) => r.resolution_status === s)?.n ?? 0);
       const accepted = by("accepted");
       const processed = counts.rows.reduce((sum, r) => sum + Number(r.n), 0);
       // Flagged = accepted observations carrying quality flags.
@@ -300,7 +310,11 @@ export class WeighingService {
           farmId: updated.rows[0]!.farm_id,
           aggregateType: "handling_session",
           aggregateId: sessionId,
-          aggregateVersion: await this.nextSessionVersion(client, context.tenantId, sessionId),
+          aggregateVersion: await this.nextSessionVersion(
+            client,
+            context.tenantId,
+            sessionId,
+          ),
           source: { channel: "api" },
           idempotencyKey: `session-close-${sessionId}`,
           payload: { handlingSessionId: sessionId, summary },
@@ -348,7 +362,8 @@ export class WeighingService {
       const firstKg = Number(first.weight_kg);
       const lastKg = Number(last.weight_kg);
       const elapsedDays =
-        (new Date(last.occurred_at).getTime() - new Date(first.occurred_at).getTime()) / 86_400_000;
+        (new Date(last.occurred_at).getTime() - new Date(first.occurred_at).getTime()) /
+        86_400_000;
       if (elapsedDays <= 0) return null;
       return {
         animalId,
@@ -373,7 +388,8 @@ export class WeighingService {
       `SELECT status FROM handling_session WHERE id = $1`,
       [sessionId],
     );
-    if (result.rows.length === 0) throw new NotFoundError(`Handling session ${sessionId} not found`);
+    if (result.rows.length === 0)
+      throw new NotFoundError(`Handling session ${sessionId} not found`);
     if (result.rows[0]!.status !== "open") {
       throw new ValidationError(`Handling session ${sessionId} is closed`);
     }
@@ -404,7 +420,8 @@ export class WeighingService {
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new HerdForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new HerdForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 
@@ -424,7 +441,8 @@ export class WeighingService {
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new HerdForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new HerdForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

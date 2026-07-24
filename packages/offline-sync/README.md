@@ -7,7 +7,7 @@ edge gateway, and in Node tests.
 ## Guarantees (invariants #4 / #5)
 
 - **Never lose an observation.** A captured record leaves the `pending` state
-  only when the server *accepts* it (→ `synced`) or *permanently rejects* it
+  only when the server _accepts_ it (→ `synced`) or _permanently rejects_ it
   (→ `rejected`, parked for human review — never deleted).
 - **At-least-once, idempotent.** Every record carries a stable client id that
   is also the server idempotency key; re-delivery is safe and de-duplicated.
@@ -38,7 +38,7 @@ returns a 207 with a per-observation result) and translate each result to
 adapter. The engine itself needs no changes.
 
 ```ts
-const store = new SqliteLocalStore(db);       // device adapter
+const store = new SqliteLocalStore(db); // device adapter
 const outbox = new Outbox({ store });
 await outbox.capture({ kind: "observation", operation: "weight", payload: { rfid, kg } });
 // …later, when connectivity returns:

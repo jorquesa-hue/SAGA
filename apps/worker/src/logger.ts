@@ -42,7 +42,6 @@ export function createLogger(
   const write =
     options.write ??
     ((line: string) => {
-       
       console.log(line);
     });
 

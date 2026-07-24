@@ -21,7 +21,10 @@ export interface ImportDecision {
   action: ImportAction;
 }
 
-export async function loadCallerMemberships(client: pg.PoolClient, context: TenantContext): Promise<CallerMembership[]> {
+export async function loadCallerMemberships(
+  client: pg.PoolClient,
+  context: TenantContext,
+): Promise<CallerMembership[]> {
   if (context.actor.type !== "user") return [];
   const result = await client.query<CallerMembership>(
     `SELECT role, status FROM tenant_membership WHERE tenant_id = $1 AND user_id = $2 AND valid_to IS NULL`,
@@ -30,10 +33,16 @@ export async function loadCallerMemberships(client: pg.PoolClient, context: Tena
   return result.rows;
 }
 
-export function decide(action: ImportAction, context: TenantContext, memberships: readonly CallerMembership[]): ImportDecision {
-  if (context.actor.type === "service") return { allowed: true, reason: "service_actor", action };
+export function decide(
+  action: ImportAction,
+  context: TenantContext,
+  memberships: readonly CallerMembership[],
+): ImportDecision {
+  if (context.actor.type === "service")
+    return { allowed: true, reason: "service_actor", action };
   const active = memberships.filter((m) => m.status === "active");
-  if (active.length === 0) return { allowed: false, reason: "no_active_membership", action };
+  if (active.length === 0)
+    return { allowed: false, reason: "no_active_membership", action };
   if (action === "read") return { allowed: true, reason: "active_member", action };
   const ok = active.some((m) => WRITE_ROLES.has(m.role));
   return ok

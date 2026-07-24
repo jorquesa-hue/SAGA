@@ -20,8 +20,8 @@ DPA and security review.
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Provider
-abstraction; no production farm data until approved DPA/security review."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Provider
+abstraction; no production farm data until approved DPA/security review."_
 
 The repository honors the default today:
 

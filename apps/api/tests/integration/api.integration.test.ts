@@ -73,9 +73,14 @@ describe.skipIf(!available)("JK API (integration)", () => {
     const allowed = await app.inject({
       method: "OPTIONS",
       url: "/api/v1/farms",
-      headers: { origin: "https://console.example", "access-control-request-method": "GET" },
+      headers: {
+        origin: "https://console.example",
+        "access-control-request-method": "GET",
+      },
     });
-    expect(allowed.headers["access-control-allow-origin"]).toBe("https://console.example");
+    expect(allowed.headers["access-control-allow-origin"]).toBe(
+      "https://console.example",
+    );
 
     const denied = await app.inject({
       method: "OPTIONS",
@@ -143,7 +148,9 @@ describe.skipIf(!available)("JK API (integration)", () => {
       headers: { "x-dev-user-id": ownerAId, "x-tenant-id": tenantAId },
     });
     expect(list.statusCode).toBe(200);
-    expect(list.json().items.some((f: { name: string }) => f.name === "Sede Aurora")).toBe(true);
+    expect(
+      list.json().items.some((f: { name: string }) => f.name === "Sede Aurora"),
+    ).toBe(true);
   });
 
   it("returns 409 on a duplicate farm name", async () => {
@@ -198,7 +205,10 @@ describe.skipIf(!available)("JK API (integration)", () => {
       method: "POST",
       url: "/api/v1/tenants",
       headers: admin(newUuid()),
-      payload: { name: "Rancho Boa Vista", owner: { email: "bruno@example.com", displayName: "Bruno" } },
+      payload: {
+        name: "Rancho Boa Vista",
+        owner: { email: "bruno@example.com", displayName: "Bruno" },
+      },
     });
     const ownerBId = createB.json().ownerUserId as string;
 

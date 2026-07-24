@@ -13,7 +13,12 @@ import { HealthForbiddenError } from "../../src/errors.js";
 
 const available = databaseAvailable();
 
-async function makeAnimal(db: TestDatabase, tenantId: Uuid, farmId: Uuid, visualId: string): Promise<Uuid> {
+async function makeAnimal(
+  db: TestDatabase,
+  tenantId: Uuid,
+  farmId: Uuid,
+  visualId: string,
+): Promise<Uuid> {
   const animalId = newUuid();
   await db.adminPool.query(
     `INSERT INTO animal (id, tenant_id, farm_id, visual_id, sex, version) VALUES ($1,$2,$3,$4,'female',0)`,
@@ -38,7 +43,11 @@ describe.skipIf(!available)("HealthService (integration)", () => {
     db = await createTestDatabase("jk_health");
     identity = makeIdentityService(db);
     health = new HealthService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Saúde", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Saúde",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -89,7 +98,10 @@ describe.skipIf(!available)("HealthService (integration)", () => {
       displayName: "Vet",
       role: "veterinarian",
     });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "veterinarian" });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "veterinarian",
+    });
     const vet = makeTenantContext(tenantId, invite.userId);
 
     const active = await health.listActiveRestrictions(owner, animalId);
@@ -127,11 +139,17 @@ describe.skipIf(!available)("HealthService (integration)", () => {
       displayName: "Tec",
       role: "technician",
     });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "technician" });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "technician",
+    });
     const tech = makeTenantContext(tenantId, invite.userId);
 
     await expect(
-      health.overrideRestriction(tech, { restrictionId: active[0]!.id, reason: "quero liberar" }),
+      health.overrideRestriction(tech, {
+        restrictionId: active[0]!.id,
+        reason: "quero liberar",
+      }),
     ).rejects.toBeInstanceOf(HealthForbiddenError);
 
     // Still blocked.
@@ -172,7 +190,11 @@ describe.skipIf(!available)("HealthService (integration)", () => {
       diagnosis: "suspeita de podridão de casco",
     });
     expect(opened.status).toBe("open");
-    const resolved = await health.resolveCase(owner, opened.id, "tratado, recuperação completa");
+    const resolved = await health.resolveCase(
+      owner,
+      opened.id,
+      "tratado, recuperação completa",
+    );
     expect(resolved.status).toBe("resolved");
     expect(resolved.outcome).toContain("recuperação");
   });
@@ -192,7 +214,9 @@ describe.skipIf(!available)("HealthService (integration)", () => {
     const treatments = await health.getAnimalTreatments(other.ownerContext, animalId);
     expect(treatments).toHaveLength(0);
     // And another tenant sees no active restriction on our animal.
-    expect((await health.listActiveRestrictions(other.ownerContext, animalId))).toHaveLength(0);
+    expect(
+      await health.listActiveRestrictions(other.ownerContext, animalId),
+    ).toHaveLength(0);
   });
 });
 

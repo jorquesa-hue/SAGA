@@ -8,11 +8,7 @@ import {
 } from "@jk/domain-kernel";
 import { appendEvent, withTenantTransaction } from "@jk/database";
 import type pg from "pg";
-import {
-  decide,
-  loadCallerMemberships,
-  type HealthAction,
-} from "./authorization.js";
+import { decide, loadCallerMemberships, type HealthAction } from "./authorization.js";
 import {
   batchTreatmentInputSchema,
   defineProtocolInputSchema,
@@ -122,7 +118,10 @@ export class HealthService {
     this.environment = options.environment ?? "local";
   }
 
-  async defineProtocol(context: TenantContext, rawInput: DefineProtocolInput): Promise<HealthProtocol> {
+  async defineProtocol(
+    context: TenantContext,
+    rawInput: DefineProtocolInput,
+  ): Promise<HealthProtocol> {
     const input = parseInput(defineProtocolInputSchema, rawInput, "defineProtocol input");
     return this.authorized(context, "manage_protocols", async (client) => {
       try {
@@ -154,15 +153,24 @@ export class HealthService {
         } satisfies HealthProtocol;
       } catch (error) {
         if ((error as { code?: string }).code === "23505") {
-          throw new ValidationError(`Protocol '${input.name}' version ${input.version} already exists`);
+          throw new ValidationError(
+            `Protocol '${input.name}' version ${input.version} already exists`,
+          );
         }
         throw error;
       }
     });
   }
 
-  async recordTreatment(context: TenantContext, rawInput: RecordTreatmentInput): Promise<Treatment> {
-    const input = parseInput(recordTreatmentInputSchema, rawInput, "recordTreatment input");
+  async recordTreatment(
+    context: TenantContext,
+    rawInput: RecordTreatmentInput,
+  ): Promise<Treatment> {
+    const input = parseInput(
+      recordTreatmentInputSchema,
+      rawInput,
+      "recordTreatment input",
+    );
     return this.authorized(context, "record_treatment", async (client) => {
       return this.insertTreatment(client, context, input);
     });
@@ -172,14 +180,29 @@ export class HealthService {
   async batchTreatment(
     context: TenantContext,
     rawInput: BatchTreatmentInput,
-  ): Promise<Array<{ animalId: Uuid; status: "administered" | "error"; treatmentId?: Uuid; reason?: string }>> {
+  ): Promise<
+    Array<{
+      animalId: Uuid;
+      status: "administered" | "error";
+      treatmentId?: Uuid;
+      reason?: string;
+    }>
+  > {
     const input = parseInput(batchTreatmentInputSchema, rawInput, "batchTreatment input");
     return this.authorized(context, "record_treatment", async (client) => {
-      const results: Array<{ animalId: Uuid; status: "administered" | "error"; treatmentId?: Uuid; reason?: string }> = [];
+      const results: Array<{
+        animalId: Uuid;
+        status: "administered" | "error";
+        treatmentId?: Uuid;
+        reason?: string;
+      }> = [];
       for (const animalId of input.animalIds) {
         await client.query("SAVEPOINT tx_item");
         try {
-          const treatment = await this.insertTreatment(client, context, { ...input, animalId });
+          const treatment = await this.insertTreatment(client, context, {
+            ...input,
+            animalId,
+          });
           await client.query("RELEASE SAVEPOINT tx_item");
           results.push({ animalId, status: "administered", treatmentId: treatment.id });
         } catch (error) {
@@ -191,7 +214,10 @@ export class HealthService {
     });
   }
 
-  async listActiveRestrictions(context: TenantContext, animalId: Uuid): Promise<AnimalRestriction[]> {
+  async listActiveRestrictions(
+    context: TenantContext,
+    animalId: Uuid,
+  ): Promise<AnimalRestriction[]> {
     return this.authorized(context, "read", async (client) => {
       const result = await client.query<RestrictionRow>(
         `SELECT * FROM animal_restriction
@@ -222,7 +248,11 @@ export class HealthService {
     context: TenantContext,
     rawInput: OverrideRestrictionInput,
   ): Promise<AnimalRestriction> {
-    const input = parseInput(overrideRestrictionInputSchema, rawInput, "overrideRestriction input");
+    const input = parseInput(
+      overrideRestrictionInputSchema,
+      rawInput,
+      "overrideRestriction input",
+    );
     return this.authorized(context, "override_restriction", async (client) => {
       const current = await client.query<RestrictionRow>(
         `SELECT * FROM animal_restriction WHERE id = $1`,
@@ -252,9 +282,14 @@ export class HealthService {
           context,
           aggregateType: "animal",
           aggregateId: restriction.animalId,
-          aggregateVersion: await this.nextAnimalVersion(client, context.tenantId, restriction.animalId),
+          aggregateVersion: await this.nextAnimalVersion(
+            client,
+            context.tenantId,
+            restriction.animalId,
+          ),
           source: { channel: "api" },
-          idempotencyKey: input.idempotencyKey ?? `restriction-override-${restriction.id}`,
+          idempotencyKey:
+            input.idempotencyKey ?? `restriction-override-${restriction.id}`,
           payload: {
             animalId: restriction.animalId,
             restrictionId: restriction.id,
@@ -264,15 +299,26 @@ export class HealthService {
         }),
         { environment: this.environment },
       );
-      await this.audit(client, context, "health.restriction_overridden", "animal", restriction.animalId, "success", {
-        restrictionId: restriction.id,
-        reason: input.reason,
-      });
+      await this.audit(
+        client,
+        context,
+        "health.restriction_overridden",
+        "animal",
+        restriction.animalId,
+        "success",
+        {
+          restrictionId: restriction.id,
+          reason: input.reason,
+        },
+      );
       return restriction;
     });
   }
 
-  async getAnimalTreatments(context: TenantContext, animalId: Uuid): Promise<Treatment[]> {
+  async getAnimalTreatments(
+    context: TenantContext,
+    animalId: Uuid,
+  ): Promise<Treatment[]> {
     return this.authorized(context, "read", async (client) => {
       const result = await client.query<TreatmentRow>(
         `SELECT * FROM treatment WHERE animal_id = $1 ORDER BY administered_at DESC`,
@@ -320,7 +366,11 @@ export class HealthService {
           aggregateVersion: 1,
           source: { channel: "api" },
           idempotencyKey: input.idempotencyKey ?? `case-open-${healthCase.id}`,
-          payload: { caseId: healthCase.id, animalId: input.animalId, symptom: input.symptom ?? null },
+          payload: {
+            caseId: healthCase.id,
+            animalId: input.animalId,
+            symptom: input.symptom ?? null,
+          },
         }),
         { environment: this.environment },
       );
@@ -328,7 +378,11 @@ export class HealthService {
     });
   }
 
-  async resolveCase(context: TenantContext, caseId: Uuid, outcome: string): Promise<HealthCase> {
+  async resolveCase(
+    context: TenantContext,
+    caseId: Uuid,
+    outcome: string,
+  ): Promise<HealthCase> {
     return this.authorized(context, "manage_cases", async (client) => {
       const updated = await client.query(
         `UPDATE health_case SET status = 'resolved', outcome = $2, closed_at = now()
@@ -376,7 +430,9 @@ export class HealthService {
   private async insertTreatment(
     client: pg.PoolClient,
     context: TenantContext,
-    input: ReturnType<typeof parseInput<typeof recordTreatmentInputSchema>> & { animalId: string },
+    input: ReturnType<typeof parseInput<typeof recordTreatmentInputSchema>> & {
+      animalId: string;
+    },
   ): Promise<Treatment> {
     await this.assertAnimalExists(client, input.animalId);
     const administeredAt = new Date(input.administeredAt);
@@ -411,11 +467,18 @@ export class HealthService {
     );
     const treatment = mapTreatment(inserted.rows[0]!);
 
-    const version = await this.nextAnimalVersion(client, context.tenantId, input.animalId);
+    const version = await this.nextAnimalVersion(
+      client,
+      context.tenantId,
+      input.animalId,
+    );
     const append = await appendEvent(
       client,
       createEventEnvelope({
-        eventType: input.kind === "vaccination" ? VACCINATION_ADMINISTERED : TREATMENT_ADMINISTERED,
+        eventType:
+          input.kind === "vaccination"
+            ? VACCINATION_ADMINISTERED
+            : TREATMENT_ADMINISTERED,
         context,
         aggregateType: "animal",
         aggregateId: input.animalId,
@@ -439,7 +502,10 @@ export class HealthService {
       }),
       { environment: this.environment },
     );
-    await client.query(`UPDATE treatment SET event_id = $2 WHERE id = $1`, [treatmentId, append.eventId]);
+    await client.query(`UPDATE treatment SET event_id = $2 WHERE id = $1`, [
+      treatmentId,
+      append.eventId,
+    ]);
 
     // JK-DOM-011: a treatment with a withdrawal period generates restriction
     // state with a due date, blocking sale-clear (JK-HLT-005).
@@ -466,7 +532,11 @@ export class HealthService {
           context,
           aggregateType: "animal",
           aggregateId: input.animalId,
-          aggregateVersion: await this.nextAnimalVersion(client, context.tenantId, input.animalId),
+          aggregateVersion: await this.nextAnimalVersion(
+            client,
+            context.tenantId,
+            input.animalId,
+          ),
           occurredAt: administeredAt,
           source: { channel: "api" },
           idempotencyKey: `restriction-${restrictionId}`,
@@ -489,7 +559,11 @@ export class HealthService {
     if (result.rows.length === 0) throw new NotFoundError(`Animal ${animalId} not found`);
   }
 
-  private async nextAnimalVersion(client: pg.PoolClient, tenantId: string, animalId: string): Promise<number> {
+  private async nextAnimalVersion(
+    client: pg.PoolClient,
+    tenantId: string,
+    animalId: string,
+  ): Promise<number> {
     const result = await client.query<{ next: number }>(
       `SELECT COALESCE(MAX(aggregate_version), 0)::int + 1 AS next
        FROM domain_event WHERE tenant_id = $1 AND aggregate_type = 'animal' AND aggregate_id = $2`,
@@ -498,7 +572,11 @@ export class HealthService {
     return result.rows[0]!.next;
   }
 
-  private async nextCaseVersion(client: pg.PoolClient, tenantId: string, caseId: string): Promise<number> {
+  private async nextCaseVersion(
+    client: pg.PoolClient,
+    tenantId: string,
+    caseId: string,
+  ): Promise<number> {
     const result = await client.query<{ next: number }>(
       `SELECT COALESCE(MAX(aggregate_version), 0)::int + 1 AS next
        FROM domain_event WHERE tenant_id = $1 AND aggregate_type = 'health_case' AND aggregate_id = $2`,
@@ -550,7 +628,8 @@ export class HealthService {
       }
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new HealthForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new HealthForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

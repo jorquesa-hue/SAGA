@@ -1,5 +1,10 @@
 import { RecommendationService, AiDisabledError } from "@jk/analytics-intelligence";
-import { createTenantContext, newUuid, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  createTenantContext,
+  newUuid,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -48,7 +53,11 @@ describe.skipIf(!available)("Orchestrator (integration)", () => {
   beforeAll(async () => {
     db = await createTestDatabase("jk_orchestrator");
     identity = makeIdentityService(db);
-    recommendations = new RecommendationService({ appPool: db.appPool, environment: "test", aiEnabled: true });
+    recommendations = new RecommendationService({
+      appPool: db.appPool,
+      environment: "test",
+      aiEnabled: true,
+    });
     const seeded = await seedTenantWithOwner(identity, "Fazenda IA", "owner@example.com");
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
@@ -89,7 +98,11 @@ describe.skipIf(!available)("Orchestrator (integration)", () => {
   });
 
   it("creates an evidence-bound, safe recommendation from grounded findings", async () => {
-    const orchestrator = new Orchestrator({ appPool: db.appPool, recommendations, environment: "test" });
+    const orchestrator = new Orchestrator({
+      appPool: db.appPool,
+      recommendations,
+      environment: "test",
+    });
     const report = await orchestrator.analyzeTenant(agentContext(tenantId));
     expect(report.findings).toBeGreaterThanOrEqual(1);
     expect(report.created.length).toBeGreaterThanOrEqual(1);
@@ -107,19 +120,38 @@ describe.skipIf(!available)("Orchestrator (integration)", () => {
   });
 
   it("blocks a rogue provider's prohibited proposal — nothing prohibited is ever created", async () => {
-    const orchestrator = new Orchestrator({ appPool: db.appPool, recommendations, provider: new RogueProvider(), environment: "test" });
+    const orchestrator = new Orchestrator({
+      appPool: db.appPool,
+      recommendations,
+      provider: new RogueProvider(),
+      environment: "test",
+    });
     const report = await orchestrator.analyzeTenant(agentContext(tenantId));
     expect(report.created).toHaveLength(0);
-    expect(report.blockedByPolicy.some((b) => b.category === "euthanasia" && b.reason === "prohibited_action_category")).toBe(true);
+    expect(
+      report.blockedByPolicy.some(
+        (b) => b.category === "euthanasia" && b.reason === "prohibited_action_category",
+      ),
+    ).toBe(true);
 
     const all = await recommendations.listRecommendations(owner);
     expect(all.some((r) => r.proposedActionCategory === "euthanasia")).toBe(false);
   });
 
   it("honors the kill switch end-to-end (AI disabled → no recommendation written)", async () => {
-    const disabled = new RecommendationService({ appPool: db.appPool, environment: "test", aiEnabled: false });
-    const orchestrator = new Orchestrator({ appPool: db.appPool, recommendations: disabled, environment: "test" });
-    await expect(orchestrator.analyzeTenant(agentContext(tenantId))).rejects.toBeInstanceOf(AiDisabledError);
+    const disabled = new RecommendationService({
+      appPool: db.appPool,
+      environment: "test",
+      aiEnabled: false,
+    });
+    const orchestrator = new Orchestrator({
+      appPool: db.appPool,
+      recommendations: disabled,
+      environment: "test",
+    });
+    await expect(
+      orchestrator.analyzeTenant(agentContext(tenantId)),
+    ).rejects.toBeInstanceOf(AiDisabledError);
   });
 });
 

@@ -7,7 +7,8 @@ import { buildTenantContext } from "../request-context.js";
 function idem(request: FastifyRequest): string {
   const v = request.headers["idempotency-key"];
   const key = Array.isArray(v) ? v[0] : v;
-  if (!key) throw new MissingHeaderError("Idempotency-Key header is required for this command");
+  if (!key)
+    throw new MissingHeaderError("Idempotency-Key header is required for this command");
   return key;
 }
 function tenant(request: FastifyRequest): string | undefined {
@@ -16,11 +17,15 @@ function tenant(request: FastifyRequest): string | undefined {
 }
 
 export function registerExportRoutes(app: FastifyInstance, exports: ExportService): void {
-  const ctx = (r: FastifyRequest) => buildTenantContext(r.principal, tenant(r), r.correlationId);
+  const ctx = (r: FastifyRequest) =>
+    buildTenantContext(r.principal, tenant(r), r.correlationId);
 
   app.post("/api/v1/exports", async (r: FastifyRequest, reply: FastifyReply) => {
     const key = idem(r);
-    const job = await exports.requestExport(ctx(r), { ...(r.body as object), idempotencyKey: `export:${key}` } as never);
+    const job = await exports.requestExport(ctx(r), {
+      ...(r.body as object),
+      idempotencyKey: `export:${key}`,
+    } as never);
     reply.status(202);
     return job;
   });
@@ -42,13 +47,20 @@ export function registerExportRoutes(app: FastifyInstance, exports: ExportServic
     return exports.processExport(ctx(r), id);
   });
 
-  app.get("/api/v1/exports/:id/download", async (r: FastifyRequest, reply: FastifyReply) => {
-    const { id } = r.params as { id: string };
-    const file = await exports.downloadExport(ctx(r), id);
-    const contentType =
-      file.format === "csv" ? "text/csv" : file.format === "json" ? "application/json" : "application/octet-stream";
-    reply.header("x-content-checksum-sha256", file.checksum);
-    reply.type(contentType);
-    return file.content;
-  });
+  app.get(
+    "/api/v1/exports/:id/download",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      const { id } = r.params as { id: string };
+      const file = await exports.downloadExport(ctx(r), id);
+      const contentType =
+        file.format === "csv"
+          ? "text/csv"
+          : file.format === "json"
+            ? "application/json"
+            : "application/octet-stream";
+      reply.header("x-content-checksum-sha256", file.checksum);
+      reply.type(contentType);
+      return file.content;
+    },
+  );
 }

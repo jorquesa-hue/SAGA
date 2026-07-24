@@ -42,7 +42,12 @@ export async function processObservation(
   const capturedAt = new Date(input.capturedAt);
 
   // 1. Dedup.
-  const existing = await client.query<{ id: string; resolution_status: string; resolved_animal_id: string | null; event_id: string | null }>(
+  const existing = await client.query<{
+    id: string;
+    resolution_status: string;
+    resolved_animal_id: string | null;
+    event_id: string | null;
+  }>(
     `SELECT id, resolution_status, resolved_animal_id, event_id
      FROM device_observation
      WHERE tenant_id = $1 AND gateway_id = $2 AND observation_id = $3`,
@@ -83,7 +88,9 @@ export async function processObservation(
     return persist(client, context, input, capturedAt, gatewayId, {
       status: "pending_resolution",
       qualityFlags: input.rfid ? ["unresolved_identifier"] : ["missing_identifier"],
-      reason: input.rfid ? `RFID ${input.rfid} does not resolve to an animal` : "no RFID provided",
+      reason: input.rfid
+        ? `RFID ${input.rfid} does not resolve to an animal`
+        : "no RFID provided",
     });
   }
 
@@ -202,7 +209,11 @@ async function persist(
   input: ObservationInput,
   capturedAt: Date,
   gatewayId: string,
-  outcome: { status: ObservationResult["status"]; qualityFlags: string[]; reason: string },
+  outcome: {
+    status: ObservationResult["status"];
+    qualityFlags: string[];
+    reason: string;
+  },
 ): Promise<ObservationResult> {
   const id = newUuid();
   await client.query(

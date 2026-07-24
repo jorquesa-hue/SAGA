@@ -1,5 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestDatabase, databaseAvailable, type TestDatabase } from "../src/pg-harness.js";
+import {
+  createTestDatabase,
+  databaseAvailable,
+  type TestDatabase,
+} from "../src/pg-harness.js";
 import { makeIdentityService, seedTenantWithOwner } from "../src/fixtures.js";
 
 const available = databaseAvailable();
@@ -27,7 +31,11 @@ describe.skipIf(!available)("pg-harness self-test", () => {
 
   it("seeds a tenant with a bootstrapped owner", async () => {
     const service = makeIdentityService(db);
-    const seeded = await seedTenantWithOwner(service, "Fazenda Harness", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      service,
+      "Fazenda Harness",
+      "owner@example.com",
+    );
     expect(seeded.tenantId).toBeTruthy();
     expect(seeded.ownerUserId).toBeTruthy();
     const farms = await service.listFarms(seeded.ownerContext);

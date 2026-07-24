@@ -62,7 +62,10 @@ export class ImportService {
   }
 
   /** Stage 1 — upload: persist the raw file as evidence and open the job. */
-  async upload(context: TenantContext, rawInput: UploadImportInput): Promise<ImportJobSummary> {
+  async upload(
+    context: TenantContext,
+    rawInput: UploadImportInput,
+  ): Promise<ImportJobSummary> {
     const input = parse(uploadInputSchema, rawInput);
     return this.write(context, async (client) => {
       const id = newUuid();
@@ -84,7 +87,17 @@ export class ImportService {
       await client.query(
         `INSERT INTO import_job (id, tenant_id, farm_id, import_type, status, filename, raw_content, raw_checksum, created_by, event_id)
          VALUES ($1,$2,$3,$4,'uploaded',$5,$6,$7,$8,$9)`,
-        [id, context.tenantId, input.farmId ?? null, input.importType, input.filename ?? null, input.content, checksum, actorRef(context), append.eventId],
+        [
+          id,
+          context.tenantId,
+          input.farmId ?? null,
+          input.importType,
+          input.filename ?? null,
+          input.content,
+          checksum,
+          actorRef(context),
+          append.eventId,
+        ],
       );
       return this.summary(await this.loadJob(client, id));
     });
@@ -104,13 +117,20 @@ export class ImportService {
           [context.tenantId, jobId, i + 1, JSON.stringify(rows[i])],
         );
       }
-      await client.query(`UPDATE import_job SET status = 'parsed', total_rows = $2 WHERE id = $1`, [jobId, rows.length]);
+      await client.query(
+        `UPDATE import_job SET status = 'parsed', total_rows = $2 WHERE id = $1`,
+        [jobId, rows.length],
+      );
       return this.summary(await this.loadJob(client, jobId));
     });
   }
 
   /** Stage 3 — map: apply a target-field → source-column mapping to each row. */
-  async map(context: TenantContext, jobId: Uuid, rawMapping: AnimalMapping): Promise<ImportJobSummary> {
+  async map(
+    context: TenantContext,
+    jobId: Uuid,
+    rawMapping: AnimalMapping,
+  ): Promise<ImportJobSummary> {
     const mapping = parse(animalMappingSchema, rawMapping);
     return this.write(context, async (client) => {
       const job = await this.loadJob(client, jobId);
@@ -127,7 +147,10 @@ export class ImportService {
           [jobId, row.row_number, JSON.stringify(mapped)],
         );
       }
-      await client.query(`UPDATE import_job SET status = 'mapped', mapping = $2 WHERE id = $1`, [jobId, JSON.stringify(mapping)]);
+      await client.query(
+        `UPDATE import_job SET status = 'mapped', mapping = $2 WHERE id = $1`,
+        [jobId, JSON.stringify(mapping)],
+      );
       return this.summary(await this.loadJob(client, jobId));
     });
   }
@@ -152,14 +175,22 @@ export class ImportService {
 
         if (!result.success) {
           status = "invalid";
-          errors = result.error.issues.map((i) => ({ field: i.path.join(".") || "row", reason: i.message }));
+          errors = result.error.issues.map((i) => ({
+            field: i.path.join(".") || "row",
+            reason: i.message,
+          }));
         } else {
           const visualId = result.data.visualId;
           const inFile = seenVisualIds.has(visualId.toLowerCase());
           const inDb = await this.animalExists(client, visualId);
           if (inFile || inDb) {
             status = "duplicate";
-            errors = [{ field: "visualId", reason: inFile ? "duplicate within file" : "already exists" }];
+            errors = [
+              {
+                field: "visualId",
+                reason: inFile ? "duplicate within file" : "already exists",
+              },
+            ];
           } else {
             seenVisualIds.add(visualId.toLowerCase());
           }
@@ -182,7 +213,11 @@ export class ImportService {
   }
 
   /** Stage 5 — preview: summary + a sample of valid and invalid rows. */
-  async preview(context: TenantContext, jobId: Uuid, sampleSize = 10): Promise<ImportPreview> {
+  async preview(
+    context: TenantContext,
+    jobId: Uuid,
+    sampleSize = 10,
+  ): Promise<ImportPreview> {
     return this.read(context, async (client) => {
       const job = await this.loadJob(client, jobId);
       const rows = await this.loadRows(client, jobId);
@@ -190,7 +225,11 @@ export class ImportService {
       return {
         job: this.summary(job),
         sample: views.filter((r) => r.validationStatus === "valid").slice(0, sampleSize),
-        invalidSample: views.filter((r) => r.validationStatus !== "valid" && r.validationStatus !== "pending").slice(0, sampleSize),
+        invalidSample: views
+          .filter(
+            (r) => r.validationStatus !== "valid" && r.validationStatus !== "pending",
+          )
+          .slice(0, sampleSize),
       };
     });
   }
@@ -200,7 +239,11 @@ export class ImportService {
    * injected executor (duplicates/invalid rows are skipped, never guessed).
    * Runs in one transaction so the reconciliation counts commit atomically.
    */
-  async execute(context: TenantContext, jobId: Uuid, executor: RowExecutor): Promise<ImportJobSummary> {
+  async execute(
+    context: TenantContext,
+    jobId: Uuid,
+    executor: RowExecutor,
+  ): Promise<ImportJobSummary> {
     return this.write(context, async (client) => {
       const job = await this.loadJob(client, jobId);
       this.expect(job.status, ["validated"], "execute");
@@ -222,7 +265,13 @@ export class ImportService {
         else if (result.status === "failed") failed++;
         await client.query(
           `UPDATE import_row SET execution_status = $3, server_id = $4, execution_error = $5 WHERE import_job_id = $1 AND row_number = $2`,
-          [jobId, row.row_number, result.status, result.serverId ?? null, result.error ?? null],
+          [
+            jobId,
+            row.row_number,
+            result.status,
+            result.serverId ?? null,
+            result.error ?? null,
+          ],
         );
       }
 
@@ -253,7 +302,9 @@ export class ImportService {
     return this.write(context, async (client) => {
       const job = await this.loadJob(client, jobId);
       this.expect(job.status, ["executed", "reconciled"], "reconcile");
-      await client.query(`UPDATE import_job SET status = 'reconciled' WHERE id = $1`, [jobId]);
+      await client.query(`UPDATE import_job SET status = 'reconciled' WHERE id = $1`, [
+        jobId,
+      ]);
       const rows = await this.loadRows(client, jobId);
       const views = rows.map(toRowView);
       return {
@@ -265,11 +316,15 @@ export class ImportService {
   }
 
   async getJob(context: TenantContext, jobId: Uuid): Promise<ImportJobSummary> {
-    return this.read(context, async (client) => this.summary(await this.loadJob(client, jobId)));
+    return this.read(context, async (client) =>
+      this.summary(await this.loadJob(client, jobId)),
+    );
   }
   async listJobs(context: TenantContext): Promise<ImportJobSummary[]> {
     return this.read(context, async (client) => {
-      const result = await client.query<JobRow>(`SELECT * FROM import_job ORDER BY created_at DESC`);
+      const result = await client.query<JobRow>(
+        `SELECT * FROM import_job ORDER BY created_at DESC`,
+      );
       return result.rows.map((r) => this.summary(r));
     });
   }
@@ -277,12 +332,16 @@ export class ImportService {
   // -- internals --
   private expect(status: string, allowed: string[], stage: string): void {
     if (!allowed.includes(status)) {
-      throw new ImportStateError(`cannot ${stage} an import in status '${status}' (expected ${allowed.join("/")})`);
+      throw new ImportStateError(
+        `cannot ${stage} an import in status '${status}' (expected ${allowed.join("/")})`,
+      );
     }
   }
 
   private async animalExists(client: pg.PoolClient, visualId: string): Promise<boolean> {
-    const r = await client.query(`SELECT 1 FROM animal WHERE visual_id = $1 LIMIT 1`, [visualId]);
+    const r = await client.query(`SELECT 1 FROM animal WHERE visual_id = $1 LIMIT 1`, [
+      visualId,
+    ]);
     return r.rows.length > 0;
   }
 
@@ -292,7 +351,10 @@ export class ImportService {
     return r.rows[0]!;
   }
   private async loadRows(client: pg.PoolClient, jobId: string): Promise<RowRow[]> {
-    const r = await client.query<RowRow>(`SELECT * FROM import_row WHERE import_job_id = $1 ORDER BY row_number`, [jobId]);
+    const r = await client.query<RowRow>(
+      `SELECT * FROM import_row WHERE import_job_id = $1 ORDER BY row_number`,
+      [jobId],
+    );
     return r.rows;
   }
 
@@ -311,24 +373,32 @@ export class ImportService {
     };
   }
 
-  private async write<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async write<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships = await loadCallerMemberships(client, context);
       const decision = decide("run_import", context, memberships);
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new ImportForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new ImportForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
-  private async read<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async read<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships = await loadCallerMemberships(client, context);
       const decision = decide("read", context, memberships);
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new ImportForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new ImportForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

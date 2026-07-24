@@ -1,4 +1,10 @@
-import { createTenantContext, newUuid, ValidationError, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  createTenantContext,
+  newUuid,
+  ValidationError,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -48,7 +54,11 @@ describe.skipIf(!available)("RecommendationService (integration)", () => {
   beforeAll(async () => {
     db = await createTestDatabase("jk_ai");
     identity = makeIdentityService(db);
-    ai = new RecommendationService({ appPool: db.appPool, environment: "test", aiEnabled: true });
+    ai = new RecommendationService({
+      appPool: db.appPool,
+      environment: "test",
+      aiEnabled: true,
+    });
     const seeded = await seedTenantWithOwner(identity, "Fazenda IA", "owner@example.com");
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
@@ -73,13 +83,22 @@ describe.skipIf(!available)("RecommendationService (integration)", () => {
 
   it("refuses to create a recommendation with no evidence (§62)", async () => {
     await expect(
-      ai.createRecommendation(agentContext(tenantId), { ...baseInput, evidenceEventIds: [] }),
+      ai.createRecommendation(agentContext(tenantId), {
+        ...baseInput,
+        evidenceEventIds: [],
+      }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("honors the kill switch (AI disabled) (§64)", async () => {
-    const disabled = new RecommendationService({ appPool: db.appPool, environment: "test", aiEnabled: false });
-    await expect(disabled.createRecommendation(agentContext(tenantId), baseInput)).rejects.toBeInstanceOf(AiDisabledError);
+    const disabled = new RecommendationService({
+      appPool: db.appPool,
+      environment: "test",
+      aiEnabled: false,
+    });
+    await expect(
+      disabled.createRecommendation(agentContext(tenantId), baseInput),
+    ).rejects.toBeInstanceOf(AiDisabledError);
   });
 
   it("BLOCKS a prohibited autonomous action and audits it (scenario #12, §62)", async () => {
@@ -112,7 +131,10 @@ describe.skipIf(!available)("RecommendationService (integration)", () => {
   });
 
   it("requires human approval before executing a non-prohibited action (JK-CON-006)", async () => {
-    const rec = await ai.createRecommendation(agentContext(tenantId), { ...baseInput, proposedActionCategory: "task" });
+    const rec = await ai.createRecommendation(agentContext(tenantId), {
+      ...baseInput,
+      proposedActionCategory: "task",
+    });
     await expect(
       ai.attemptAutonomousExecution(agentContext(tenantId), rec.id),
     ).rejects.toBeInstanceOf(ApprovalRequiredError);
@@ -126,16 +148,33 @@ describe.skipIf(!available)("RecommendationService (integration)", () => {
   });
 
   it("an agent cannot approve its own proposal (human-in-the-loop)", async () => {
-    const rec = await ai.createRecommendation(agentContext(tenantId), { ...baseInput, proposedActionCategory: "task" });
-    await expect(ai.approveRecommendation(agentContext(tenantId), rec.id)).rejects.toBeInstanceOf(AnalyticsForbiddenError);
+    const rec = await ai.createRecommendation(agentContext(tenantId), {
+      ...baseInput,
+      proposedActionCategory: "task",
+    });
+    await expect(
+      ai.approveRecommendation(agentContext(tenantId), rec.id),
+    ).rejects.toBeInstanceOf(AnalyticsForbiddenError);
   });
 
   it("denies approval by a non-management role (technician)", async () => {
-    const invite = await identity.inviteUser(owner, { email: "tec@example.com", displayName: "Tec", role: "technician" });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "technician" });
+    const invite = await identity.inviteUser(owner, {
+      email: "tec@example.com",
+      displayName: "Tec",
+      role: "technician",
+    });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "technician",
+    });
     const tech = makeTenantContext(tenantId, invite.userId);
-    const rec = await ai.createRecommendation(agentContext(tenantId), { ...baseInput, proposedActionCategory: "task" });
-    await expect(ai.approveRecommendation(tech, rec.id)).rejects.toBeInstanceOf(AnalyticsForbiddenError);
+    const rec = await ai.createRecommendation(agentContext(tenantId), {
+      ...baseInput,
+      proposedActionCategory: "task",
+    });
+    await expect(ai.approveRecommendation(tech, rec.id)).rejects.toBeInstanceOf(
+      AnalyticsForbiddenError,
+    );
   });
 
   it("does not leak recommendations across tenants", async () => {

@@ -6,13 +6,13 @@ secrets** — configuration is injected at runtime (Appendix G).
 
 ## Images (`infrastructure/docker/`)
 
-| image | Dockerfile | serves |
-| --- | --- | --- |
-| `jk-api` | `Dockerfile.api` | Fastify API, `:4000`, `/health/live` |
-| `jk-worker` | `Dockerfile.worker` | outbox relay + projections, `:4100` |
+| image             | Dockerfile                | serves                                                 |
+| ----------------- | ------------------------- | ------------------------------------------------------ |
+| `jk-api`          | `Dockerfile.api`          | Fastify API, `:4000`, `/health/live`                   |
+| `jk-worker`       | `Dockerfile.worker`       | outbox relay + projections, `:4100`                    |
 | `jk-edge-gateway` | `Dockerfile.edge-gateway` | on-farm device ingest, `:4200`, durable `/data` volume |
-| `jk-web` | `Dockerfile.web` | nginx serving the SPA + proxying `/api`, `:8080` |
-| `jk-migrate` | `Dockerfile.migrate` | one-shot roles+migrations+seed, then exits |
+| `jk-web`          | `Dockerfile.web`          | nginx serving the SPA + proxying `/api`, `:8080`       |
+| `jk-migrate`      | `Dockerfile.migrate`      | one-shot roles+migrations+seed, then exits             |
 
 Each long-running image runs as non-root (uid 10001) with a `HEALTHCHECK`.
 The API/worker/edge/orchestrator images use a cached multi-stage pnpm build and

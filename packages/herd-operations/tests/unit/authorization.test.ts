@@ -5,7 +5,9 @@ import { decide, decideServiceActor } from "../../src/authorization.js";
 describe("herd-operations authorization", () => {
   it("denies without active membership; allows read for any active member", () => {
     expect(decide("record_weight", []).allowed).toBe(false);
-    expect(decide("read", [{ role: "finance_user", status: "active" }]).allowed).toBe(true);
+    expect(decide("read", [{ role: "finance_user", status: "active" }]).allowed).toBe(
+      true,
+    );
   });
 
   it("allows herd roles to record weights and manage sessions", () => {

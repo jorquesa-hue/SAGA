@@ -7,7 +7,8 @@ import { buildTenantContext } from "../request-context.js";
 function idem(request: FastifyRequest): string {
   const v = request.headers["idempotency-key"];
   const key = Array.isArray(v) ? v[0] : v;
-  if (!key) throw new MissingHeaderError("Idempotency-Key header is required for this command");
+  if (!key)
+    throw new MissingHeaderError("Idempotency-Key header is required for this command");
   return key;
 }
 function tenant(request: FastifyRequest): string | undefined {
@@ -16,11 +17,15 @@ function tenant(request: FastifyRequest): string | undefined {
 }
 
 export function registerAiRoutes(app: FastifyInstance, ai: RecommendationService): void {
-  const ctx = (r: FastifyRequest) => buildTenantContext(r.principal, tenant(r), r.correlationId);
+  const ctx = (r: FastifyRequest) =>
+    buildTenantContext(r.principal, tenant(r), r.correlationId);
 
   app.post("/api/v1/recommendations", async (r: FastifyRequest, reply: FastifyReply) => {
     const key = idem(r);
-    const rec = await ai.createRecommendation(ctx(r), { ...(r.body as object), idempotencyKey: `rec:${key}` } as never);
+    const rec = await ai.createRecommendation(ctx(r), {
+      ...(r.body as object),
+      idempotencyKey: `rec:${key}`,
+    } as never);
     reply.status(201);
     return rec;
   });
@@ -35,20 +40,26 @@ export function registerAiRoutes(app: FastifyInstance, ai: RecommendationService
     return ai.getRecommendation(ctx(r), id);
   });
 
-  app.post("/api/v1/recommendations/:id/approve", async (r: FastifyRequest, reply: FastifyReply) => {
-    idem(r);
-    const { id } = r.params as { id: string };
-    await ai.approveRecommendation(ctx(r), id);
-    reply.status(204);
-  });
+  app.post(
+    "/api/v1/recommendations/:id/approve",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      idem(r);
+      const { id } = r.params as { id: string };
+      await ai.approveRecommendation(ctx(r), id);
+      reply.status(204);
+    },
+  );
 
-  app.post("/api/v1/recommendations/:id/reject", async (r: FastifyRequest, reply: FastifyReply) => {
-    idem(r);
-    const { id } = r.params as { id: string };
-    const body = (r.body ?? {}) as { reason?: string };
-    await ai.rejectRecommendation(ctx(r), id, body.reason ?? "rejected");
-    reply.status(204);
-  });
+  app.post(
+    "/api/v1/recommendations/:id/reject",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      idem(r);
+      const { id } = r.params as { id: string };
+      const body = (r.body ?? {}) as { reason?: string };
+      await ai.rejectRecommendation(ctx(r), id, body.reason ?? "rejected");
+      reply.status(204);
+    },
+  );
 
   app.post("/api/v1/recommendations/:id/execute", async (r: FastifyRequest) => {
     const { id } = r.params as { id: string };

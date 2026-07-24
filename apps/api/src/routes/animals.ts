@@ -11,7 +11,8 @@ import { buildTenantContext } from "../request-context.js";
 function idempotencyKey(request: FastifyRequest): string {
   const key = request.headers["idempotency-key"];
   const value = Array.isArray(key) ? key[0] : key;
-  if (!value) throw new MissingHeaderError("Idempotency-Key header is required for this command");
+  if (!value)
+    throw new MissingHeaderError("Idempotency-Key header is required for this command");
   return value;
 }
 
@@ -20,7 +21,10 @@ function tenantHeader(request: FastifyRequest): string | undefined {
   return Array.isArray(raw) ? raw[0] : raw;
 }
 
-export function registerAnimalRoutes(app: FastifyInstance, service: AnimalRegistryService): void {
+export function registerAnimalRoutes(
+  app: FastifyInstance,
+  service: AnimalRegistryService,
+): void {
   const ctx = (request: FastifyRequest) =>
     buildTenantContext(request.principal, tenantHeader(request), request.correlationId);
 
@@ -63,28 +67,31 @@ export function registerAnimalRoutes(app: FastifyInstance, service: AnimalRegist
     return { items: entries };
   });
 
-  app.post("/api/v1/animals/:animalId/identifiers", async (request: FastifyRequest, reply: FastifyReply) => {
-    const key = idempotencyKey(request);
-    const { animalId } = request.params as { animalId: string };
-    const body = (request.body ?? {}) as Record<string, unknown>;
-    if (body.replace === true) {
-      const identifier = await service.replaceIdentifier(ctx(request), {
+  app.post(
+    "/api/v1/animals/:animalId/identifiers",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const key = idempotencyKey(request);
+      const { animalId } = request.params as { animalId: string };
+      const body = (request.body ?? {}) as Record<string, unknown>;
+      if (body.replace === true) {
+        const identifier = await service.replaceIdentifier(ctx(request), {
+          animalId,
+          identifierType: body.identifierType as never,
+          newValue: body.identifierValue as string,
+          reason: body.reason as string | undefined,
+          idempotencyKey: `identifier-replace:${key}`,
+        });
+        reply.status(201);
+        return identifier;
+      }
+      const identifier = await service.assignIdentifier(ctx(request), {
         animalId,
         identifierType: body.identifierType as never,
-        newValue: body.identifierValue as string,
-        reason: body.reason as string | undefined,
-        idempotencyKey: `identifier-replace:${key}`,
+        identifierValue: body.identifierValue as string,
+        idempotencyKey: `identifier-assign:${key}`,
       });
       reply.status(201);
       return identifier;
-    }
-    const identifier = await service.assignIdentifier(ctx(request), {
-      animalId,
-      identifierType: body.identifierType as never,
-      identifierValue: body.identifierValue as string,
-      idempotencyKey: `identifier-assign:${key}`,
-    });
-    reply.status(201);
-    return identifier;
-  });
+    },
+  );
 }

@@ -8,7 +8,7 @@ a capture is never lost when the uplink is down.
 ## How it works
 
 - **Ingest** (`POST /ingest`, `POST /ingest:batch`): device readers push
-  readings; each is persisted to disk *before* the request returns, then the
+  readings; each is persisted to disk _before_ the request returns, then the
   handler responds `202`. The uplink is never on the ingest critical path.
 - **Buffer**: a `FileLocalStore` (durable `LocalStore` from `@jk/offline-sync`)
   writes the whole snapshot through a temp-file rename on every mutation, so a
@@ -26,15 +26,15 @@ review, never dropped.
 
 ## Configuration (Appendix G)
 
-| var | purpose |
-| --- | --- |
-| `EDGE_TENANT_ID` | tenant the gateway belongs to (required) |
-| `EDGE_DEV_USER_ID` *or* `EDGE_API_TOKEN` | local dev auth, or a bearer token |
-| `API_BASE_URL` | platform API origin (default `http://localhost:4000`) |
-| `EDGE_GATEWAY_ID` | gateway identifier stamped on observations |
-| `EDGE_DATA_FILE` | durable buffer path (default `./data/edge-outbox.json`) |
-| `FLUSH_INTERVAL_MS` | upstream flush cadence (default 5000) |
-| `PORT` | HTTP port (default 4200) |
+| var                                      | purpose                                                 |
+| ---------------------------------------- | ------------------------------------------------------- |
+| `EDGE_TENANT_ID`                         | tenant the gateway belongs to (required)                |
+| `EDGE_DEV_USER_ID` _or_ `EDGE_API_TOKEN` | local dev auth, or a bearer token                       |
+| `API_BASE_URL`                           | platform API origin (default `http://localhost:4000`)   |
+| `EDGE_GATEWAY_ID`                        | gateway identifier stamped on observations              |
+| `EDGE_DATA_FILE`                         | durable buffer path (default `./data/edge-outbox.json`) |
+| `FLUSH_INTERVAL_MS`                      | upstream flush cadence (default 5000)                   |
+| `PORT`                                   | HTTP port (default 4200)                                |
 
 ```bash
 pnpm --filter @jk/edge-gateway build

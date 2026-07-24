@@ -13,7 +13,12 @@ import { HerdForbiddenError } from "../../src/errors.js";
 
 const available = databaseAvailable();
 
-async function makeAnimal(db: TestDatabase, tenantId: Uuid, farmId: Uuid, visualId: string): Promise<Uuid> {
+async function makeAnimal(
+  db: TestDatabase,
+  tenantId: Uuid,
+  farmId: Uuid,
+  visualId: string,
+): Promise<Uuid> {
   const id = newUuid();
   await db.adminPool.query(
     `INSERT INTO animal (id, tenant_id, farm_id, visual_id, sex, version) VALUES ($1,$2,$3,$4,'female',0)`,
@@ -22,7 +27,12 @@ async function makeAnimal(db: TestDatabase, tenantId: Uuid, farmId: Uuid, visual
   return id;
 }
 
-async function makePaddock(db: TestDatabase, tenantId: Uuid, farmId: Uuid, name: string): Promise<Uuid> {
+async function makePaddock(
+  db: TestDatabase,
+  tenantId: Uuid,
+  farmId: Uuid,
+  name: string,
+): Promise<Uuid> {
   const id = newUuid();
   await db.adminPool.query(
     `INSERT INTO paddock (id, tenant_id, farm_id, name, area_ha, status) VALUES ($1,$2,$3,$4,10,'active')`,
@@ -43,7 +53,11 @@ describe.skipIf(!available)("LotsService (integration)", () => {
     db = await createTestDatabase("jk_lots");
     identity = makeIdentityService(db);
     lots = new LotsService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Lotes", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Lotes",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -55,7 +69,11 @@ describe.skipIf(!available)("LotsService (integration)", () => {
   });
 
   it("creates a lot, adds animals, and projects membership (JK-HER-001/002/004)", async () => {
-    const lot = await lots.createLot(owner, { farmId, name: "Lote Recria A", purpose: "rearing" });
+    const lot = await lots.createLot(owner, {
+      farmId,
+      name: "Lote Recria A",
+      purpose: "rearing",
+    });
     const a1 = await makeAnimal(db, tenantId, farmId, "BR-L001");
     const a2 = await makeAnimal(db, tenantId, farmId, "BR-L002");
 
@@ -87,7 +105,11 @@ describe.skipIf(!available)("LotsService (integration)", () => {
   });
 
   it("moves a lot between paddocks, closing the prior occupation (JK-HER-003)", async () => {
-    const lot = await lots.createLot(owner, { farmId, name: "Lote Pasto", purpose: "beef" });
+    const lot = await lots.createLot(owner, {
+      farmId,
+      name: "Lote Pasto",
+      purpose: "beef",
+    });
     const p1 = await makePaddock(db, tenantId, farmId, "Pasto A");
     const p2 = await makePaddock(db, tenantId, farmId, "Pasto B");
 
@@ -111,18 +133,32 @@ describe.skipIf(!available)("LotsService (integration)", () => {
   });
 
   it("removes an animal from a lot", async () => {
-    const lot = await lots.createLot(owner, { farmId, name: "Lote Remove", purpose: "beef" });
+    const lot = await lots.createLot(owner, {
+      farmId,
+      name: "Lote Remove",
+      purpose: "beef",
+    });
     const animal = await makeAnimal(db, tenantId, farmId, "BR-L020");
     await lots.addAnimals(owner, { lotId: lot.id, animalIds: [animal] });
-    const removed = await lots.removeAnimals(owner, { lotId: lot.id, animalIds: [animal] });
+    const removed = await lots.removeAnimals(owner, {
+      lotId: lot.id,
+      animalIds: [animal],
+    });
     expect(removed[0]!.status).toBe("removed");
     expect(await lots.getAnimalLot(owner, animal)).toBeNull();
   });
 
   it("reports errors for missing animals in a batch add (partial success)", async () => {
-    const lot = await lots.createLot(owner, { farmId, name: "Lote Parcial", purpose: "beef" });
+    const lot = await lots.createLot(owner, {
+      farmId,
+      name: "Lote Parcial",
+      purpose: "beef",
+    });
     const good = await makeAnimal(db, tenantId, farmId, "BR-L030");
-    const results = await lots.addAnimals(owner, { lotId: lot.id, animalIds: [good, newUuid()] });
+    const results = await lots.addAnimals(owner, {
+      lotId: lot.id,
+      animalIds: [good, newUuid()],
+    });
     expect(results.filter((r) => r.status === "added")).toHaveLength(1);
     expect(results.filter((r) => r.status === "error")).toHaveLength(1);
   });
@@ -133,7 +169,10 @@ describe.skipIf(!available)("LotsService (integration)", () => {
       displayName: "Fin",
       role: "finance_user",
     });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "finance_user" });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "finance_user",
+    });
     const finance = makeTenantContext(tenantId, invite.userId);
     await expect(
       lots.createLot(finance, { farmId, name: "Proibido", purpose: "beef" }),
@@ -149,7 +188,11 @@ describe.skipIf(!available)("LotsService (integration)", () => {
 
   it("does not leak lots across tenants", async () => {
     const other = await seedTenantWithOwner(identity, "Outra", "o@example.com");
-    const lot = await lots.createLot(owner, { farmId, name: "Lote Secreto", purpose: "beef" });
+    const lot = await lots.createLot(owner, {
+      farmId,
+      name: "Lote Secreto",
+      purpose: "beef",
+    });
     await expect(lots.getLotMembers(other.ownerContext, lot.id)).resolves.toEqual([]);
   });
 });

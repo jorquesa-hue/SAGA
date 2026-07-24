@@ -1,4 +1,10 @@
-import { ConflictError, NotFoundError, newUuid, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  ConflictError,
+  NotFoundError,
+  newUuid,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -23,7 +29,11 @@ describe.skipIf(!available)("InventoryService (integration)", () => {
     db = await createTestDatabase("jk_inv");
     identity = makeIdentityService(db);
     inv = new InventoryService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Estoque", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Estoque",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
   }, 90_000);
@@ -33,7 +43,11 @@ describe.skipIf(!available)("InventoryService (integration)", () => {
   });
 
   it("receives and consumes stock with a calculated balance", async () => {
-    const item = await inv.createItem(owner, { name: "Vermífugo", category: "medicine", unit: "mL" });
+    const item = await inv.createItem(owner, {
+      name: "Vermífugo",
+      category: "medicine",
+      unit: "mL",
+    });
     const r = await inv.receiveStock(owner, {
       itemId: item.id,
       quantity: 1000,
@@ -42,13 +56,21 @@ describe.skipIf(!available)("InventoryService (integration)", () => {
     });
     expect(r.balance).toBe(1000);
 
-    const c = await inv.consumeStock(owner, { itemId: item.id, quantity: 250, reason: "tratamento lote A" });
+    const c = await inv.consumeStock(owner, {
+      itemId: item.id,
+      quantity: 250,
+      reason: "tratamento lote A",
+    });
     expect(c.balance).toBe(750);
     expect(await inv.getBalance(owner, item.id)).toBe(750);
   });
 
   it("prohibits negative stock by default (JK-INV-002/005)", async () => {
-    const item = await inv.createItem(owner, { name: "Sal Mineral", category: "mineral", unit: "kg" });
+    const item = await inv.createItem(owner, {
+      name: "Sal Mineral",
+      category: "mineral",
+      unit: "kg",
+    });
     await inv.receiveStock(owner, { itemId: item.id, quantity: 50 });
     await expect(
       inv.consumeStock(owner, { itemId: item.id, quantity: 80 }),
@@ -57,7 +79,11 @@ describe.skipIf(!available)("InventoryService (integration)", () => {
   });
 
   it("links consumption to an animal/lot (JK-INV-003)", async () => {
-    const item = await inv.createItem(owner, { name: "Antibiótico", category: "medicine", unit: "mL" });
+    const item = await inv.createItem(owner, {
+      name: "Antibiótico",
+      category: "medicine",
+      unit: "mL",
+    });
     await inv.receiveStock(owner, { itemId: item.id, quantity: 100 });
     const animalId = newUuid();
     await inv.consumeStock(owner, { itemId: item.id, quantity: 10, animalId });
@@ -69,17 +95,38 @@ describe.skipIf(!available)("InventoryService (integration)", () => {
   });
 
   it("stock movements are immutable (append-only ledger)", async () => {
-    const item = await inv.createItem(owner, { name: "Ração", category: "feed", unit: "kg" });
+    const item = await inv.createItem(owner, {
+      name: "Ração",
+      category: "feed",
+      unit: "kg",
+    });
     await inv.receiveStock(owner, { itemId: item.id, quantity: 500 });
     await expect(
-      db.adminPool.query(`UPDATE stock_movement SET quantity_delta = 9999 WHERE item_id = $1`, [item.id]),
+      db.adminPool.query(
+        `UPDATE stock_movement SET quantity_delta = 9999 WHERE item_id = $1`,
+        [item.id],
+      ),
     ).rejects.toThrow(/append-only/);
   });
 
   it("lists batches expiring within the horizon (JK-INV-005)", async () => {
-    const item = await inv.createItem(owner, { name: "Vacina", category: "medicine", unit: "dose" });
-    await inv.receiveStock(owner, { itemId: item.id, quantity: 40, batchCode: "V-SOON", expirationDate: "2026-08-01" });
-    await inv.receiveStock(owner, { itemId: item.id, quantity: 40, batchCode: "V-LATER", expirationDate: "2030-01-01" });
+    const item = await inv.createItem(owner, {
+      name: "Vacina",
+      category: "medicine",
+      unit: "dose",
+    });
+    await inv.receiveStock(owner, {
+      itemId: item.id,
+      quantity: 40,
+      batchCode: "V-SOON",
+      expirationDate: "2026-08-01",
+    });
+    await inv.receiveStock(owner, {
+      itemId: item.id,
+      quantity: 40,
+      batchCode: "V-LATER",
+      expirationDate: "2030-01-01",
+    });
     const expiring = await inv.getExpiringBatches(owner, 60);
     expect(expiring.some((b) => b.batchCode === "V-SOON")).toBe(true);
     expect(expiring.some((b) => b.batchCode === "V-LATER")).toBe(false);
@@ -96,8 +143,15 @@ describe.skipIf(!available)("InventoryService (integration)", () => {
   });
 
   it("denies a finance_user from changing inventory (403)", async () => {
-    const invite = await identity.inviteUser(owner, { email: "fin@example.com", displayName: "Fin", role: "finance_user" });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "finance_user" });
+    const invite = await identity.inviteUser(owner, {
+      email: "fin@example.com",
+      displayName: "Fin",
+      role: "finance_user",
+    });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "finance_user",
+    });
     const finance = makeTenantContext(tenantId, invite.userId);
     await expect(
       inv.createItem(finance, { name: "Proibido", category: "feed", unit: "kg" }),
@@ -105,7 +159,11 @@ describe.skipIf(!available)("InventoryService (integration)", () => {
   });
 
   it("does not leak inventory across tenants", async () => {
-    const item = await inv.createItem(owner, { name: "Secreto", category: "feed", unit: "kg" });
+    const item = await inv.createItem(owner, {
+      name: "Secreto",
+      category: "feed",
+      unit: "kg",
+    });
     const other = await seedTenantWithOwner(identity, "Outra", "o@example.com");
     await expect(inv.getBalance(other.ownerContext, item.id)).resolves.toBe(0);
   });

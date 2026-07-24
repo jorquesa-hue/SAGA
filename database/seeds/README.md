@@ -9,18 +9,18 @@ import workflow (§27) and data-migration strategy (§87).
 
 A reference Brangus operation on ~100 ha near Lagoinha/Cunha, SP:
 
-| Entity | Count | Notes |
-|---|---|---|
-| tenant | 1 | Fazenda JK (Referência Sintética), pt-BR / BRL |
-| farm | 1 | Sede Lagoinha, 100 ha, America/Sao_Paulo |
-| paddock | 12 | Pasto 01–12, PostGIS MultiPolygon geometries (SRID 4326) |
-| user_account | 6 | one per operational role (§17) |
-| tenant_membership | 6 | active, one per user |
-| farm_membership | 5 | farm-scoped roles (owner is tenant-level) |
-| animal | 15 | 10 female / 5 male Brangus, varied birth-date precision |
-| animal_identifier | 30 | active RFID + visual tag per animal (JK-DOM-003) |
-| domain_event | 1 | worked `animal.animal_registered.v1` example (BR-0001) |
-| outbox_message | 1 | matching transactional-outbox row (§39 envelope shape) |
+| Entity            | Count | Notes                                                    |
+| ----------------- | ----- | -------------------------------------------------------- |
+| tenant            | 1     | Fazenda JK (Referência Sintética), pt-BR / BRL           |
+| farm              | 1     | Sede Lagoinha, 100 ha, America/Sao_Paulo                 |
+| paddock           | 12    | Pasto 01–12, PostGIS MultiPolygon geometries (SRID 4326) |
+| user_account      | 6     | one per operational role (§17)                           |
+| tenant_membership | 6     | active, one per user                                     |
+| farm_membership   | 5     | farm-scoped roles (owner is tenant-level)                |
+| animal            | 15    | 10 female / 5 male Brangus, varied birth-date precision  |
+| animal_identifier | 30    | active RFID + visual tag per animal (JK-DOM-003)         |
+| domain_event      | 1     | worked `animal.animal_registered.v1` example (BR-0001)   |
+| outbox_message    | 1     | matching transactional-outbox row (§39 envelope shape)   |
 
 ## Determinism
 

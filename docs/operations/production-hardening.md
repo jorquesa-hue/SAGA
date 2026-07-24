@@ -8,7 +8,7 @@ where each is enforced. Items marked **deferred** have a named owner
 
 - **Enforced.** Every tenant table is `ROW LEVEL SECURITY … FORCE` with a
   fail-closed policy (`tenant_id = NULLIF(current_setting('app.tenant_id',
-  true), '')::uuid`). The app role (`jk_app`) can never see across tenants; the
+true), '')::uuid`). The app role (`jk_app`) can never see across tenants; the
   worker role (`jk_worker`) has narrow cross-tenant scope on the outbox only.
 - **Tested.** `pnpm test:tenant-isolation` runs the cross-tenant attack suite;
   every feature package's integration suite asserts no cross-tenant leakage.

@@ -87,9 +87,13 @@ describe.skipIf(!available)("event stats projector (§31.2, §42, real PostgreSQ
   });
 
   it("relay pipeline feeds the projector; stats count per tenant and aggregate type", async () => {
-    await append(buildEnvelope(tenantA, "identity.farm_created.v1", "farm", { name: "Sede" }));
     await append(
-      buildEnvelope(tenantA, "identity.farm_created.v1", "farm", { name: "Retiro do Ipê" }),
+      buildEnvelope(tenantA, "identity.farm_created.v1", "farm", { name: "Sede" }),
+    );
+    await append(
+      buildEnvelope(tenantA, "identity.farm_created.v1", "farm", {
+        name: "Retiro do Ipê",
+      }),
     );
     await append(
       buildEnvelope(tenantA, "identity.user_invited.v1", "user", {
@@ -98,7 +102,9 @@ describe.skipIf(!available)("event stats projector (§31.2, §42, real PostgreSQ
       }),
     );
     await append(
-      buildEnvelope(tenantB, "identity.farm_created.v1", "farm", { name: "Invernada Norte" }),
+      buildEnvelope(tenantB, "identity.farm_created.v1", "farm", {
+        name: "Invernada Norte",
+      }),
     );
 
     const publisher = new InMemoryPublisher();
@@ -126,8 +132,12 @@ describe.skipIf(!available)("event stats projector (§31.2, §42, real PostgreSQ
       `SELECT consumer_name, message_id FROM processed_message ORDER BY message_id`,
     );
     expect(processed.rows).toHaveLength(4);
-    expect(processed.rows.every((r) => r.consumer_name === EVENT_STATS_CONSUMER)).toBe(true);
-    expect(processed.rows.map((r) => r.message_id).sort()).toEqual(publisher.eventIds().sort());
+    expect(processed.rows.every((r) => r.consumer_name === EVENT_STATS_CONSUMER)).toBe(
+      true,
+    );
+    expect(processed.rows.map((r) => r.message_id).sort()).toEqual(
+      publisher.eventIds().sort(),
+    );
   });
 
   it("a second relay run neither republishes nor reprojects", async () => {
@@ -177,7 +187,9 @@ describe.skipIf(!available)("event stats projector (§31.2, §42, real PostgreSQ
         WHERE tenant_id = $1 AND aggregate_type = 'farm'`,
       [tenantB],
     );
-    expect(Number(after.rows[0].event_count)).toBe(Number(before.rows[0].event_count) + 1);
+    expect(Number(after.rows[0].event_count)).toBe(
+      Number(before.rows[0].event_count) + 1,
+    );
     expect(after.rows[0].calculated_at.getTime()).toBeGreaterThanOrEqual(
       before.rows[0].calculated_at.getTime(),
     );

@@ -47,7 +47,10 @@ describe("createLogger", () => {
     const { pino } = await import("pino");
     const logger = pino(
       {
-        redact: { paths: ["password", "token", "req.headers.authorization"], censor: "[redacted]" },
+        redact: {
+          paths: ["password", "token", "req.headers.authorization"],
+          censor: "[redacted]",
+        },
       },
       sink,
     );

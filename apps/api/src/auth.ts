@@ -21,7 +21,9 @@ export interface AuthenticatedPrincipal {
 }
 
 export interface Authenticator {
-  authenticate(headers: Record<string, string | string[] | undefined>): Promise<AuthenticatedPrincipal>;
+  authenticate(
+    headers: Record<string, string | string[] | undefined>,
+  ): Promise<AuthenticatedPrincipal>;
   readonly mode: "oidc" | "dev";
 }
 
@@ -43,7 +45,9 @@ class OidcAuthenticator implements Authenticator {
     private readonly issuer: string,
     private readonly audience: string | undefined,
   ) {
-    this.jwks = createRemoteJWKSet(new URL(`${issuer.replace(/\/$/, "")}/protocol/openid-connect/certs`));
+    this.jwks = createRemoteJWKSet(
+      new URL(`${issuer.replace(/\/$/, "")}/protocol/openid-connect/certs`),
+    );
   }
 
   async authenticate(

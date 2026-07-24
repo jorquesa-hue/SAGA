@@ -9,11 +9,7 @@ import type pg from "pg";
  */
 
 export type HerdAction =
-  | "start_session"
-  | "record_weight"
-  | "review_observation"
-  | "manage_lots"
-  | "read";
+  "start_session" | "record_weight" | "review_observation" | "manage_lots" | "read";
 
 const WRITE_ROLES = new Set(["tenant_owner", "farm_manager", "technician"]);
 
@@ -71,7 +67,10 @@ export function decideServiceActor(
   context: TenantContext,
   action: HerdAction,
 ): HerdAuthorizationDecision {
-  if ((context.actor.type === "device" || context.actor.type === "service") && action === "record_weight") {
+  if (
+    (context.actor.type === "device" || context.actor.type === "service") &&
+    action === "record_weight"
+  ) {
     return { allowed: true, reason: "integration_actor", action };
   }
   return { allowed: false, reason: "integration actor may only record weights", action };

@@ -44,7 +44,10 @@ export const recordEntryInputSchema = z
   .object({
     category: z.string().trim().min(1).max(120),
     amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "amount must be a decimal string"),
-    currency: z.string().regex(/^[A-Z]{3}$/).default("BRL"),
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .default("BRL"),
     counterparty: z.string().max(200).optional(),
     capexOpex: z.enum(["capex", "opex"]).optional(),
     farmId: z.string().uuid().optional(),
@@ -62,9 +65,18 @@ export const recordSaleInputSchema = z
     weightKg: z.number().positive().optional(),
     priceBasis: z.string().max(120).optional(),
     gross: z.string().regex(/^\d+(\.\d{1,2})?$/),
-    deductions: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
-    freight: z.string().regex(/^\d+(\.\d{1,2})?$/).default("0"),
-    currency: z.string().regex(/^[A-Z]{3}$/).default("BRL"),
+    deductions: z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/)
+      .default("0"),
+    freight: z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/)
+      .default("0"),
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .default("BRL"),
     soldAt: z.string().datetime({ offset: true }).optional(),
     idempotencyKey: z.string().min(1).max(200).optional(),
   })
@@ -78,7 +90,10 @@ export const budgetInputSchema = z
     periodMonth: z.string().regex(/^\d{4}-\d{2}$/, "periodMonth must be YYYY-MM"),
     category: z.string().min(1).max(120),
     planned: z.string().regex(/^\d+(\.\d{1,2})?$/),
-    currency: z.string().regex(/^[A-Z]{3}$/).default("BRL"),
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .default("BRL"),
   })
   .strict();
 export type BudgetInput = z.input<typeof budgetInputSchema>;
@@ -97,11 +112,17 @@ export class FinanceService {
     this.environment = options.environment ?? "local";
   }
 
-  async recordExpense(context: TenantContext, rawInput: RecordEntryInput): Promise<{ entryId: Uuid }> {
+  async recordExpense(
+    context: TenantContext,
+    rawInput: RecordEntryInput,
+  ): Promise<{ entryId: Uuid }> {
     return this.recordEntry(context, "expense", rawInput);
   }
 
-  async recordRevenue(context: TenantContext, rawInput: RecordEntryInput): Promise<{ entryId: Uuid }> {
+  async recordRevenue(
+    context: TenantContext,
+    rawInput: RecordEntryInput,
+  ): Promise<{ entryId: Uuid }> {
     return this.recordEntry(context, "revenue", rawInput);
   }
 
@@ -129,22 +150,39 @@ export class FinanceService {
           input.currency,
           input.capexOpex ?? null,
           input.occurredAt ?? null,
-          await this.emit(client, context, entryType === "expense" ? EXPENSE_RECORDED : REVENUE_RECORDED, entryId, input.idempotencyKey ?? `entry-${entryId}`, {
+          await this.emit(
+            client,
+            context,
+            entryType === "expense" ? EXPENSE_RECORDED : REVENUE_RECORDED,
             entryId,
-            entryType,
-            category: input.category,
-            amount: money.toDecimal(),
-            currency: input.currency,
-          }),
+            input.idempotencyKey ?? `entry-${entryId}`,
+            {
+              entryId,
+              entryType,
+              category: input.category,
+              amount: money.toDecimal(),
+              currency: input.currency,
+            },
+          ),
         ],
       );
-      await this.writeAllocations(client, context, entryId, money, input.allocations, input.farmId);
+      await this.writeAllocations(
+        client,
+        context,
+        entryId,
+        money,
+        input.allocations,
+        input.farmId,
+      );
       return { entryId };
     });
   }
 
   /** Record an animal/lot sale: net = gross - deductions - freight; posts revenue. */
-  async recordSale(context: TenantContext, rawInput: RecordSaleInput): Promise<{ saleId: Uuid; entryId: Uuid; netReceipt: string }> {
+  async recordSale(
+    context: TenantContext,
+    rawInput: RecordSaleInput,
+  ): Promise<{ saleId: Uuid; entryId: Uuid; netReceipt: string }> {
     const input = this.parse(recordSaleInputSchema, rawInput);
     const currency = input.currency;
     const gross = Money.fromDecimal(input.gross, currency);
@@ -152,7 +190,9 @@ export class FinanceService {
     const freight = Money.fromDecimal(input.freight, currency);
     const net = gross.subtract(deductions).subtract(freight);
     if (net.isNegative()) {
-      throw new ValidationError("Net receipt cannot be negative (deductions + freight exceed gross)");
+      throw new ValidationError(
+        "Net receipt cannot be negative (deductions + freight exceed gross)",
+      );
     }
     return this.authorized(context, async (client) => {
       // Post the revenue entry allocated to the animal or lot.
@@ -169,13 +209,27 @@ export class FinanceService {
           net.minorUnits.toString(),
           currency,
           input.soldAt ?? null,
-          await this.emit(client, context, REVENUE_RECORDED, entryId, `sale-entry-${entryId}`, { entryId, category: "animal_sale" }),
+          await this.emit(
+            client,
+            context,
+            REVENUE_RECORDED,
+            entryId,
+            `sale-entry-${entryId}`,
+            { entryId, category: "animal_sale" },
+          ),
         ],
       );
       await client.query(
         `INSERT INTO financial_allocation (tenant_id, entry_id, dimension, target_id, allocated_minor, allocation_rule_version)
          VALUES ($1,$2,$3,$4,$5,$6)`,
-        [context.tenantId, entryId, allocationDim, targetId, net.minorUnits.toString(), ALLOCATION_RULE_VERSION],
+        [
+          context.tenantId,
+          entryId,
+          allocationDim,
+          targetId,
+          net.minorUnits.toString(),
+          ALLOCATION_RULE_VERSION,
+        ],
       );
 
       const saleId = newUuid();
@@ -197,12 +251,20 @@ export class FinanceService {
           net.minorUnits.toString(),
           currency,
           input.soldAt ?? null,
-          await this.emit(client, context, SALE_RECORDED, saleId, input.idempotencyKey ?? `sale-${saleId}`, {
+          await this.emit(
+            client,
+            context,
+            SALE_RECORDED,
             saleId,
-            animalId: input.animalId ?? null,
-            lotId: input.lotId ?? null,
-            netReceipt: net.toDecimal(),
-          }, "sale"),
+            input.idempotencyKey ?? `sale-${saleId}`,
+            {
+              saleId,
+              animalId: input.animalId ?? null,
+              lotId: input.lotId ?? null,
+              netReceipt: net.toDecimal(),
+            },
+            "sale",
+          ),
         ],
       );
       return { saleId, entryId, netReceipt: net.toDecimal() };
@@ -210,7 +272,12 @@ export class FinanceService {
   }
 
   /** Total allocated cost (expenses) for a dimension target (JK-FIN-003/006). */
-  async getCostForTarget(context: TenantContext, dimension: Dimension, targetId: Uuid, currency = "BRL"): Promise<string> {
+  async getCostForTarget(
+    context: TenantContext,
+    dimension: Dimension,
+    targetId: Uuid,
+    currency = "BRL",
+  ): Promise<string> {
     return this.authorized(context, async (client) => {
       const result = await client.query<{ total: string }>(
         `SELECT COALESCE(SUM(al.allocated_minor), 0)::text AS total
@@ -224,7 +291,11 @@ export class FinanceService {
   }
 
   /** Margin for a lot = revenue allocated to it minus expense allocated to it. */
-  async getMarginForLot(context: TenantContext, lotId: Uuid, currency = "BRL"): Promise<{ revenue: string; cost: string; margin: string }> {
+  async getMarginForLot(
+    context: TenantContext,
+    lotId: Uuid,
+    currency = "BRL",
+  ): Promise<{ revenue: string; cost: string; margin: string }> {
     return this.authorized(context, async (client) => {
       const rev = await client.query<{ total: string }>(
         `SELECT COALESCE(SUM(al.allocated_minor), 0)::text AS total
@@ -242,7 +313,11 @@ export class FinanceService {
       );
       const revenue = Money.fromMinorUnits(BigInt(rev.rows[0]!.total), currency);
       const costM = Money.fromMinorUnits(BigInt(cost.rows[0]!.total), currency);
-      return { revenue: revenue.toDecimal(), cost: costM.toDecimal(), margin: revenue.subtract(costM).toDecimal() };
+      return {
+        revenue: revenue.toDecimal(),
+        cost: costM.toDecimal(),
+        margin: revenue.subtract(costM).toDecimal(),
+      };
     });
   }
 
@@ -255,7 +330,14 @@ export class FinanceService {
          VALUES ($1,$2, ($3 || '-01')::date, $4, $5, $6)
          ON CONFLICT (tenant_id, farm_id, period_month, category)
          DO UPDATE SET planned_minor = EXCLUDED.planned_minor`,
-        [context.tenantId, input.farmId ?? null, input.periodMonth, input.category, money.minorUnits.toString(), input.currency],
+        [
+          context.tenantId,
+          input.farmId ?? null,
+          input.periodMonth,
+          input.category,
+          money.minorUnits.toString(),
+          input.currency,
+        ],
       );
     });
   }
@@ -280,7 +362,11 @@ export class FinanceService {
       );
       const p = Money.fromMinorUnits(BigInt(planned.rows[0]!.total), currency);
       const a = Money.fromMinorUnits(BigInt(actual.rows[0]!.total), currency);
-      return { planned: p.toDecimal(), actual: a.toDecimal(), variance: p.subtract(a).toDecimal() };
+      return {
+        planned: p.toDecimal(),
+        actual: a.toDecimal(),
+        variance: p.subtract(a).toDecimal(),
+      };
     });
   }
 
@@ -298,7 +384,14 @@ export class FinanceService {
       await client.query(
         `INSERT INTO financial_allocation (tenant_id, entry_id, dimension, target_id, target_ref, allocated_minor, allocation_rule_version)
          VALUES ($1,$2,'farm',$3,$4,$5,$6)`,
-        [context.tenantId, entryId, farmId ?? null, farmId ? null : "unallocated", money.minorUnits.toString(), ALLOCATION_RULE_VERSION],
+        [
+          context.tenantId,
+          entryId,
+          farmId ?? null,
+          farmId ? null : "unallocated",
+          money.minorUnits.toString(),
+          ALLOCATION_RULE_VERSION,
+        ],
       );
       return;
     }
@@ -309,7 +402,15 @@ export class FinanceService {
       await client.query(
         `INSERT INTO financial_allocation (tenant_id, entry_id, dimension, target_id, target_ref, allocated_minor, allocation_rule_version)
          VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [context.tenantId, entryId, a.dimension, a.targetId ?? null, a.targetRef ?? null, parts[i]!.minorUnits.toString(), ALLOCATION_RULE_VERSION],
+        [
+          context.tenantId,
+          entryId,
+          a.dimension,
+          a.targetId ?? null,
+          a.targetRef ?? null,
+          parts[i]!.minorUnits.toString(),
+          ALLOCATION_RULE_VERSION,
+        ],
       );
     }
   }
@@ -351,7 +452,10 @@ export class FinanceService {
     return result.data;
   }
 
-  private async authorized<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async authorized<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships =
         context.actor.type === "user"
@@ -363,9 +467,13 @@ export class FinanceService {
             ).rows
           : [];
       const active = memberships.filter((m) => m.status === "active");
-      if (active.length === 0) return { ok: false as const, reason: "no_active_membership" };
+      if (active.length === 0)
+        return { ok: false as const, reason: "no_active_membership" };
       if (!active.some((m) => FINANCE_ROLES.has(m.role))) {
-        return { ok: false as const, reason: `role not permitted for finance; requires one of ${[...FINANCE_ROLES].join(", ")}` };
+        return {
+          ok: false as const,
+          reason: `role not permitted for finance; requires one of ${[...FINANCE_ROLES].join(", ")}`,
+        };
       }
       return { ok: true as const, value: await fn(client) };
     });
