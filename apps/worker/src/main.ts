@@ -5,7 +5,11 @@ import { loadWorkerConfig } from "./config.js";
 import { createLogger } from "./logger.js";
 import { OutboxRelay } from "./outbox-relay.js";
 import { EventStatsProjector } from "./projector.js";
-import { LogPublisher, NatsJetStreamPublisher, type EventPublisher } from "./publisher.js";
+import {
+  LogPublisher,
+  NatsJetStreamPublisher,
+  type EventPublisher,
+} from "./publisher.js";
 
 /**
  * Worker entrypoint (§31.1 steps 4-5, §77): outbox relay + in-process
@@ -93,7 +97,7 @@ function respondJson(res: ServerResponse, status: number, body: unknown): void {
 
 main().catch((error) => {
   // Configuration or bootstrap failure: fail startup loudly (Appendix G).
-  // eslint-disable-next-line no-console
+
   console.error(
     JSON.stringify({
       level: "error",

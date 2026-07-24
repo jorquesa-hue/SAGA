@@ -107,6 +107,32 @@ export const createTenantInputSchema = z
 
 export type CreateTenantInput = z.infer<typeof createTenantInputSchema>;
 
+/**
+ * Update a tenant's configurable settings (base locale/currency). At least one
+ * field must be present. Tenant settings are mutable configuration (not
+ * append-only domain history), but each change still appends an event and an
+ * audit record so the change is traceable (§68).
+ */
+export const updateTenantSettingsInputSchema = z
+  .object({
+    defaultLocale: z
+      .string()
+      .regex(/^[a-z]{2}(-[A-Z]{2})?$/, "locale must look like 'pt-BR'")
+      .optional(),
+    defaultCurrency: z
+      .string()
+      .regex(/^[A-Z]{3}$/, "currency must be a 3-letter ISO 4217 code")
+      .optional(),
+    correlationId: z.string().uuid().optional(),
+    idempotencyKey: idempotencyKeySchema.optional(),
+  })
+  .strict()
+  .refine((v) => v.defaultLocale !== undefined || v.defaultCurrency !== undefined, {
+    message: "at least one of defaultLocale or defaultCurrency must be provided",
+  });
+
+export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsInputSchema>;
+
 export const createFarmInputSchema = z
   .object({
     name: nonEmptyName,
@@ -117,11 +143,7 @@ export const createFarmInputSchema = z
         "timezone must be an IANA zone like 'America/Sao_Paulo'",
       )
       .optional(),
-    areaHa: z
-      .number()
-      .finite()
-      .nonnegative("areaHa must be >= 0")
-      .optional(),
+    areaHa: z.number().finite().nonnegative("areaHa must be >= 0").optional(),
     idempotencyKey: idempotencyKeySchema.optional(),
   })
   .strict();

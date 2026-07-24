@@ -42,7 +42,6 @@ export function createLogger(
   const write =
     options.write ??
     ((line: string) => {
-      // eslint-disable-next-line no-console
       console.log(line);
     });
 

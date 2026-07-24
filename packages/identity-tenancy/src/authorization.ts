@@ -14,10 +14,7 @@ import { type Role } from "./roles.js";
  */
 
 export type IdentityAction =
-  | "read"
-  | "manage_farms"
-  | "invite_users"
-  | "manage_members";
+  "read" | "manage_farms" | "invite_users" | "manage_members" | "manage_tenant";
 
 export interface CallerMembership {
   role: Role;
@@ -43,6 +40,7 @@ const REQUIRED_ROLES: Record<IdentityAction, readonly Role[] | null> = {
   manage_farms: ["tenant_owner", "farm_manager"],
   invite_users: ["tenant_owner"],
   manage_members: ["tenant_owner"],
+  manage_tenant: ["tenant_owner"],
 };
 
 export interface AuthorizationInput {
@@ -59,7 +57,9 @@ export class AuthorizationPolicy {
     const activeRoles = input.memberships
       .filter((m) => m.status === "active")
       .map((m) => m.role);
-    const suffix = resource ? ` on ${resource.type}${resource.id ? `/${resource.id}` : ""}` : "";
+    const suffix = resource
+      ? ` on ${resource.type}${resource.id ? `/${resource.id}` : ""}`
+      : "";
 
     if (activeRoles.length === 0) {
       return {

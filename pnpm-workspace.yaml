@@ -1,6 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "devices/*"
 allowBuilds:
   esbuild: true
   "@swc/core": true
