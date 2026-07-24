@@ -19,8 +19,8 @@ bookkeeping out of scope for the initial release (§4.2 non-goals).
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"CSV/journal export
-baseline."*
+OPEN. **Default until decided (spec §93, verbatim):** _"CSV/journal export
+baseline."_
 
 **Decision criteria:**
 

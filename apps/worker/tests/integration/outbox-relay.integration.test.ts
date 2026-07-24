@@ -44,7 +44,10 @@ describe.skipIf(!available)("outbox relay (§31.1-§31.2, real PostgreSQL)", () 
       correlationId: newUuid(),
     });
 
-  async function appendFarmCreated(tenantId: string, name: string): Promise<DomainEventEnvelope> {
+  async function appendFarmCreated(
+    tenantId: string,
+    name: string,
+  ): Promise<DomainEventEnvelope> {
     const context = contextFor(tenantId);
     const aggregateId = newUuid();
     const envelope = createEventEnvelope({
@@ -57,7 +60,9 @@ describe.skipIf(!available)("outbox relay (§31.1-§31.2, real PostgreSQL)", () 
       idempotencyKey: `farm-create-${aggregateId}`,
       payload: { name, herd: "Brangus" },
     });
-    await withTenantTransaction(db.appPool, context, (client) => appendEvent(client, envelope));
+    await withTenantTransaction(db.appPool, context, (client) =>
+      appendEvent(client, envelope),
+    );
     return envelope;
   }
 
@@ -103,7 +108,9 @@ describe.skipIf(!available)("outbox relay (§31.1-§31.2, real PostgreSQL)", () 
 
     const first = await relay.runOnce();
     expect(first).toMatchObject({ polled: 3, published: 3, failed: 0 });
-    expect(publisher.eventIds().sort()).toEqual([e1.eventId, e2.eventId, e3.eventId].sort());
+    expect(publisher.eventIds().sort()).toEqual(
+      [e1.eventId, e2.eventId, e3.eventId].sort(),
+    );
 
     for (const envelope of [e1, e2, e3]) {
       const row = await outboxRow(envelope.eventId);
@@ -119,7 +126,9 @@ describe.skipIf(!available)("outbox relay (§31.1-§31.2, real PostgreSQL)", () 
   });
 
   it("subjects never expose the raw tenant id (§49)", async () => {
-    const { rows } = await db.adminPool.query(`SELECT subject, tenant_id FROM outbox_message`);
+    const { rows } = await db.adminPool.query(
+      `SELECT subject, tenant_id FROM outbox_message`,
+    );
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
       expect(row.subject).toMatch(/^jk\.local\.a1\.identity\.farm\.farm-created\.v1$/);
@@ -135,8 +144,16 @@ describe.skipIf(!available)("outbox relay (§31.1-§31.2, real PostgreSQL)", () 
 
     const slow = new SlowInMemoryPublisher(40);
     const fast = new InMemoryPublisher();
-    const relayA = new OutboxRelay({ pool: db.workerPool, publisher: slow, batchSize: 3 });
-    const relayB = new OutboxRelay({ pool: db.createWorkerPool(), publisher: fast, batchSize: 10 });
+    const relayA = new OutboxRelay({
+      pool: db.workerPool,
+      publisher: slow,
+      batchSize: 3,
+    });
+    const relayB = new OutboxRelay({
+      pool: db.createWorkerPool(),
+      publisher: fast,
+      batchSize: 10,
+    });
 
     const [resultA, resultB] = await Promise.all([
       relayA.runOnce(),

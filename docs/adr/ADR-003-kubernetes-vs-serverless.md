@@ -20,8 +20,8 @@ scale-out safe via `FOR UPDATE SKIP LOCKED` — see
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Kubernetes specified
-as target; cost/operations proof required."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Kubernetes specified
+as target; cost/operations proof required."_
 
 The repository honors the default today:
 

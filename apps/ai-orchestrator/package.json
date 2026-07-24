@@ -1,0 +1,29 @@
+{
+  "name": "@jk/ai-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Governed AI orchestrator (§62, ADR-008 open): read-only evidence tools, a pluggable ModelProvider (deterministic rules by default), a policy guard that refuses prohibited actions, and governed recommendation creation via the Phase 5 recommendation service. Evidence + confidence + approval + kill switch always.",
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/main.js",
+    "test:unit": "vitest run --exclude '**/*.integration.test.ts' --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
+  },
+  "dependencies": {
+    "@jk/analytics-intelligence": "workspace:*",
+    "@jk/database": "workspace:*",
+    "@jk/domain-kernel": "workspace:*",
+    "dotenv": "^16.4.5",
+    "pg": "^8.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@jk/testkit": "workspace:*",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.9"
+  }
+}

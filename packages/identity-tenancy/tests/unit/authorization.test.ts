@@ -33,8 +33,8 @@ describe("AuthorizationPolicy role matrix", () => {
     }
   });
 
-  it("invite_users and manage_members require tenant_owner", () => {
-    for (const action of ["invite_users", "manage_members"] as const) {
+  it("invite_users, manage_members and manage_tenant require tenant_owner", () => {
+    for (const action of ["invite_users", "manage_members", "manage_tenant"] as const) {
       for (const role of TENANT_ROLES) {
         const decision = decide(action, [active(role)]);
         expect(decision.allowed, `${action} as ${role}`).toBe(role === "tenant_owner");
