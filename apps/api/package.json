@@ -14,7 +14,7 @@
     "test:integration": "vitest run tests/integration --passWithNoTests"
   },
   "dependencies": {
-    "@fastify/under-pressure": "^8.5.0",
+    "@fastify/under-pressure": "^9.0.3",
     "@jk/analytics-intelligence": "workspace:*",
     "@jk/animal-registry": "workspace:*",
     "@jk/assets-maintenance": "workspace:*",
@@ -30,12 +30,12 @@
     "@jk/observability": "workspace:*",
     "@jk/reproduction-genetics": "workspace:*",
     "dotenv": "^16.4.5",
-    "fastify": "^4.28.1",
+    "fastify": "^5.8.3",
     "jose": "^5.9.2",
     "pg": "^8.12.0",
     "zod": "^3.23.8",
     "@jk/data-import": "workspace:*",
-    "@fastify/cors": "^8.5.0"
+    "@fastify/cors": "^10.0.2"
   },
   "devDependencies": {
     "@jk/testkit": "workspace:*",
