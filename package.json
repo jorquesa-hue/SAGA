@@ -34,7 +34,7 @@
     "prettier": "^3.3.3",
     "vitest": "^3.2.6",
     "tsx": "^4.19.0",
-    "graphql": "^16.9.0",
+    "graphql": "^17.0.2",
     "@apidevtools/swagger-parser": "^10.1.0",
     "yaml": "^2.5.0",
     "pg": "^8.12.0",
