@@ -60,13 +60,21 @@ export class FarmIntelligenceService {
     this.appPool = options.appPool;
   }
 
-  async computeIndex(context: TenantContext, farmId?: Uuid): Promise<FarmIntelligenceIndex> {
+  async computeIndex(
+    context: TenantContext,
+    farmId?: Uuid,
+  ): Promise<FarmIntelligenceIndex> {
     return this.read(context, async (client) => {
       const farmFilter = farmId ? "AND a.farm_id = $1" : "";
       const params = farmId ? [farmId] : [];
 
       const activeAnimals = Number(
-        (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM animal a WHERE a.lifecycle_status = 'active' ${farmFilter}`, params)).rows[0]!.n,
+        (
+          await client.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM animal a WHERE a.lifecycle_status = 'active' ${farmFilter}`,
+            params,
+          )
+        ).rows[0]!.n,
       );
       const denom = Math.max(activeAnimals, 1);
 
@@ -97,7 +105,12 @@ export class FarmIntelligenceService {
 
       // 3. Reproduction control: active females with a service or check on record.
       const females = Number(
-        (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM animal a WHERE a.lifecycle_status='active' AND a.sex='female' ${farmFilter}`, params)).rows[0]!.n,
+        (
+          await client.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM animal a WHERE a.lifecycle_status='active' AND a.sex='female' ${farmFilter}`,
+            params,
+          )
+        ).rows[0]!.n,
       );
       const reproTracked = Number(
         (
@@ -113,13 +126,22 @@ export class FarmIntelligenceService {
 
       // 4. Health compliance: fraction of active animals WITHOUT an open health alert.
       const openHealthAlerts = Number(
-        (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM alert WHERE status <> 'resolved' AND alert_type IN ('withdrawal_active')`)).rows[0]!.n,
+        (
+          await client.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM alert WHERE status <> 'resolved' AND alert_type IN ('withdrawal_active')`,
+          )
+        ).rows[0]!.n,
       );
 
       // 5. Pasture visibility: paddocks with an assessment in the last 45 days.
       const paddockFilter = farmId ? "WHERE p.farm_id = $1" : "";
       const paddocks = Number(
-        (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM paddock p ${paddockFilter}`, params)).rows[0]!.n,
+        (
+          await client.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM paddock p ${paddockFilter}`,
+            params,
+          )
+        ).rows[0]!.n,
       );
       const assessedPaddocks = Number(
         (
@@ -134,20 +156,44 @@ export class FarmIntelligenceService {
 
       // 6. Exception burden: fewer open alerts per animal is better.
       const openAlerts = Number(
-        (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM alert WHERE status <> 'resolved'`)).rows[0]!.n,
+        (
+          await client.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM alert WHERE status <> 'resolved'`,
+          )
+        ).rows[0]!.n,
       );
 
       const components: FiiComponent[] = [
-        this.component("identity_traceability", withRfid / denom, { withRfid, activeAnimals }),
+        this.component("identity_traceability", withRfid / denom, {
+          withRfid,
+          activeAnimals,
+        }),
         this.component("timely_measurement", timely / denom, { timely, activeAnimals }),
-        this.component("reproduction_control", females > 0 ? reproTracked / females : 1, { reproTracked, females }),
-        this.component("health_compliance", Math.max(0, 1 - openHealthAlerts / denom), { openHealthAlerts, activeAnimals }),
-        this.component("pasture_visibility", paddocks > 0 ? assessedPaddocks / paddocks : 1, { assessedPaddocks, paddocks }),
-        this.component("exception_burden", Math.max(0, 1 - openAlerts / denom), { openAlerts, activeAnimals }),
+        this.component("reproduction_control", females > 0 ? reproTracked / females : 1, {
+          reproTracked,
+          females,
+        }),
+        this.component("health_compliance", Math.max(0, 1 - openHealthAlerts / denom), {
+          openHealthAlerts,
+          activeAnimals,
+        }),
+        this.component(
+          "pasture_visibility",
+          paddocks > 0 ? assessedPaddocks / paddocks : 1,
+          { assessedPaddocks, paddocks },
+        ),
+        this.component("exception_burden", Math.max(0, 1 - openAlerts / denom), {
+          openAlerts,
+          activeAnimals,
+        }),
       ];
 
       const totalWeight = components.reduce((s, c) => s + c.weight, 0);
-      const score = totalWeight > 0 ? (100 * components.reduce((s, c) => s + c.weightedContribution, 0)) / totalWeight : 0;
+      const score =
+        totalWeight > 0
+          ? (100 * components.reduce((s, c) => s + c.weightedContribution, 0)) /
+            totalWeight
+          : 0;
 
       return {
         farmId: farmId ?? null,
@@ -159,7 +205,10 @@ export class FarmIntelligenceService {
     });
   }
 
-  async executiveDashboard(context: TenantContext, farmId?: Uuid): Promise<ExecutiveDashboard> {
+  async executiveDashboard(
+    context: TenantContext,
+    farmId?: Uuid,
+  ): Promise<ExecutiveDashboard> {
     return this.read(context, async (client) => {
       const farmFilter = farmId ? "WHERE farm_id = $1" : "";
       const params = farmId ? [farmId] : [];
@@ -180,10 +229,18 @@ export class FarmIntelligenceService {
       );
 
       const restrictions = Number(
-        (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM animal_restriction WHERE status='active' AND (valid_to IS NULL OR valid_to > now())`)).rows[0]!.n,
+        (
+          await client.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM animal_restriction WHERE status='active' AND (valid_to IS NULL OR valid_to > now())`,
+          )
+        ).rows[0]!.n,
       );
       const openCases = Number(
-        (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM health_case WHERE status='open'`)).rows[0]!.n,
+        (
+          await client.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM health_case WHERE status='open'`,
+          )
+        ).rows[0]!.n,
       );
 
       const alertRows = await client.query<{ severity: string; n: string }>(
@@ -214,18 +271,36 @@ export class FarmIntelligenceService {
   }
 
   // -- internals --
-  private component(domain: string, rawScore: number, detail: Record<string, unknown>): FiiComponent {
+  private component(
+    domain: string,
+    rawScore: number,
+    detail: Record<string, unknown>,
+  ): FiiComponent {
     const score = Math.min(1, Math.max(0, Number.isFinite(rawScore) ? rawScore : 0));
     const weight = WEIGHTS_V1[domain] ?? 0;
-    return { domain, score: Math.round(score * 1000) / 1000, weight, weightedContribution: score * weight, detail };
+    return {
+      domain,
+      score: Math.round(score * 1000) / 1000,
+      weight,
+      weightedContribution: score * weight,
+      detail,
+    };
   }
 
-  private async computeIndexInline(client: pg.PoolClient, farmId?: Uuid): Promise<number> {
+  private async computeIndexInline(
+    client: pg.PoolClient,
+    farmId?: Uuid,
+  ): Promise<number> {
     // Lightweight FII for the dashboard: reuse traceability + timely + exception.
     const farmFilter = farmId ? "AND a.farm_id = $1" : "";
     const params = farmId ? [farmId] : [];
     const active = Number(
-      (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM animal a WHERE a.lifecycle_status='active' ${farmFilter}`, params)).rows[0]!.n,
+      (
+        await client.query<{ n: string }>(
+          `SELECT count(*)::text AS n FROM animal a WHERE a.lifecycle_status='active' ${farmFilter}`,
+          params,
+        )
+      ).rows[0]!.n,
     );
     const denom = Math.max(active, 1);
     const withRfid = Number(
@@ -239,20 +314,28 @@ export class FarmIntelligenceService {
       ).rows[0]!.n,
     );
     const openAlerts = Number(
-      (await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM alert WHERE status <> 'resolved'`)).rows[0]!.n,
+      (
+        await client.query<{ n: string }>(
+          `SELECT count(*)::text AS n FROM alert WHERE status <> 'resolved'`,
+        )
+      ).rows[0]!.n,
     );
     const s = 0.6 * (withRfid / denom) + 0.4 * Math.max(0, 1 - openAlerts / denom);
     return Math.round(100 * s * 10) / 10;
   }
 
-  private async read<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async read<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships = await loadCallerMemberships(client, context);
       const decision = decide("read", context, memberships);
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

@@ -14,11 +14,11 @@
 
 Spec §30.1 baselines "Prisma for common access plus reviewed SQL
 migrations — developer productivity without hiding database design". But the
-Phase 0 foundation is almost entirely the part Prisma abstracts *away*:
+Phase 0 foundation is almost entirely the part Prisma abstracts _away_:
 
 - Appendix B mandates SQL-first constructs as first-class artifacts: RLS
   policies with `current_setting('app.tenant_id')`, `FORCE ROW LEVEL
-  SECURITY`, partial unique indexes (`animal_identifier_active_unique`),
+SECURITY`, partial unique indexes (`animal_identifier_active_unique`),
   composite same-tenant foreign keys, append-only enforcement triggers
   (`forbid_event_mutation`), PostGIS geometry columns, and guarded
   role grants. None of these are expressible in Prisma's schema language;
@@ -51,7 +51,7 @@ migrations** executed by our own **checksum-enforced runner**:
   only, no string interpolation.
 
 **Prisma is not rejected permanently.** Per the §30.1 baseline it is
-re-evaluated for *common access* (CRUD-heavy Phase 1+ modules such as the
+re-evaluated for _common access_ (CRUD-heavy Phase 1+ modules such as the
 animal registry) once the foundation is stable — as a query layer on top of
 these same reviewed SQL migrations, never as the migration authority, and
 only if it can run inside `withTenantTransaction`-managed transactions

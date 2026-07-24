@@ -8,7 +8,12 @@ import {
   type TestDatabase,
 } from "@jk/testkit";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { chunk, generateHerd, generateWeightBatch, type SimulatedAnimal } from "../../src/index.js";
+import {
+  chunk,
+  generateHerd,
+  generateWeightBatch,
+  type SimulatedAnimal,
+} from "../../src/index.js";
 
 /**
  * Phase 1 exit criterion (Volume XII): "end-to-end 500-animal simulated
@@ -66,10 +71,17 @@ describe.skipIf(!available)("500-animal handling session with disconnect/replay"
     db = await createTestDatabase("jk_500");
     const identity = makeIdentityService(db);
     weighing = new WeighingService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda 500", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda 500",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
-    const farm = await identity.createFarm(owner, { name: "Curral Central", areaHa: 400 });
+    const farm = await identity.createFarm(owner, {
+      name: "Curral Central",
+      areaHa: 400,
+    });
     farmId = farm.id;
     herd = generateHerd(HERD_SIZE, { seed: 500 });
     await registerHerd(db, tenantId, farmId, herd);

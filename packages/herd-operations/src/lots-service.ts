@@ -44,7 +44,9 @@ export const createLotInputSchema = z
   .object({
     farmId: z.string().uuid(),
     name: z.string().trim().min(1).max(120),
-    purpose: z.enum(["genetic_nucleus", "beef", "rearing", "quarantine", "other"]).default("beef"),
+    purpose: z
+      .enum(["genetic_nucleus", "beef", "rearing", "quarantine", "other"])
+      .default("beef"),
     target: z.string().max(200).optional(),
     responsibleId: z.string().uuid().optional(),
     idempotencyKey: idempotencyKeySchema.optional(),
@@ -83,7 +85,11 @@ export interface LotsServiceOptions {
   environment?: string;
 }
 
-function parse<S extends z.ZodTypeAny>(schema: S, value: unknown, what: string): z.infer<S> {
+function parse<S extends z.ZodTypeAny>(
+  schema: S,
+  value: unknown,
+  what: string,
+): z.infer<S> {
   const result = schema.safeParse(value);
   if (!result.success) {
     throw new ValidationError(
@@ -107,19 +113,29 @@ export class LotsService {
     const input = parse(createLotInputSchema, rawInput, "createLot input");
     return this.authorized(context, "manage_lots", async (client) => {
       const farm = await client.query(`SELECT 1 FROM farm WHERE id = $1`, [input.farmId]);
-      if (farm.rows.length === 0) throw new NotFoundError(`Farm ${input.farmId} not found`);
+      if (farm.rows.length === 0)
+        throw new NotFoundError(`Farm ${input.farmId} not found`);
       let row;
       try {
         const inserted = await client.query(
           `INSERT INTO lot (tenant_id, farm_id, name, purpose, target, responsible_id)
            VALUES ($1,$2,$3,$4,$5,$6)
            RETURNING id, tenant_id, farm_id, name, purpose, target, status`,
-          [context.tenantId, input.farmId, input.name, input.purpose, input.target ?? null, input.responsibleId ?? null],
+          [
+            context.tenantId,
+            input.farmId,
+            input.name,
+            input.purpose,
+            input.target ?? null,
+            input.responsibleId ?? null,
+          ],
         );
         row = inserted.rows[0]!;
       } catch (error) {
         if ((error as { code?: string }).code === "23505") {
-          throw new ValidationError(`An open lot named '${input.name}' already exists on this farm`);
+          throw new ValidationError(
+            `An open lot named '${input.name}' already exists on this farm`,
+          );
         }
         throw error;
       }
@@ -134,7 +150,12 @@ export class LotsService {
           aggregateVersion: 1,
           source: { channel: "api" },
           idempotencyKey: input.idempotencyKey ?? `lot-create-${row.id}`,
-          payload: { lotId: row.id, farmId: input.farmId, name: input.name, purpose: input.purpose },
+          payload: {
+            lotId: row.id,
+            farmId: input.farmId,
+            name: input.name,
+            purpose: input.purpose,
+          },
         }),
         { environment: this.environment },
       );
@@ -155,7 +176,10 @@ export class LotsService {
    * lot, that membership is closed first (a move), then the new one opens
    * (JK-HER-002 conflicting-membership validation).
    */
-  async addAnimals(context: TenantContext, rawInput: LotMembershipInput): Promise<MembershipChangeResult[]> {
+  async addAnimals(
+    context: TenantContext,
+    rawInput: LotMembershipInput,
+  ): Promise<MembershipChangeResult[]> {
     const input = parse(lotMembershipInputSchema, rawInput, "addAnimals input");
     const effectiveAt = input.effectiveAt ? new Date(input.effectiveAt) : new Date();
     return this.authorized(context, "manage_lots", async (client) => {
@@ -164,8 +188,11 @@ export class LotsService {
       for (const animalId of input.animalIds) {
         await client.query("SAVEPOINT lot_item");
         try {
-          const animal = await client.query(`SELECT 1 FROM animal WHERE id = $1`, [animalId]);
-          if (animal.rows.length === 0) throw new NotFoundError(`Animal ${animalId} not found`);
+          const animal = await client.query(`SELECT 1 FROM animal WHERE id = $1`, [
+            animalId,
+          ]);
+          if (animal.rows.length === 0)
+            throw new NotFoundError(`Animal ${animalId} not found`);
 
           // Close any existing active membership (move semantics).
           const prior = await client.query<{ id: string; lot_id: string }>(
@@ -176,11 +203,17 @@ export class LotsService {
           );
           for (const p of prior.rows) {
             if (p.lot_id !== input.lotId) {
-              await this.appendAnimalEvent(client, context, animalId, LOT_MEMBERSHIP_ENDED, {
+              await this.appendAnimalEvent(
+                client,
+                context,
                 animalId,
-                lotId: p.lot_id,
-                reason: "moved_to_other_lot",
-              });
+                LOT_MEMBERSHIP_ENDED,
+                {
+                  animalId,
+                  lotId: p.lot_id,
+                  reason: "moved_to_other_lot",
+                },
+              );
             }
           }
           // If it was already in this lot, we've just closed it; reopen fresh.
@@ -189,10 +222,16 @@ export class LotsService {
              VALUES ($1,$2,$3,$4)`,
             [context.tenantId, input.lotId, animalId, effectiveAt.toISOString()],
           );
-          await this.appendAnimalEvent(client, context, animalId, LOT_MEMBERSHIP_STARTED, {
+          await this.appendAnimalEvent(
+            client,
+            context,
             animalId,
-            lotId: input.lotId,
-          });
+            LOT_MEMBERSHIP_STARTED,
+            {
+              animalId,
+              lotId: input.lotId,
+            },
+          );
           await client.query("RELEASE SAVEPOINT lot_item");
           results.push({ animalId, status: "added" });
         } catch (error) {
@@ -204,7 +243,10 @@ export class LotsService {
     });
   }
 
-  async removeAnimals(context: TenantContext, rawInput: LotMembershipInput): Promise<MembershipChangeResult[]> {
+  async removeAnimals(
+    context: TenantContext,
+    rawInput: LotMembershipInput,
+  ): Promise<MembershipChangeResult[]> {
     const input = parse(lotMembershipInputSchema, rawInput, "removeAnimals input");
     const effectiveAt = input.effectiveAt ? new Date(input.effectiveAt) : new Date();
     return this.authorized(context, "manage_lots", async (client) => {
@@ -217,7 +259,11 @@ export class LotsService {
           [input.lotId, animalId, effectiveAt.toISOString()],
         );
         if (closed.rows.length === 0) {
-          results.push({ animalId, status: "error", reason: "not an active member of this lot" });
+          results.push({
+            animalId,
+            status: "error",
+            reason: "not an active member of this lot",
+          });
           continue;
         }
         await this.appendAnimalEvent(client, context, animalId, LOT_MEMBERSHIP_ENDED, {
@@ -232,13 +278,19 @@ export class LotsService {
   }
 
   /** Batch-move a lot between paddocks; closes the prior occupation (JK-HER-003). */
-  async moveToPaddock(context: TenantContext, rawInput: MoveToPaddockInput): Promise<{ occupationId: Uuid }> {
+  async moveToPaddock(
+    context: TenantContext,
+    rawInput: MoveToPaddockInput,
+  ): Promise<{ occupationId: Uuid }> {
     const input = parse(moveToPaddockInputSchema, rawInput, "moveToPaddock input");
     const movedAt = input.movedAt ? new Date(input.movedAt) : new Date();
     return this.authorized(context, "manage_lots", async (client) => {
       await this.assertLotOpen(client, input.lotId);
-      const paddock = await client.query(`SELECT 1 FROM paddock WHERE id = $1`, [input.paddockId]);
-      if (paddock.rows.length === 0) throw new NotFoundError(`Paddock ${input.paddockId} not found`);
+      const paddock = await client.query(`SELECT 1 FROM paddock WHERE id = $1`, [
+        input.paddockId,
+      ]);
+      if (paddock.rows.length === 0)
+        throw new NotFoundError(`Paddock ${input.paddockId} not found`);
 
       // Close the previous open occupation before opening the next.
       const prior = await client.query<{ paddock_id: string }>(
@@ -253,7 +305,14 @@ export class LotsService {
       await client.query(
         `INSERT INTO paddock_occupation (id, tenant_id, paddock_id, lot_id, entry_at, head_count)
          VALUES ($1,$2,$3,$4,$5,$6)`,
-        [occupationId, context.tenantId, input.paddockId, input.lotId, movedAt.toISOString(), input.headCount ?? null],
+        [
+          occupationId,
+          context.tenantId,
+          input.paddockId,
+          input.lotId,
+          movedAt.toISOString(),
+          input.headCount ?? null,
+        ],
       );
       await appendEvent(
         client,
@@ -262,7 +321,12 @@ export class LotsService {
           context,
           aggregateType: "lot",
           aggregateId: input.lotId,
-          aggregateVersion: await this.nextVersion(client, context.tenantId, "lot", input.lotId),
+          aggregateVersion: await this.nextVersion(
+            client,
+            context.tenantId,
+            "lot",
+            input.lotId,
+          ),
           occurredAt: movedAt,
           source: { channel: "api" },
           idempotencyKey: input.idempotencyKey ?? `lot-move-${occupationId}`,
@@ -317,9 +381,13 @@ export class LotsService {
   // -------------------------------------------------------------------------
 
   private async assertLotOpen(client: pg.PoolClient, lotId: Uuid): Promise<void> {
-    const result = await client.query<{ status: string }>(`SELECT status FROM lot WHERE id = $1`, [lotId]);
+    const result = await client.query<{ status: string }>(
+      `SELECT status FROM lot WHERE id = $1`,
+      [lotId],
+    );
     if (result.rows.length === 0) throw new NotFoundError(`Lot ${lotId} not found`);
-    if (result.rows[0]!.status !== "open") throw new ValidationError(`Lot ${lotId} is closed`);
+    if (result.rows[0]!.status !== "open")
+      throw new ValidationError(`Lot ${lotId} is closed`);
   }
 
   private async appendAnimalEvent(
@@ -336,7 +404,12 @@ export class LotsService {
         context,
         aggregateType: "animal",
         aggregateId: animalId,
-        aggregateVersion: await this.nextVersion(client, context.tenantId, "animal", animalId),
+        aggregateVersion: await this.nextVersion(
+          client,
+          context.tenantId,
+          "animal",
+          animalId,
+        ),
         source: { channel: "api" },
         idempotencyKey: `${eventType}-${animalId}-${newUuid()}`,
         payload,
@@ -370,7 +443,8 @@ export class LotsService {
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new HerdForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new HerdForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

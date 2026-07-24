@@ -74,7 +74,9 @@ for (const pkg of packages) {
   }).filter((d) => d.startsWith("@jk/"));
 
   if (pkg.name === "@jk/domain-kernel" && deps.length > 0) {
-    violations.push(`${pkg.name}: domain-kernel must not depend on workspace packages (found ${deps.join(", ")})`);
+    violations.push(
+      `${pkg.name}: domain-kernel must not depend on workspace packages (found ${deps.join(", ")})`,
+    );
   }
 
   if (FEATURE_PACKAGES.has(pkg.name)) {
@@ -84,7 +86,9 @@ for (const pkg of packages) {
           `${pkg.name}: feature package depends on feature package ${dep} — use application ports or events`,
         );
       } else if (!SHARED_TECHNICAL.has(dep)) {
-        violations.push(`${pkg.name}: dependency ${dep} is not an approved shared package`);
+        violations.push(
+          `${pkg.name}: dependency ${dep} is not an approved shared package`,
+        );
       }
     }
   }
@@ -106,7 +110,9 @@ function scanSources(dir) {
       const rel = relative(root, full);
       const deep = DEEP_IMPORT_RE.exec(content);
       if (deep) {
-        violations.push(`${rel}: deep import into ${deep[1]}/${deep[2]} — import the package public API`);
+        violations.push(
+          `${rel}: deep import into ${deep[1]}/${deep[2]} — import the package public API`,
+        );
       }
       const escape = SIBLING_ESCAPE_RE.exec(content);
       if (escape) {

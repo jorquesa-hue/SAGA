@@ -21,8 +21,8 @@ work is possible or needed in Phase 0 beyond keeping the decision visible.
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Expo development
-build with secure release pipeline."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Expo development
+build with secure release pipeline."_
 
 **Decision criteria:**
 

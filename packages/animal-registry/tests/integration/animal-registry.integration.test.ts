@@ -1,4 +1,9 @@
-import { ConflictError, NotFoundError, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  ConflictError,
+  NotFoundError,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -26,7 +31,11 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
     identity = makeIdentityService(db);
     registry = new AnimalRegistryService({ appPool: db.appPool, environment: "test" });
 
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Registro", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Registro",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     ownerContext = seeded.ownerContext;
     const farm = await identity.createFarm(ownerContext, { name: "Sede", areaHa: 100 });
@@ -52,7 +61,9 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
     expect(animal.version).toBe(1);
 
     const timeline = await registry.getTimeline(ownerContext, animal.id);
-    expect(timeline.some((e) => e.eventType === "animal.animal_registered.v1")).toBe(true);
+    expect(timeline.some((e) => e.eventType === "animal.animal_registered.v1")).toBe(
+      true,
+    );
 
     const resolved = await registry.resolveRfid(ownerContext, "982000000001001");
     expect(resolved?.id).toBe(animal.id);
@@ -67,7 +78,11 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
     });
     expect(a.id).toBeTruthy();
     // Assigning the same active RFID to another animal is rejected.
-    const b = await registry.registerAnimal(ownerContext, { farmId, visualId: "BR-1003", sex: "male" });
+    const b = await registry.registerAnimal(ownerContext, {
+      farmId,
+      visualId: "BR-1003",
+      sex: "male",
+    });
     await expect(
       registry.assignIdentifier(ownerContext, {
         animalId: b.id,
@@ -78,9 +93,17 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
   });
 
   it("rejects a duplicate visual id in the same tenant", async () => {
-    await registry.registerAnimal(ownerContext, { farmId, visualId: "BR-DUP", sex: "female" });
+    await registry.registerAnimal(ownerContext, {
+      farmId,
+      visualId: "BR-DUP",
+      sex: "female",
+    });
     await expect(
-      registry.registerAnimal(ownerContext, { farmId, visualId: "BR-DUP", sex: "female" }),
+      registry.registerAnimal(ownerContext, {
+        farmId,
+        visualId: "BR-DUP",
+        sex: "female",
+      }),
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
@@ -101,7 +124,9 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
     expect(replaced.validTo).toBeNull();
 
     // Identity is unchanged; new RFID resolves, old RFID no longer active.
-    expect((await registry.resolveRfid(ownerContext, "982000000009004"))?.id).toBe(animal.id);
+    expect((await registry.resolveRfid(ownerContext, "982000000009004"))?.id).toBe(
+      animal.id,
+    );
     expect(await registry.resolveRfid(ownerContext, "982000000001004")).toBeNull();
 
     // The old assignment still exists as closed history + a replacement event.
@@ -112,10 +137,16 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
     );
     expect(history.rows[0].valid_to).not.toBeNull();
     const timeline = await registry.getTimeline(ownerContext, animal.id);
-    expect(timeline.some((e) => e.eventType === "animal.identifier_replaced.v1")).toBe(true);
+    expect(timeline.some((e) => e.eventType === "animal.identifier_replaced.v1")).toBe(
+      true,
+    );
 
     // The freed RFID can now be assigned to another animal.
-    const other = await registry.registerAnimal(ownerContext, { farmId, visualId: "BR-1005", sex: "male" });
+    const other = await registry.registerAnimal(ownerContext, {
+      farmId,
+      visualId: "BR-1005",
+      sex: "male",
+    });
     const reassigned = await registry.assignIdentifier(ownerContext, {
       animalId: other.id,
       identifierType: "rfid",
@@ -138,7 +169,11 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
     const financeContext = makeTenantContext(tenantId, invite.userId);
 
     await expect(
-      registry.registerAnimal(financeContext, { farmId, visualId: "BR-NO", sex: "female" }),
+      registry.registerAnimal(financeContext, {
+        farmId,
+        visualId: "BR-NO",
+        sex: "female",
+      }),
     ).rejects.toBeInstanceOf(AnimalForbiddenError);
 
     const denials = await db.adminPool.query(
@@ -160,7 +195,11 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
   });
 
   it("does not leak animals across tenants", async () => {
-    const other = await seedTenantWithOwner(identity, "Outra Fazenda", "outro@example.com");
+    const other = await seedTenantWithOwner(
+      identity,
+      "Outra Fazenda",
+      "outro@example.com",
+    );
     const animals = await registry.listAnimals(other.ownerContext);
     expect(animals).toHaveLength(0);
   });

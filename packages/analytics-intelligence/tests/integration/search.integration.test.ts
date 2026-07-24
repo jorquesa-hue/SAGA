@@ -23,7 +23,11 @@ describe.skipIf(!available)("SearchService (integration)", () => {
     db = await createTestDatabase("jk_search");
     identity = makeIdentityService(db);
     search = new SearchService({ appPool: db.appPool });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Busca", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Busca",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -40,8 +44,14 @@ describe.skipIf(!available)("SearchService (integration)", () => {
        VALUES ($1,$2,$3,'rfid','982000000SEARCH', now())`,
       [newUuid(), tenantId, animalId],
     );
-    await db.adminPool.query(`INSERT INTO lot (tenant_id, farm_id, name, purpose) VALUES ($1,$2,'Lote Busca','beef')`, [tenantId, farmId]);
-    await db.adminPool.query(`INSERT INTO paddock (tenant_id, farm_id, name) VALUES ($1,$2,'Piquete Busca')`, [tenantId, farmId]);
+    await db.adminPool.query(
+      `INSERT INTO lot (tenant_id, farm_id, name, purpose) VALUES ($1,$2,'Lote Busca','beef')`,
+      [tenantId, farmId],
+    );
+    await db.adminPool.query(
+      `INSERT INTO paddock (tenant_id, farm_id, name) VALUES ($1,$2,'Piquete Busca')`,
+      [tenantId, farmId],
+    );
   }, 90_000);
 
   afterAll(async () => {

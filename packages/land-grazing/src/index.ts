@@ -27,7 +27,9 @@ export class LandForbiddenError extends PlatformError {
 export const assessmentInputSchema = z
   .object({
     paddockId: z.string().uuid(),
-    method: z.enum(["visual", "rising_plate", "sward_stick", "cut_and_weigh", "other"]).default("visual"),
+    method: z
+      .enum(["visual", "rising_plate", "sward_stick", "cut_and_weigh", "other"])
+      .default("visual"),
     condition: z.enum(["poor", "fair", "good", "excellent"]),
     availabilityKgDmHa: z.number().nonnegative().optional(),
     notes: z.string().max(1000).optional(),
@@ -73,11 +75,17 @@ export class LandGrazingService {
     this.environment = options.environment ?? "local";
   }
 
-  async recordAssessment(context: TenantContext, rawInput: AssessmentInput): Promise<PastureAssessment> {
+  async recordAssessment(
+    context: TenantContext,
+    rawInput: AssessmentInput,
+  ): Promise<PastureAssessment> {
     const input = this.parse(assessmentInputSchema, rawInput);
     return this.authorized(context, true, async (client) => {
-      const paddock = await client.query(`SELECT 1 FROM paddock WHERE id = $1`, [input.paddockId]);
-      if (paddock.rows.length === 0) throw new NotFoundError(`Paddock ${input.paddockId} not found`);
+      const paddock = await client.query(`SELECT 1 FROM paddock WHERE id = $1`, [
+        input.paddockId,
+      ]);
+      if (paddock.rows.length === 0)
+        throw new NotFoundError(`Paddock ${input.paddockId} not found`);
       const inserted = await client.query(
         `INSERT INTO pasture_assessment
            (tenant_id, paddock_id, method, condition, availability_kg_dm_ha, assessed_by, notes)
@@ -101,7 +109,11 @@ export class LandGrazingService {
           context,
           aggregateType: "paddock",
           aggregateId: input.paddockId,
-          aggregateVersion: await this.nextVersion(client, context.tenantId, input.paddockId),
+          aggregateVersion: await this.nextVersion(
+            client,
+            context.tenantId,
+            input.paddockId,
+          ),
           source: { channel: "api" },
           idempotencyKey: input.idempotencyKey ?? `assessment-${r.id}`,
           payload: {
@@ -112,19 +124,26 @@ export class LandGrazingService {
         }),
         { environment: this.environment },
       );
-      await client.query(`UPDATE pasture_assessment SET event_id = $2 WHERE id = $1`, [r.id, append.eventId]);
+      await client.query(`UPDATE pasture_assessment SET event_id = $2 WHERE id = $1`, [
+        r.id,
+        append.eventId,
+      ]);
       return {
         id: r.id,
         paddockId: r.paddock_id,
         assessedAt: r.assessed_at,
         method: r.method,
         condition: r.condition,
-        availabilityKgDmHa: r.availability_kg_dm_ha === null ? null : Number(r.availability_kg_dm_ha),
+        availabilityKgDmHa:
+          r.availability_kg_dm_ha === null ? null : Number(r.availability_kg_dm_ha),
       };
     });
   }
 
-  async listAssessments(context: TenantContext, paddockId: Uuid): Promise<PastureAssessment[]> {
+  async listAssessments(
+    context: TenantContext,
+    paddockId: Uuid,
+  ): Promise<PastureAssessment[]> {
     return this.authorized(context, false, async (client) => {
       const result = await client.query(
         `SELECT id, paddock_id, assessed_at, method, condition, availability_kg_dm_ha
@@ -137,20 +156,26 @@ export class LandGrazingService {
         assessedAt: r.assessed_at,
         method: r.method,
         condition: r.condition,
-        availabilityKgDmHa: r.availability_kg_dm_ha === null ? null : Number(r.availability_kg_dm_ha),
+        availabilityKgDmHa:
+          r.availability_kg_dm_ha === null ? null : Number(r.availability_kg_dm_ha),
       }));
     });
   }
 
   /** Grazing metrics for a paddock (JK-PAS-004): stocking, grazing days, kg/ha. */
-  async getGrazingMetrics(context: TenantContext, paddockId: Uuid): Promise<GrazingMetrics> {
+  async getGrazingMetrics(
+    context: TenantContext,
+    paddockId: Uuid,
+  ): Promise<GrazingMetrics> {
     return this.authorized(context, false, async (client) => {
       const paddock = await client.query<{ area_ha: string | null }>(
         `SELECT area_ha FROM paddock WHERE id = $1`,
         [paddockId],
       );
-      if (paddock.rows.length === 0) throw new NotFoundError(`Paddock ${paddockId} not found`);
-      const areaHa = paddock.rows[0]!.area_ha == null ? null : Number(paddock.rows[0]!.area_ha);
+      if (paddock.rows.length === 0)
+        throw new NotFoundError(`Paddock ${paddockId} not found`);
+      const areaHa =
+        paddock.rows[0]!.area_ha == null ? null : Number(paddock.rows[0]!.area_ha);
 
       const current = await client.query<{ lot_id: string }>(
         `SELECT lot_id FROM paddock_occupation WHERE paddock_id = $1 AND exit_at IS NULL LIMIT 1`,
@@ -168,7 +193,10 @@ export class LandGrazingService {
         );
         headCount = members.rows.length;
         for (const m of members.rows) {
-          const w = await client.query<{ first_kg: string | null; last_kg: string | null }>(
+          const w = await client.query<{
+            first_kg: string | null;
+            last_kg: string | null;
+          }>(
             `SELECT
                (SELECT weight_kg FROM animal_weight WHERE animal_id = $1 AND eligible_for_analytics ORDER BY occurred_at ASC LIMIT 1) AS first_kg,
                (SELECT weight_kg FROM animal_weight WHERE animal_id = $1 AND eligible_for_analytics ORDER BY occurred_at DESC LIMIT 1) AS last_kg`,
@@ -191,7 +219,10 @@ export class LandGrazingService {
       );
       const totalGrazingDays = Math.round(Number(grazing.rows[0]!.days) * 10) / 10;
 
-      const assess = await client.query<{ condition: string; availability_kg_dm_ha: string | null }>(
+      const assess = await client.query<{
+        condition: string;
+        availability_kg_dm_ha: string | null;
+      }>(
         `SELECT condition, availability_kg_dm_ha FROM pasture_assessment
          WHERE paddock_id = $1 ORDER BY assessed_at DESC LIMIT 1`,
         [paddockId],
@@ -202,11 +233,14 @@ export class LandGrazingService {
         areaHa,
         currentLotId,
         currentHeadCount: headCount,
-        stockingRateHeadPerHa: areaHa && areaHa > 0 ? Math.round((headCount / areaHa) * 100) / 100 : null,
+        stockingRateHeadPerHa:
+          areaHa && areaHa > 0 ? Math.round((headCount / areaHa) * 100) / 100 : null,
         totalGrazingDays,
         latestCondition: assess.rows[0]?.condition ?? null,
         latestAvailabilityKgDmHa:
-          assess.rows[0]?.availability_kg_dm_ha == null ? null : Number(assess.rows[0]!.availability_kg_dm_ha),
+          assess.rows[0]?.availability_kg_dm_ha == null
+            ? null
+            : Number(assess.rows[0]!.availability_kg_dm_ha),
         kgPerHa: areaHa && areaHa > 0 ? Math.round((kgGain / areaHa) * 100) / 100 : null,
         dataComplete: gainComplete && headCount > 0 && areaHa !== null,
         calculatedAt: new Date().toISOString(),
@@ -226,7 +260,11 @@ export class LandGrazingService {
     return result.data;
   }
 
-  private async nextVersion(client: pg.PoolClient, tenantId: string, paddockId: string): Promise<number> {
+  private async nextVersion(
+    client: pg.PoolClient,
+    tenantId: string,
+    paddockId: string,
+  ): Promise<number> {
     const result = await client.query<{ next: number }>(
       `SELECT COALESCE(MAX(aggregate_version), 0)::int + 1 AS next
        FROM domain_event WHERE tenant_id = $1 AND aggregate_type = 'paddock' AND aggregate_id = $2`,
@@ -251,9 +289,13 @@ export class LandGrazingService {
             ).rows
           : [];
       const active = memberships.filter((m) => m.status === "active");
-      if (active.length === 0) return { ok: false as const, reason: "no_active_membership" };
+      if (active.length === 0)
+        return { ok: false as const, reason: "no_active_membership" };
       if (write && !active.some((m) => WRITE_ROLES.has(m.role))) {
-        return { ok: false as const, reason: "role not permitted for pasture assessment" };
+        return {
+          ok: false as const,
+          reason: "role not permitted for pasture assessment",
+        };
       }
       return { ok: true as const, value: await fn(client) };
     });

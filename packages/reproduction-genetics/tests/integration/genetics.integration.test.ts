@@ -1,4 +1,9 @@
-import { newUuid, ValidationError, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  newUuid,
+  ValidationError,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -13,7 +18,13 @@ import { ReproForbiddenError } from "../../src/errors.js";
 
 const available = databaseAvailable();
 
-async function makeAnimal(db: TestDatabase, tenantId: Uuid, farmId: Uuid, visualId: string, birthDate: string): Promise<Uuid> {
+async function makeAnimal(
+  db: TestDatabase,
+  tenantId: Uuid,
+  farmId: Uuid,
+  visualId: string,
+  birthDate: string,
+): Promise<Uuid> {
   const id = newUuid();
   await db.adminPool.query(
     `INSERT INTO animal (id, tenant_id, farm_id, visual_id, sex, birth_date, version) VALUES ($1,$2,$3,$4,'female',$5,0)`,
@@ -37,7 +48,11 @@ describe.skipIf(!available)("GeneticsService (integration)", () => {
     db = await createTestDatabase("jk_genetics");
     identity = makeIdentityService(db);
     genetics = new GeneticsService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Genética", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Genética",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -53,10 +68,19 @@ describe.skipIf(!available)("GeneticsService (integration)", () => {
 
   it("imports DEP/EBV evaluations with provenance (JK-GEN-002)", async () => {
     await genetics.importEvaluation(owner, {
-      animalId: a1, provider: "ANCP", evaluationDate: "2026-01-15", trait: "weaning_weight",
-      value: 12.5, percentile: 90, reliability: 0.75, sourceFile: "ancp_2026.csv",
+      animalId: a1,
+      provider: "ANCP",
+      evaluationDate: "2026-01-15",
+      trait: "weaning_weight",
+      value: 12.5,
+      percentile: 90,
+      reliability: 0.75,
+      sourceFile: "ancp_2026.csv",
     });
-    const row = await db.adminPool.query(`SELECT provider, percentile, reliability, source_file FROM genetic_evaluation WHERE animal_id = $1`, [a1]);
+    const row = await db.adminPool.query(
+      `SELECT provider, percentile, reliability, source_file FROM genetic_evaluation WHERE animal_id = $1`,
+      [a1],
+    );
     expect(row.rows[0].provider).toBe("ANCP");
     expect(Number(row.rows[0].percentile)).toBe(90);
     expect(row.rows[0].source_file).toBe("ancp_2026.csv");
@@ -65,21 +89,51 @@ describe.skipIf(!available)("GeneticsService (integration)", () => {
   it("rejects a duplicate evaluation import", async () => {
     await expect(
       genetics.importEvaluation(owner, {
-        animalId: a1, provider: "ANCP", evaluationDate: "2026-01-15", trait: "weaning_weight", value: 12.5,
+        animalId: a1,
+        provider: "ANCP",
+        evaluationDate: "2026-01-15",
+        trait: "weaning_weight",
+        value: 12.5,
       }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("ranks animals by a versioned index, exposing inputs/normalization/exclusions (JK-GEN-004/005)", async () => {
     // a2 and a3 get evaluations; a1 already has weaning_weight only.
-    await genetics.importEvaluation(owner, { animalId: a2, provider: "ANCP", evaluationDate: "2026-01-15", trait: "weaning_weight", value: 8.0 });
-    await genetics.importEvaluation(owner, { animalId: a3, provider: "ANCP", evaluationDate: "2026-01-15", trait: "weaning_weight", value: 15.0 });
-    await genetics.importEvaluation(owner, { animalId: a1, provider: "ANCP", evaluationDate: "2026-01-15", trait: "milk", value: 5.0 });
-    await genetics.importEvaluation(owner, { animalId: a2, provider: "ANCP", evaluationDate: "2026-01-15", trait: "milk", value: 7.0 });
+    await genetics.importEvaluation(owner, {
+      animalId: a2,
+      provider: "ANCP",
+      evaluationDate: "2026-01-15",
+      trait: "weaning_weight",
+      value: 8.0,
+    });
+    await genetics.importEvaluation(owner, {
+      animalId: a3,
+      provider: "ANCP",
+      evaluationDate: "2026-01-15",
+      trait: "weaning_weight",
+      value: 15.0,
+    });
+    await genetics.importEvaluation(owner, {
+      animalId: a1,
+      provider: "ANCP",
+      evaluationDate: "2026-01-15",
+      trait: "milk",
+      value: 5.0,
+    });
+    await genetics.importEvaluation(owner, {
+      animalId: a2,
+      provider: "ANCP",
+      evaluationDate: "2026-01-15",
+      trait: "milk",
+      value: 7.0,
+    });
     // a3 has NO milk → excluded under default 'exclude' behavior.
 
     const idx = await genetics.defineSelectionIndex(owner, {
-      name: "Índice Materno", weights: { weaning_weight: 0.6, milk: 0.4 }, missingDataBehavior: "exclude",
+      name: "Índice Materno",
+      weights: { weaning_weight: 0.6, milk: 0.4 },
+      missingDataBehavior: "exclude",
     });
     const ranked = await genetics.rankAnimals(owner, idx.indexId, [a1, a2, a3]);
     expect(ranked).toHaveLength(3);
@@ -98,7 +152,9 @@ describe.skipIf(!available)("GeneticsService (integration)", () => {
 
   it("treat_as_zero index includes animals with missing traits", async () => {
     const idx = await genetics.defineSelectionIndex(owner, {
-      name: "Índice Zero", weights: { weaning_weight: 1.0, milk: 0.5 }, missingDataBehavior: "treat_as_zero",
+      name: "Índice Zero",
+      weights: { weaning_weight: 1.0, milk: 0.5 },
+      missingDataBehavior: "treat_as_zero",
     });
     const ranked = await genetics.rankAnimals(owner, idx.indexId, [a1, a2, a3]);
     expect(ranked.every((r) => !r.excluded)).toBe(true);
@@ -114,11 +170,24 @@ describe.skipIf(!available)("GeneticsService (integration)", () => {
   });
 
   it("denies a technician from importing evaluations (403)", async () => {
-    const invite = await identity.inviteUser(owner, { email: "tec@example.com", displayName: "Tec", role: "technician" });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "technician" });
+    const invite = await identity.inviteUser(owner, {
+      email: "tec@example.com",
+      displayName: "Tec",
+      role: "technician",
+    });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "technician",
+    });
     const tech = makeTenantContext(tenantId, invite.userId);
     await expect(
-      genetics.importEvaluation(tech, { animalId: a1, provider: "X", evaluationDate: "2026-02-01", trait: "t", value: 1 }),
+      genetics.importEvaluation(tech, {
+        animalId: a1,
+        provider: "X",
+        evaluationDate: "2026-02-01",
+        trait: "t",
+        value: 1,
+      }),
     ).rejects.toBeInstanceOf(ReproForbiddenError);
   });
 

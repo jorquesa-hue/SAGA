@@ -44,7 +44,10 @@ export interface HerdOptions {
   maxBaseKg?: number;
 }
 
-export function generateHerd(count: number, options: HerdOptions = {}): SimulatedAnimal[] {
+export function generateHerd(
+  count: number,
+  options: HerdOptions = {},
+): SimulatedAnimal[] {
   const rand = lcg(options.seed ?? 42);
   const prefix = options.rfidPrefix ?? "982000000";
   const minBase = options.minBaseKg ?? 180;
@@ -92,7 +95,8 @@ export function generateWeightBatch(
   return herd.map((animal) => {
     const noise = (rand() - 0.5) * 2 * noiseKg;
     const value =
-      Math.round((animal.baseWeightKg + animal.adgKgPerDay * growthDays + noise) * 10) / 10;
+      Math.round((animal.baseWeightKg + animal.adgKgPerDay * growthDays + noise) * 10) /
+      10;
     return {
       observationId: `${options.gatewayId}:${options.sessionId}:${animal.rfid}:r${round}`,
       gatewayId: options.gatewayId,

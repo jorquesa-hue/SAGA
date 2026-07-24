@@ -19,18 +19,18 @@ The sections below are retained as the record of what was built; the
 
 ## ✅ Done, verified, and pushed
 
-| Area | Contents | Evidence |
-|---|---|---|
-| Monorepo | pnpm workspaces, strict TS (NodeNext ESM), ESLint/Prettier, root scripts | `pnpm build` clean |
-| `@jk/domain-kernel` | §39 event envelope + zod, TenantContext, Money (bigint-exact, lossless allocate), Measurement (metric canonical, lb/arroba/acre), temporal validity, error taxonomy, typed config loader | 32 unit tests |
-| Migrations 0001–0004 | Appendix B baseline + identity/membership + paddock (PostGIS) + worker projections; append-only triggers; **RLS FORCE with NULLIF pattern on every tenant table**; 3-role model (owner / `jk_app` / `jk_worker`) | 12 integration tests |
-| `@jk/database` | Checksum-enforced migration runner (drift & out-of-order rejection), `withTenantTransaction` (SET LOCAL app.tenant_id), idempotent `appendEvent` + transactional outbox, §49 subject builder | same suite |
-| `@jk/identity-tenancy` | IdentityService: createTenant/createFarm/inviteUser/activate/revokeMembership; AuthorizationPolicy with decision reasons (§66); denied ops audited; 5 canonical `identity.*.v1` events; JK-IAM-001/003/005 | 20 unit + 17 integration tests |
-| `@jk/worker` | Outbox relay (FOR UPDATE SKIP LOCKED, per-message SAVEPOINT), publishers (InMemory/Log/NATS JetStream w/ msgID dedupe), idempotent EventStatsProjector (processed_message dedupe + tenant assertion), health HTTP server, graceful shutdown | 9 unit + 11 integration tests |
-| `contracts/` | OpenAPI 3.1 (identity + Appendix C animal/device baseline), GraphQL SDL (Appendix D), AsyncAPI 3.0 (Appendix E + identity events), envelope + payload JSON Schemas, examples | `pnpm contracts:validate` → 9 docs OK |
-| `infrastructure/` | Dockerfiles (api/worker), Compose stack (PG+PostGIS/Redis/NATS/MinIO/Keycloak/OTel), Helm chart `jk-api`, provider-neutral Terraform module contract, otel-collector config | YAML-validated (no docker/helm/tf binaries in env) |
-| `.github/` | pull-request.yml (full gate incl. tenant-isolation), security.yml, contract-compatibility.yml (+ `scripts/validate/openapi-compat.mjs`), release.yml, deploy.yml, CODEOWNERS, dependabot, PR template | YAML-validated |
-| Gates | `pnpm architecture:check` (boundary rules §35/Appendix F), `pnpm contracts:validate` | both green |
+| Area                   | Contents                                                                                                                                                                                                                                    | Evidence                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Monorepo               | pnpm workspaces, strict TS (NodeNext ESM), ESLint/Prettier, root scripts                                                                                                                                                                    | `pnpm build` clean                                 |
+| `@jk/domain-kernel`    | §39 event envelope + zod, TenantContext, Money (bigint-exact, lossless allocate), Measurement (metric canonical, lb/arroba/acre), temporal validity, error taxonomy, typed config loader                                                    | 32 unit tests                                      |
+| Migrations 0001–0004   | Appendix B baseline + identity/membership + paddock (PostGIS) + worker projections; append-only triggers; **RLS FORCE with NULLIF pattern on every tenant table**; 3-role model (owner / `jk_app` / `jk_worker`)                            | 12 integration tests                               |
+| `@jk/database`         | Checksum-enforced migration runner (drift & out-of-order rejection), `withTenantTransaction` (SET LOCAL app.tenant_id), idempotent `appendEvent` + transactional outbox, §49 subject builder                                                | same suite                                         |
+| `@jk/identity-tenancy` | IdentityService: createTenant/createFarm/inviteUser/activate/revokeMembership; AuthorizationPolicy with decision reasons (§66); denied ops audited; 5 canonical `identity.*.v1` events; JK-IAM-001/003/005                                  | 20 unit + 17 integration tests                     |
+| `@jk/worker`           | Outbox relay (FOR UPDATE SKIP LOCKED, per-message SAVEPOINT), publishers (InMemory/Log/NATS JetStream w/ msgID dedupe), idempotent EventStatsProjector (processed_message dedupe + tenant assertion), health HTTP server, graceful shutdown | 9 unit + 11 integration tests                      |
+| `contracts/`           | OpenAPI 3.1 (identity + Appendix C animal/device baseline), GraphQL SDL (Appendix D), AsyncAPI 3.0 (Appendix E + identity events), envelope + payload JSON Schemas, examples                                                                | `pnpm contracts:validate` → 9 docs OK              |
+| `infrastructure/`      | Dockerfiles (api/worker), Compose stack (PG+PostGIS/Redis/NATS/MinIO/Keycloak/OTel), Helm chart `jk-api`, provider-neutral Terraform module contract, otel-collector config                                                                 | YAML-validated (no docker/helm/tf binaries in env) |
+| `.github/`             | pull-request.yml (full gate incl. tenant-isolation), security.yml, contract-compatibility.yml (+ `scripts/validate/openapi-compat.mjs`), release.yml, deploy.yml, CODEOWNERS, dependabot, PR template                                       | YAML-validated                                     |
+| Gates                  | `pnpm architecture:check` (boundary rules §35/Appendix F), `pnpm contracts:validate`                                                                                                                                                        | both green                                         |
 
 Local dev database: PostgreSQL 16 + PostGIS with roles from
 `database/policies/application_roles.sql`. Run `pnpm bootstrap`.
@@ -64,8 +64,8 @@ Local dev database: PostgreSQL 16 + PostGIS with roles from
 
 ## ▶️ Phase 1 preview (next after Phase 0, Volume XII)
 
-Animal registry & identifiers (JK-ANI-*), handling sessions & weighing
-(JK-WGT-*), device-observation ingestion pipeline (Appendix C batch API),
+Animal registry & identifiers (JK-ANI-_), handling sessions & weighing
+(JK-WGT-_), device-observation ingestion pipeline (Appendix C batch API),
 scale/RFID simulator, animal timeline projection, first dashboard reads.
 
 ## How to continue (any model/session)

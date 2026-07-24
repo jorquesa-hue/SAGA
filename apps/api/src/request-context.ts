@@ -18,7 +18,9 @@ export function buildTenantContext(
   correlationId: string,
 ): TenantContext {
   if (!tenantIdHeader || !UUID_RE.test(tenantIdHeader)) {
-    throw new MissingHeaderError("A valid x-tenant-id header is required for this operation");
+    throw new MissingHeaderError(
+      "A valid x-tenant-id header is required for this operation",
+    );
   }
   return createTenantContext({
     tenantId: tenantIdHeader,

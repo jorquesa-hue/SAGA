@@ -1,4 +1,9 @@
-import type { DeliveryOutcome, LocalStore, OutboxRecord, SyncTransport } from "./types.js";
+import type {
+  DeliveryOutcome,
+  LocalStore,
+  OutboxRecord,
+  SyncTransport,
+} from "./types.js";
 
 export interface SyncReport {
   /** Records handed to the transport this round. */
@@ -69,7 +74,13 @@ export class SyncEngine {
     await this.recover();
     const now = this.now();
     const batch = await this.due(now);
-    const report: SyncReport = { attempted: batch.length, accepted: 0, retryable: 0, rejected: 0, transportFailed: false };
+    const report: SyncReport = {
+      attempted: batch.length,
+      accepted: 0,
+      retryable: 0,
+      rejected: 0,
+      transportFailed: false,
+    };
     if (batch.length === 0) return report;
 
     for (const r of batch) {
@@ -90,17 +101,38 @@ export class SyncEngine {
 
     const byId = new Map(outcomes.map((o) => [o.id, o]));
     for (const r of batch) {
-      const outcome = byId.get(r.id) ?? { id: r.id, outcome: "retryable" as const, error: "no_outcome_returned" };
+      const outcome = byId.get(r.id) ?? {
+        id: r.id,
+        outcome: "retryable" as const,
+        error: "no_outcome_returned",
+      };
       const attempts = r.attempts + 1;
       if (outcome.outcome === "accepted") {
-        await this.store.putRecord({ ...r, status: "synced", attempts, serverId: outcome.serverId, lastError: undefined });
+        await this.store.putRecord({
+          ...r,
+          status: "synced",
+          attempts,
+          serverId: outcome.serverId,
+          lastError: undefined,
+        });
         report.accepted += 1;
       } else if (outcome.outcome === "rejected") {
-        await this.store.putRecord({ ...r, status: "rejected", attempts, lastError: outcome.error ?? "rejected" });
+        await this.store.putRecord({
+          ...r,
+          status: "rejected",
+          attempts,
+          lastError: outcome.error ?? "rejected",
+        });
         report.rejected += 1;
       } else {
         const nextAttemptAt = now + this.backoffSeconds(attempts) * 1000;
-        await this.store.putRecord({ ...r, status: "pending", attempts, nextAttemptAt, lastError: outcome.error ?? "retryable" });
+        await this.store.putRecord({
+          ...r,
+          status: "pending",
+          attempts,
+          nextAttemptAt,
+          lastError: outcome.error ?? "retryable",
+        });
         report.retryable += 1;
       }
     }
@@ -113,7 +145,13 @@ export class SyncEngine {
    * left for a later call.
    */
   async syncAll(maxRounds = 1000): Promise<SyncReport> {
-    const total: SyncReport = { attempted: 0, accepted: 0, retryable: 0, rejected: 0, transportFailed: false };
+    const total: SyncReport = {
+      attempted: 0,
+      accepted: 0,
+      retryable: 0,
+      rejected: 0,
+      transportFailed: false,
+    };
     for (let round = 0; round < maxRounds; round += 1) {
       const r = await this.sync();
       total.attempted += r.attempted;

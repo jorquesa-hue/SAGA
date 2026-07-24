@@ -1,4 +1,9 @@
-import { createTenantContext, newUuid, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  createTenantContext,
+  newUuid,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -50,7 +55,11 @@ describe.skipIf(!available)("WeighingService (integration)", () => {
     db = await createTestDatabase("jk_weigh");
     const identity = makeIdentityService(db);
     weighing = new WeighingService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Peso", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Peso",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -63,7 +72,11 @@ describe.skipIf(!available)("WeighingService (integration)", () => {
   });
 
   it("starts a session and accepts a resolved weight (event + read model)", async () => {
-    const session = await weighing.startSession(owner, { farmId, purpose: "weighing", expectedCount: 1 });
+    const session = await weighing.startSession(owner, {
+      farmId,
+      purpose: "weighing",
+      expectedCount: 1,
+    });
     expect(session.status).toBe("open");
 
     const result = await weighing.recordObservation(owner, {
@@ -176,7 +189,11 @@ describe.skipIf(!available)("WeighingService (integration)", () => {
   });
 
   it("closes a session with a counts summary", async () => {
-    const session = await weighing.startSession(owner, { farmId, purpose: "weighing", expectedCount: 2 });
+    const session = await weighing.startSession(owner, {
+      farmId,
+      purpose: "weighing",
+      expectedCount: 2,
+    });
     await weighing.recordObservation(owner, {
       observationId: "close-1",
       capturedAt: iso(daysAgo(1)),
@@ -202,14 +219,36 @@ describe.skipIf(!available)("WeighingService (integration)", () => {
 
   it("ingests a batch with partial success", async () => {
     const results = await weighing.ingestBatch(owner, [
-      { observationId: "batch-1", capturedAt: iso(daysAgo(2)), value: 315, unit: "kg", rfid: "982000000000101" },
-      { observationId: "batch-2", capturedAt: iso(daysAgo(2)), value: 0, unit: "kg", rfid: "982000000000101" },
-      { observationId: "batch-3", capturedAt: iso(daysAgo(2)), value: 288, unit: "kg", rfid: "982000000000999" },
+      {
+        observationId: "batch-1",
+        capturedAt: iso(daysAgo(2)),
+        value: 315,
+        unit: "kg",
+        rfid: "982000000000101",
+      },
+      {
+        observationId: "batch-2",
+        capturedAt: iso(daysAgo(2)),
+        value: 0,
+        unit: "kg",
+        rfid: "982000000000101",
+      },
+      {
+        observationId: "batch-3",
+        capturedAt: iso(daysAgo(2)),
+        value: 288,
+        unit: "kg",
+        rfid: "982000000000999",
+      },
     ]);
     expect(results).toHaveLength(3);
     expect(results.find((r) => r.observationId === "batch-1")?.status).toBe("accepted");
-    expect(results.find((r) => r.observationId === "batch-2")?.status).toBe("rejected_validation");
-    expect(results.find((r) => r.observationId === "batch-3")?.status).toBe("pending_resolution");
+    expect(results.find((r) => r.observationId === "batch-2")?.status).toBe(
+      "rejected_validation",
+    );
+    expect(results.find((r) => r.observationId === "batch-3")?.status).toBe(
+      "pending_resolution",
+    );
   });
 
   it("allows a device actor to record weights", async () => {
@@ -236,7 +275,10 @@ describe.skipIf(!available)("WeighingService (integration)", () => {
       displayName: "Fin",
       role: "finance_user",
     });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "finance_user" });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "finance_user",
+    });
     const finance = makeTenantContext(tenantId, invite.userId);
     await expect(
       weighing.recordObservation(finance, {
@@ -250,7 +292,11 @@ describe.skipIf(!available)("WeighingService (integration)", () => {
   });
 
   it("does not leak weights across tenants", async () => {
-    const other = await seedTenantWithOwner(makeIdentityService(db), "Outra", "o@example.com");
+    const other = await seedTenantWithOwner(
+      makeIdentityService(db),
+      "Outra",
+      "o@example.com",
+    );
     const series = await weighing.getWeightSeries(other.ownerContext, animalA);
     expect(series).toHaveLength(0);
   });

@@ -8,12 +8,21 @@ import type { Finding } from "./model-provider.js";
  * built from them are evidence-bound by construction. Tools run inside a
  * tenant transaction (RLS), so they only ever see the caller's tenant.
  */
-export type EvidenceTool = (client: pg.PoolClient, context: TenantContext) => Promise<Finding[]>;
+export type EvidenceTool = (
+  client: pg.PoolClient,
+  context: TenantContext,
+) => Promise<Finding[]>;
 
 /** Active animals whose latest eligible weight is below a threshold. */
 export function lowWeightTool(thresholdKg = 250): EvidenceTool {
   return async (client) => {
-    const rows = await client.query<{ animal_id: string; farm_id: string; visual_id: string; weight_kg: string; event_id: string }>(
+    const rows = await client.query<{
+      animal_id: string;
+      farm_id: string;
+      visual_id: string;
+      weight_kg: string;
+      event_id: string;
+    }>(
       `SELECT a.id AS animal_id, a.farm_id, a.visual_id, w.weight_kg, w.event_id
          FROM animal a
          JOIN LATERAL (
@@ -38,7 +47,12 @@ export function lowWeightTool(thresholdKg = 250): EvidenceTool {
 /** Active animals with no weight recorded at all (coverage gap). */
 export function missingWeightTool(): EvidenceTool {
   return async (client) => {
-    const rows = await client.query<{ animal_id: string; farm_id: string; visual_id: string; reg_event_id: string | null }>(
+    const rows = await client.query<{
+      animal_id: string;
+      farm_id: string;
+      visual_id: string;
+      reg_event_id: string | null;
+    }>(
       `SELECT a.id AS animal_id, a.farm_id, a.visual_id,
               (SELECT event_id FROM domain_event de
                 WHERE de.aggregate_type = 'animal' AND de.aggregate_id = a.id
@@ -67,7 +81,13 @@ export function missingWeightTool(): EvidenceTool {
  */
 export function withdrawalNearSaleTool(): EvidenceTool {
   return async (client) => {
-    const rows = await client.query<{ animal_id: string; farm_id: string; visual_id: string; event_id: string; valid_to: string | null }>(
+    const rows = await client.query<{
+      animal_id: string;
+      farm_id: string;
+      visual_id: string;
+      event_id: string;
+      valid_to: string | null;
+    }>(
       `SELECT a.id AS animal_id, a.farm_id, a.visual_id, t.event_id, r.valid_to::text AS valid_to
          FROM animal_restriction r
          JOIN animal a ON a.id = r.animal_id
@@ -91,7 +111,12 @@ export function withdrawalNearSaleTool(): EvidenceTool {
  */
 export function reproductionGapTool(): EvidenceTool {
   return async (client) => {
-    const rows = await client.query<{ animal_id: string; farm_id: string; visual_id: string; reg_event_id: string | null }>(
+    const rows = await client.query<{
+      animal_id: string;
+      farm_id: string;
+      visual_id: string;
+      reg_event_id: string | null;
+    }>(
       `SELECT a.id AS animal_id, a.farm_id, a.visual_id,
               (SELECT event_id FROM domain_event de
                 WHERE de.aggregate_type = 'animal' AND de.aggregate_id = a.id

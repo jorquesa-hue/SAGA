@@ -30,9 +30,17 @@ export class HttpSyncTransport implements SyncTransport {
         case "accepted":
         case "duplicate":
         case "pending_resolution":
-          return { id: r.id, outcome: "accepted", serverId: res.serverObservationId ?? undefined };
+          return {
+            id: r.id,
+            outcome: "accepted",
+            serverId: res.serverObservationId ?? undefined,
+          };
         case "rejected_validation":
-          return { id: r.id, outcome: "rejected", error: res.reason ?? "rejected_validation" };
+          return {
+            id: r.id,
+            outcome: "rejected",
+            error: res.reason ?? "rejected_validation",
+          };
         default:
           return { id: r.id, outcome: "retryable", error: res.reason ?? res.status };
       }

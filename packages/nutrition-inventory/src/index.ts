@@ -20,7 +20,12 @@ import { z } from "zod";
  */
 
 export const STOCK_MOVEMENT_RECORDED = "inventory.stock_movement_recorded.v1";
-const WRITE_ROLES = new Set(["tenant_owner", "farm_manager", "technician", "veterinarian"]);
+const WRITE_ROLES = new Set([
+  "tenant_owner",
+  "farm_manager",
+  "technician",
+  "veterinarian",
+]);
 
 export class InventoryForbiddenError extends PlatformError {
   readonly code = "JK-FORBIDDEN";
@@ -43,7 +48,10 @@ export const receiveInputSchema = z
     itemId: z.string().uuid(),
     quantity: z.number().positive(),
     batchCode: z.string().max(200).optional(),
-    expirationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    expirationDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
     occurredAt: z.string().datetime({ offset: true }).optional(),
     idempotencyKey: z.string().min(1).max(200).optional(),
   })
@@ -98,7 +106,14 @@ export class InventoryService {
           `INSERT INTO item (tenant_id, name, category, unit, supplier, reorder_level)
            VALUES ($1,$2,$3,$4,$5,$6)
            RETURNING id, name, category, unit, supplier, reorder_level`,
-          [context.tenantId, input.name, input.category, input.unit, input.supplier ?? null, input.reorderLevel ?? null],
+          [
+            context.tenantId,
+            input.name,
+            input.category,
+            input.unit,
+            input.supplier ?? null,
+            input.reorderLevel ?? null,
+          ],
         );
         const r = inserted.rows[0]!;
         return {
@@ -118,7 +133,10 @@ export class InventoryService {
     });
   }
 
-  async receiveStock(context: TenantContext, rawInput: ReceiveInput): Promise<{ movementId: Uuid; balance: number }> {
+  async receiveStock(
+    context: TenantContext,
+    rawInput: ReceiveInput,
+  ): Promise<{ movementId: Uuid; balance: number }> {
     const input = this.parse(receiveInputSchema, rawInput);
     return this.authorized(context, true, async (client) => {
       const item = await this.getItemUnit(client, input.itemId);
@@ -147,7 +165,10 @@ export class InventoryService {
     });
   }
 
-  async consumeStock(context: TenantContext, rawInput: ConsumeInput): Promise<{ movementId: Uuid; balance: number }> {
+  async consumeStock(
+    context: TenantContext,
+    rawInput: ConsumeInput,
+  ): Promise<{ movementId: Uuid; balance: number }> {
     const input = this.parse(consumeInputSchema, rawInput);
     return this.authorized(context, true, async (client) => {
       const item = await this.getItemUnit(client, input.itemId);
@@ -178,7 +199,9 @@ export class InventoryService {
   }
 
   async getBalance(context: TenantContext, itemId: Uuid): Promise<number> {
-    return this.authorized(context, false, async (client) => this.balance(client, itemId));
+    return this.authorized(context, false, async (client) =>
+      this.balance(client, itemId),
+    );
   }
 
   /** Batches expiring on or before the given horizon (JK-INV-005). */
@@ -277,13 +300,23 @@ export class InventoryService {
     return Number(result.rows[0]!.balance);
   }
 
-  private async getItemUnit(client: pg.PoolClient, itemId: string): Promise<{ unit: string }> {
-    const result = await client.query<{ unit: string }>(`SELECT unit FROM item WHERE id = $1`, [itemId]);
+  private async getItemUnit(
+    client: pg.PoolClient,
+    itemId: string,
+  ): Promise<{ unit: string }> {
+    const result = await client.query<{ unit: string }>(
+      `SELECT unit FROM item WHERE id = $1`,
+      [itemId],
+    );
     if (result.rows.length === 0) throw new NotFoundError(`Item ${itemId} not found`);
     return result.rows[0]!;
   }
 
-  private async nextVersion(client: pg.PoolClient, tenantId: string, itemId: string): Promise<number> {
+  private async nextVersion(
+    client: pg.PoolClient,
+    tenantId: string,
+    itemId: string,
+  ): Promise<number> {
     const result = await client.query<{ next: number }>(
       `SELECT COALESCE(MAX(aggregate_version), 0)::int + 1 AS next
        FROM domain_event WHERE tenant_id = $1 AND aggregate_type = 'item' AND aggregate_id = $2`,
@@ -319,7 +352,8 @@ export class InventoryService {
             ).rows
           : [];
       const active = memberships.filter((m) => m.status === "active");
-      if (active.length === 0) return { ok: false as const, reason: "no_active_membership" };
+      if (active.length === 0)
+        return { ok: false as const, reason: "no_active_membership" };
       if (write && !active.some((m) => WRITE_ROLES.has(m.role))) {
         return { ok: false as const, reason: "role not permitted for inventory changes" };
       }

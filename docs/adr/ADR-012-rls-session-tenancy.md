@@ -64,11 +64,11 @@ application never connects as one).
 Provisioned by `database/policies/application_roles.sql` (local/CI;
 infrastructure-provisioned with strong credentials in staging/production):
 
-| Role | Used by | Powers |
-| ---- | ------- | ------ |
-| owner/admin (`jk` locally) | migrations (`scripts/bootstrap/migrate.mjs`), test harness, tenant onboarding via `withSystemTransaction` | DDL; still subject to FORCE RLS on owned tables outside superuser |
-| `jk_app` | API / application services via `withTenantTransaction` | tenant-scoped DML only, RLS-enforced; read-only on projections |
-| `jk_worker` | `apps/worker` outbox relay + projector | cross-tenant via **scoped policies** (`outbox_worker_policy`, `domain_event_worker_read`, `processed_message_worker_policy`, ...), *no* grants on business tables, never BYPASSRLS |
+| Role                       | Used by                                                                                                   | Powers                                                                                                                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| owner/admin (`jk` locally) | migrations (`scripts/bootstrap/migrate.mjs`), test harness, tenant onboarding via `withSystemTransaction` | DDL; still subject to FORCE RLS on owned tables outside superuser                                                                                                                  |
+| `jk_app`                   | API / application services via `withTenantTransaction`                                                    | tenant-scoped DML only, RLS-enforced; read-only on projections                                                                                                                     |
+| `jk_worker`                | `apps/worker` outbox relay + projector                                                                    | cross-tenant via **scoped policies** (`outbox_worker_policy`, `domain_event_worker_read`, `processed_message_worker_policy`, ...), _no_ grants on business tables, never BYPASSRLS |
 
 `withSystemTransaction` (no tenant GUC) exists for platform-level operations
 only — tenant onboarding, where no tenant exists yet

@@ -267,7 +267,12 @@ paths:
       tags: [Animals]
       parameters:
         - $ref: "#/components/parameters/AnimalId"
-        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 500 } }
+        - {
+            name: limit,
+            in: query,
+            required: false,
+            schema: { type: integer, minimum: 1, maximum: 500 },
+          }
         - { name: types, in: query, required: false, schema: { type: string } }
       responses:
         "200":
@@ -346,7 +351,19 @@ paths:
               required: [farmId]
               properties:
                 farmId: { type: string, format: uuid }
-                purpose: { type: string, enum: [weighing, vaccination, pregnancy_check, treatment, handling, other] }
+                purpose:
+                  {
+                    type: string,
+                    enum:
+                      [
+                        weighing,
+                        vaccination,
+                        pregnancy_check,
+                        treatment,
+                        handling,
+                        other,
+                      ],
+                  }
                 deviceId: { type: string }
                 expectedCount: { type: integer, minimum: 0 }
       responses:
@@ -880,7 +897,14 @@ paths:
         - $ref: "#/components/parameters/ImportId"
         - $ref: "#/components/parameters/IdempotencyKey"
       responses:
-        "200": { description: Parsed, content: { application/json: { schema: { $ref: "#/components/schemas/ImportJob" } } } }
+        "200":
+          {
+            description: Parsed,
+            content:
+              {
+                application/json: { schema: { $ref: "#/components/schemas/ImportJob" } },
+              },
+          }
         "409": { $ref: "#/components/responses/Conflict" }
   /imports/{importId}/map:
     post:
@@ -896,7 +920,14 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/AnimalImportMapping" }
       responses:
-        "200": { description: Mapped, content: { application/json: { schema: { $ref: "#/components/schemas/ImportJob" } } } }
+        "200":
+          {
+            description: Mapped,
+            content:
+              {
+                application/json: { schema: { $ref: "#/components/schemas/ImportJob" } },
+              },
+          }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/UnprocessableEntity" }
   /imports/{importId}/validate:
@@ -908,7 +939,14 @@ paths:
         - $ref: "#/components/parameters/ImportId"
         - $ref: "#/components/parameters/IdempotencyKey"
       responses:
-        "200": { description: Validated, content: { application/json: { schema: { $ref: "#/components/schemas/ImportJob" } } } }
+        "200":
+          {
+            description: Validated,
+            content:
+              {
+                application/json: { schema: { $ref: "#/components/schemas/ImportJob" } },
+              },
+          }
         "409": { $ref: "#/components/responses/Conflict" }
   /imports/{importId}/preview:
     get:
@@ -932,7 +970,14 @@ paths:
         - $ref: "#/components/parameters/ImportId"
         - $ref: "#/components/parameters/IdempotencyKey"
       responses:
-        "200": { description: Executed, content: { application/json: { schema: { $ref: "#/components/schemas/ImportJob" } } } }
+        "200":
+          {
+            description: Executed,
+            content:
+              {
+                application/json: { schema: { $ref: "#/components/schemas/ImportJob" } },
+              },
+          }
         "409": { $ref: "#/components/responses/Conflict" }
   /imports/{importId}/reconcile:
     post:
@@ -1311,7 +1356,19 @@ components:
           description: Allowlisted event families (§51).
           items:
             type: string
-            enum: [animal, weight, health, reproduction, herd, inventory, finance, genetics, pasture, asset]
+            enum:
+              [
+                animal,
+                weight,
+                health,
+                reproduction,
+                herd,
+                inventory,
+                finance,
+                genetics,
+                pasture,
+                asset,
+              ]
         description: { type: string }
     WebhookSubscription:
       type: object
@@ -1335,7 +1392,18 @@ components:
               description: Signing secret — returned only at creation and rotation.
     WebhookDelivery:
       type: object
-      required: [id, subscriptionId, deliveryId, eventId, eventType, eventFamily, status, attempts, maxAttempts]
+      required:
+        [
+          id,
+          subscriptionId,
+          deliveryId,
+          eventId,
+          eventType,
+          eventFamily,
+          status,
+          attempts,
+          maxAttempts,
+        ]
       properties:
         id: { type: string, format: uuid }
         subscriptionId: { type: string, format: uuid }
@@ -1390,7 +1458,8 @@ components:
       properties:
         exportType:
           type: string
-          enum: [animal_traceability_packet, animal_inventory, herd_weights, finance_ledger]
+          enum:
+            [animal_traceability_packet, animal_inventory, herd_weights, finance_ledger]
         format:
           type: string
           enum: [json, csv, xlsx, pdf, geojson, zip]
@@ -1450,7 +1519,18 @@ components:
         rfid: { type: string }
     ImportJob:
       type: object
-      required: [id, importType, status, totalRows, validRows, invalidRows, duplicateRows, executedRows, failedRows]
+      required:
+        [
+          id,
+          importType,
+          status,
+          totalRows,
+          validRows,
+          invalidRows,
+          duplicateRows,
+          executedRows,
+          failedRows,
+        ]
       properties:
         id: { type: string, format: uuid }
         importType: { type: string }

@@ -114,10 +114,7 @@ export interface ConnectorRegistration {
 }
 
 export type ExportType =
-  | "animal_traceability_packet"
-  | "animal_inventory"
-  | "herd_weights"
-  | "finance_ledger";
+  "animal_traceability_packet" | "animal_inventory" | "herd_weights" | "finance_ledger";
 export type ExportFormat = "json" | "csv" | "xlsx" | "pdf" | "geojson" | "zip";
 
 export interface RequestExportRequest {
@@ -144,7 +141,8 @@ export interface Page<T> {
 export interface ImportJob {
   id: string;
   importType: string;
-  status: "uploaded" | "parsed" | "mapped" | "validated" | "executed" | "reconciled" | "failed";
+  status:
+    "uploaded" | "parsed" | "mapped" | "validated" | "executed" | "reconciled" | "failed";
   filename?: string | null;
   totalRows: number;
   validRows: number;

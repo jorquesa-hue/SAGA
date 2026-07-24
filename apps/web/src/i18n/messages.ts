@@ -145,7 +145,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "treatments.withdrawal": "Carência (dias)",
     "treatments.administeredAt": "Aplicado em (ISO)",
     "treatments.submit": "Registrar",
-    "treatments.recordedWithRestriction": "Tratamento registrado — restrição de carência criada",
+    "treatments.recordedWithRestriction":
+      "Tratamento registrado — restrição de carência criada",
     "treatments.recorded": "Tratamento registrado",
     // reproduction
     "repro.title": "Reprodução",
@@ -283,7 +284,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "imports.failures": "falhas {n}",
     "imports.statusBadge": "status {s}",
     "imports.createdTitle": "Registros criados",
-    "imports.reconciled": "Importação reconciliada. O arquivo enviado fica arquivado como evidência.",
+    "imports.reconciled":
+      "Importação reconciliada. O arquivo enviado fica arquivado como evidência.",
     "imports.colVisual": "ID visual",
     "imports.colSex": "Sexo",
     "imports.colBreed": "Raça",
@@ -351,7 +353,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "settings.currency": "Moeda",
     "settings.save": "Salvar",
     "settings.saved": "Configurações salvas",
-    "settings.hint": "Aplica-se a toda a organização. Os valores monetários passam a ser exibidos e registrados nesta moeda.",
+    "settings.hint":
+      "Aplica-se a toda a organização. Os valores monetários passam a ser exibidos e registrados nesta moeda.",
   },
   en: {
     "nav.dashboard": "Dashboard",
@@ -472,7 +475,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "treatments.withdrawal": "Withdrawal (days)",
     "treatments.administeredAt": "Administered at (ISO)",
     "treatments.submit": "Record",
-    "treatments.recordedWithRestriction": "Treatment recorded — withdrawal restriction created",
+    "treatments.recordedWithRestriction":
+      "Treatment recorded — withdrawal restriction created",
     "treatments.recorded": "Treatment recorded",
     "repro.title": "Reproduction",
     "repro.serviceTitle": "Service / breeding",
@@ -670,7 +674,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "settings.currency": "Currency",
     "settings.save": "Save",
     "settings.saved": "Settings saved",
-    "settings.hint": "Applies to the whole organization. Money is displayed and recorded in this currency.",
+    "settings.hint":
+      "Applies to the whole organization. Money is displayed and recorded in this currency.",
   },
   es: {
     "nav.dashboard": "Panel",
@@ -791,7 +796,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "treatments.withdrawal": "Retiro (días)",
     "treatments.administeredAt": "Aplicado en (ISO)",
     "treatments.submit": "Registrar",
-    "treatments.recordedWithRestriction": "Tratamiento registrado — restricción de retiro creada",
+    "treatments.recordedWithRestriction":
+      "Tratamiento registrado — restricción de retiro creada",
     "treatments.recorded": "Tratamiento registrado",
     "repro.title": "Reproducción",
     "repro.serviceTitle": "Servicio / monta",
@@ -924,7 +930,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "imports.failures": "fallas {n}",
     "imports.statusBadge": "estado {s}",
     "imports.createdTitle": "Registros creados",
-    "imports.reconciled": "Importación reconciliada. El archivo subido queda archivado como evidencia.",
+    "imports.reconciled":
+      "Importación reconciliada. El archivo subido queda archivado como evidencia.",
     "imports.colVisual": "ID visual",
     "imports.colSex": "Sexo",
     "imports.colBreed": "Raza",
@@ -989,6 +996,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "settings.currency": "Moneda",
     "settings.save": "Guardar",
     "settings.saved": "Configuración guardada",
-    "settings.hint": "Se aplica a toda la organización. Los importes se muestran y registran en esta moneda.",
+    "settings.hint":
+      "Se aplica a toda la organización. Los importes se muestran y registran en esta moneda.",
   },
 };

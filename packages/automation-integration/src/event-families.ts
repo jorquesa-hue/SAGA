@@ -24,7 +24,13 @@ export type EventFamily = (typeof ALLOWED_EVENT_FAMILIES)[number];
 const ALLOWED = new Set<string>(ALLOWED_EVENT_FAMILIES);
 
 /** Families that exist as domain contexts but are never webhook-exposable. */
-const SENSITIVE_FAMILIES = new Set(["identity", "security", "ai", "connector", "webhook"]);
+const SENSITIVE_FAMILIES = new Set([
+  "identity",
+  "security",
+  "ai",
+  "connector",
+  "webhook",
+]);
 
 export function isAllowedFamily(family: string): family is EventFamily {
   return ALLOWED.has(family);
@@ -63,7 +69,14 @@ const FAMILY_FIELDS: Record<string, readonly string[]> = {
   animal: ["animalId", "registrationCode", "sex", "breed", "status"],
   weight: ["animalId", "weightKg", "measuredAt", "sessionId"],
   health: ["animalId", "protocolId", "treatmentId", "withdrawalUntil", "status"],
-  reproduction: ["animalId", "damId", "sireId", "serviceId", "expectedCalvingDate", "status"],
+  reproduction: [
+    "animalId",
+    "damId",
+    "sireId",
+    "serviceId",
+    "expectedCalvingDate",
+    "status",
+  ],
   herd: ["lotId", "animalId", "paddockId", "fromPaddockId", "toPaddockId", "occurredAt"],
   inventory: ["itemId", "batchId", "quantity", "unit", "movementType"],
   finance: ["transactionId", "lotId", "category", "amountMinor", "currency", "kind"],
@@ -72,7 +85,10 @@ const FAMILY_FIELDS: Record<string, readonly string[]> = {
   asset: ["assetId", "maintenanceId", "status", "dueAt"],
 };
 
-export function projectPayload(family: string, payload: Record<string, unknown>): Record<string, unknown> {
+export function projectPayload(
+  family: string,
+  payload: Record<string, unknown>,
+): Record<string, unknown> {
   const allowed = FAMILY_FIELDS[family];
   if (!allowed) {
     // Identifier-only fallback: pass through *Id keys, nothing else.

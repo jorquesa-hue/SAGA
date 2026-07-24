@@ -10,7 +10,7 @@ authorization, events, tests, contracts, and traceability.
 - `@jk/analytics-intelligence`: `ai-safety` (prohibited/safe action assessment,
   typed guard errors) and `recommendation-service` (evidence-bound create,
   human approval, prohibited-action block, per-tenant kill switch).
-- Scenario #12 proven end-to-end: an agent may *propose* a prohibited action
+- Scenario #12 proven end-to-end: an agent may _propose_ a prohibited action
   (e.g. euthanasia) but autonomous execution is blocked and audited; even after
   human approval it never auto-executes.
 - REST surface: `/recommendations` (+ approve/reject/execute).

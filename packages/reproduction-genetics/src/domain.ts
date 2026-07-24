@@ -6,19 +6,15 @@ import { z } from "zod";
 export type ServiceMethod = "ai" | "tai" | "natural";
 export type PregnancyResult = "positive" | "negative" | "uncertain" | "loss";
 export type CalvingOutcome = "live" | "stillborn" | "aborted";
-export type CalvingEase = "unassisted" | "easy_pull" | "hard_pull" | "surgical" | "unknown";
+export type CalvingEase =
+  "unassisted" | "easy_pull" | "hard_pull" | "surgical" | "unknown";
 export type SireConfidence = "known" | "probable" | "unknown";
 
 /** Standard bovine gestation length used for expected-calving estimates. */
 export const BOVINE_GESTATION_DAYS = 283;
 
 export type ReproductionState =
-  | "open"
-  | "served"
-  | "awaiting_check"
-  | "pregnant"
-  | "calved"
-  | "loss";
+  "open" | "served" | "awaiting_check" | "pregnant" | "calved" | "loss";
 
 export interface ReproductionService {
   id: Uuid;
@@ -100,7 +96,9 @@ export const recordCalvingInputSchema = z
     damId: z.string().uuid(),
     serviceId: z.string().uuid().optional(),
     calvingDate: z.string().datetime({ offset: true }),
-    ease: z.enum(["unassisted", "easy_pull", "hard_pull", "surgical", "unknown"]).optional(),
+    ease: z
+      .enum(["unassisted", "easy_pull", "hard_pull", "surgical", "unknown"])
+      .optional(),
     outcome: z.enum(["live", "stillborn", "aborted"]),
     birthWeightKg: z.number().positive().optional(),
     sireConfidence: z.enum(["known", "probable", "unknown"]).optional(),

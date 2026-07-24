@@ -1,4 +1,9 @@
-import { newUuid, ValidationError, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  newUuid,
+  ValidationError,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -45,7 +50,11 @@ describe.skipIf(!available)("ReproductionGeneticsService (integration)", () => {
     db = await createTestDatabase("jk_repro");
     identity = makeIdentityService(db);
     repro = new ReproductionGeneticsService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Repro", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Repro",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -99,10 +108,17 @@ describe.skipIf(!available)("ReproductionGeneticsService (integration)", () => {
     expect(calving.calfId).toBeTruthy();
 
     // The calf exists as an animal with a registered event and parentage edges.
-    const calf = await db.adminPool.query(`SELECT sex, birth_date FROM animal WHERE id = $1`, [calving.calfId]);
+    const calf = await db.adminPool.query(
+      `SELECT sex, birth_date FROM animal WHERE id = $1`,
+      [calving.calfId],
+    );
     expect(calf.rows[0].sex).toBe("female");
 
-    const parentage = await db.adminPool.query<{ relation: string; parent_id: string | null; confidence: string }>(
+    const parentage = await db.adminPool.query<{
+      relation: string;
+      parent_id: string | null;
+      confidence: string;
+    }>(
       `SELECT relation, parent_id, confidence FROM animal_parentage WHERE child_id = $1 ORDER BY relation`,
       [calving.calfId],
     );
@@ -127,7 +143,11 @@ describe.skipIf(!available)("ReproductionGeneticsService (integration)", () => {
 
   it("records a negative check leaving the dam open", async () => {
     const dam2 = await makeAnimal(db, tenantId, farmId, "BR-DAM-2", "female");
-    await repro.recordService(owner, { damId: dam2, method: "ai", serviceDate: iso(daysAgo(40)) });
+    await repro.recordService(owner, {
+      damId: dam2,
+      method: "ai",
+      serviceDate: iso(daysAgo(40)),
+    });
     await repro.recordPregnancyCheck(owner, {
       damId: dam2,
       checkDate: iso(daysAgo(1)),
@@ -139,7 +159,11 @@ describe.skipIf(!available)("ReproductionGeneticsService (integration)", () => {
 
   it("rejects reproduction events on a male animal", async () => {
     await expect(
-      repro.recordService(owner, { damId: bull, method: "natural", serviceDate: iso(daysAgo(1)) }),
+      repro.recordService(owner, {
+        damId: bull,
+        method: "natural",
+        serviceDate: iso(daysAgo(1)),
+      }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
@@ -161,10 +185,17 @@ describe.skipIf(!available)("ReproductionGeneticsService (integration)", () => {
       displayName: "Fin",
       role: "finance_user",
     });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "finance_user" });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "finance_user",
+    });
     const finance = makeTenantContext(tenantId, invite.userId);
     await expect(
-      repro.recordService(finance, { damId: dam, method: "ai", serviceDate: iso(daysAgo(1)) }),
+      repro.recordService(finance, {
+        damId: dam,
+        method: "ai",
+        serviceDate: iso(daysAgo(1)),
+      }),
     ).rejects.toBeInstanceOf(ReproForbiddenError);
   });
 

@@ -13,7 +13,8 @@ export function registerAnalyticsRoutes(
   alerts: AlertService,
   reports: ReportService,
 ): void {
-  const ctx = (r: FastifyRequest) => buildTenantContext(r.principal, tenant(r), r.correlationId);
+  const ctx = (r: FastifyRequest) =>
+    buildTenantContext(r.principal, tenant(r), r.correlationId);
 
   app.post("/api/v1/alerts:generate", async (r: FastifyRequest) => {
     const body = (r.body ?? {}) as { farmId?: string };
@@ -22,20 +23,28 @@ export function registerAnalyticsRoutes(
 
   app.get("/api/v1/alerts", async (r: FastifyRequest) => {
     const q = r.query as { status?: string; severity?: string };
-    return { items: await alerts.listAlerts(ctx(r), { status: q.status, severity: q.severity }) };
+    return {
+      items: await alerts.listAlerts(ctx(r), { status: q.status, severity: q.severity }),
+    };
   });
 
-  app.post("/api/v1/alerts/:alertId/acknowledge", async (r: FastifyRequest, reply: FastifyReply) => {
-    const { alertId } = r.params as { alertId: string };
-    await alerts.acknowledgeAlert(ctx(r), alertId);
-    reply.status(204);
-  });
+  app.post(
+    "/api/v1/alerts/:alertId/acknowledge",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      const { alertId } = r.params as { alertId: string };
+      await alerts.acknowledgeAlert(ctx(r), alertId);
+      reply.status(204);
+    },
+  );
 
-  app.post("/api/v1/alerts/:alertId/resolve", async (r: FastifyRequest, reply: FastifyReply) => {
-    const { alertId } = r.params as { alertId: string };
-    await alerts.resolveAlert(ctx(r), alertId);
-    reply.status(204);
-  });
+  app.post(
+    "/api/v1/alerts/:alertId/resolve",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      const { alertId } = r.params as { alertId: string };
+      await alerts.resolveAlert(ctx(r), alertId);
+      reply.status(204);
+    },
+  );
 
   app.get("/api/v1/reports/beef-lot/:lotId", async (r: FastifyRequest) => {
     const { lotId } = r.params as { lotId: string };

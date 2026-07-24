@@ -108,7 +108,9 @@ operations:
     action: send
     channel: { $ref: "#/channels/identityTenantSettingsUpdated" }
     messages:
-      - { $ref: "#/channels/identityTenantSettingsUpdated/messages/tenantSettingsUpdated" }
+      - {
+          $ref: "#/channels/identityTenantSettingsUpdated/messages/tenantSettingsUpdated",
+        }
 components:
   messages:
     WeightRecorded:

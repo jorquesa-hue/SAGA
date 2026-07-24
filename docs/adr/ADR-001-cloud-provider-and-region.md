@@ -20,8 +20,8 @@ Brazil or nearby region.
 
 ## Decision
 
-OPEN. **Default until decided (spec §93, verbatim):** *"Provider-neutral
-Terraform interfaces; Brazil/nearby compliant region evaluation."*
+OPEN. **Default until decided (spec §93, verbatim):** _"Provider-neutral
+Terraform interfaces; Brazil/nearby compliant region evaluation."_
 
 The repository honors the default today:
 

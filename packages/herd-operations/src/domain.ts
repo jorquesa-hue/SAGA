@@ -6,12 +6,7 @@ import { z } from "zod";
  */
 
 export type SessionPurpose =
-  | "weighing"
-  | "vaccination"
-  | "pregnancy_check"
-  | "treatment"
-  | "handling"
-  | "other";
+  "weighing" | "vaccination" | "pregnancy_check" | "treatment" | "handling" | "other";
 export type SessionStatus = "open" | "closed";
 export type ResolutionStatus =
   | "accepted"
@@ -84,7 +79,14 @@ export const startSessionInputSchema = z
   .object({
     farmId: z.string().uuid(),
     purpose: z
-      .enum(["weighing", "vaccination", "pregnancy_check", "treatment", "handling", "other"])
+      .enum([
+        "weighing",
+        "vaccination",
+        "pregnancy_check",
+        "treatment",
+        "handling",
+        "other",
+      ])
       .default("weighing"),
     deviceId: z.string().max(200).optional(),
     expectedCount: z.number().int().nonnegative().optional(),

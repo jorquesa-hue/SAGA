@@ -13,7 +13,12 @@ import { ReportService } from "../../src/report-service.js";
 const available = databaseAvailable();
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
 
-async function makeAnimal(db: TestDatabase, tenantId: Uuid, farmId: Uuid, visualId: string): Promise<Uuid> {
+async function makeAnimal(
+  db: TestDatabase,
+  tenantId: Uuid,
+  farmId: Uuid,
+  visualId: string,
+): Promise<Uuid> {
   const id = newUuid();
   await db.adminPool.query(
     `INSERT INTO animal (id, tenant_id, farm_id, visual_id, sex, version) VALUES ($1,$2,$3,$4,'female',0)`,
@@ -22,7 +27,13 @@ async function makeAnimal(db: TestDatabase, tenantId: Uuid, farmId: Uuid, visual
   return id;
 }
 
-async function addWeight(db: TestDatabase, tenantId: Uuid, animalId: Uuid, kg: number, at: Date): Promise<void> {
+async function addWeight(
+  db: TestDatabase,
+  tenantId: Uuid,
+  animalId: Uuid,
+  kg: number,
+  at: Date,
+): Promise<void> {
   await db.adminPool.query(
     `INSERT INTO animal_weight (tenant_id, animal_id, occurred_at, weight_kg, eligible_for_analytics, event_id)
      VALUES ($1,$2,$3,$4,true,$5)`,
@@ -44,7 +55,11 @@ describe.skipIf(!available)("Analytics (alerts + reports) integration", () => {
     identity = makeIdentityService(db);
     alerts = new AlertService({ appPool: db.appPool });
     reports = new ReportService({ appPool: db.appPool });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Analytics", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Analytics",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 200 });
@@ -67,7 +82,9 @@ describe.skipIf(!available)("Analytics (alerts + reports) integration", () => {
     expect(second.weighingOverdue).toBe(0);
 
     const open = await alerts.listAlerts(owner, { status: "open" });
-    const forAnimal = open.filter((al) => al.animalId === a && al.alertType === "weighing_overdue");
+    const forAnimal = open.filter(
+      (al) => al.animalId === a && al.alertType === "weighing_overdue",
+    );
     expect(forAnimal).toHaveLength(1);
   });
 
@@ -81,7 +98,9 @@ describe.skipIf(!available)("Analytics (alerts + reports) integration", () => {
     const result = await alerts.generateAlerts(owner, { farmId });
     expect(result.withdrawal).toBeGreaterThanOrEqual(1);
     const open = await alerts.listAlerts(owner, { severity: "warning" });
-    expect(open.some((al) => al.animalId === a && al.alertType === "withdrawal_active")).toBe(true);
+    expect(
+      open.some((al) => al.animalId === a && al.alertType === "withdrawal_active"),
+    ).toBe(true);
   });
 
   it("acknowledges and resolves an alert; resolving frees the dedupe key", async () => {
@@ -116,7 +135,10 @@ describe.skipIf(!available)("Analytics (alerts + reports) integration", () => {
       `INSERT INTO paddock_occupation (tenant_id, paddock_id, lot_id, entry_at) VALUES ($1,$2,$3, now())`,
       [tenantId, paddock.rows[0].id, lotId],
     );
-    for (const [vid, entry, current] of [["RP-1", 200, 260], ["RP-2", 220, 280]] as const) {
+    for (const [vid, entry, current] of [
+      ["RP-1", 200, 260],
+      ["RP-2", 220, 280],
+    ] as const) {
       const animal = await makeAnimal(db, tenantId, farmId, vid);
       await addWeight(db, tenantId, animal, entry, daysAgo(60));
       await addWeight(db, tenantId, animal, current, daysAgo(0));

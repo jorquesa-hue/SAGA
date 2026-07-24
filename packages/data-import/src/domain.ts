@@ -76,4 +76,7 @@ export interface RowExecutionResult {
 /** Delegate that performs the actual domain write for one validated row. The
  *  import module never writes another module's tables directly — the API
  *  composition root supplies an executor backed by the owning service. */
-export type RowExecutor = (row: AnimalRow, context: { farmId: string | null }) => Promise<RowExecutionResult>;
+export type RowExecutor = (
+  row: AnimalRow,
+  context: { farmId: string | null },
+) => Promise<RowExecutionResult>;

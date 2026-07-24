@@ -143,11 +143,7 @@ export const createFarmInputSchema = z
         "timezone must be an IANA zone like 'America/Sao_Paulo'",
       )
       .optional(),
-    areaHa: z
-      .number()
-      .finite()
-      .nonnegative("areaHa must be >= 0")
-      .optional(),
+    areaHa: z.number().finite().nonnegative("areaHa must be >= 0").optional(),
     idempotencyKey: idempotencyKeySchema.optional(),
   })
   .strict();

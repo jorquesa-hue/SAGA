@@ -20,16 +20,28 @@ describe("registerAnimal input validation", () => {
 
   it("rejects a non-UUID farmId and empty visualId", () => {
     expect(() =>
-      parseInput(registerAnimalInputSchema, { farmId: "x", visualId: "BR", sex: "female" }, "r"),
+      parseInput(
+        registerAnimalInputSchema,
+        { farmId: "x", visualId: "BR", sex: "female" },
+        "r",
+      ),
     ).toThrow(ValidationError);
     expect(() =>
-      parseInput(registerAnimalInputSchema, { farmId: newUuid(), visualId: "  ", sex: "female" }, "r"),
+      parseInput(
+        registerAnimalInputSchema,
+        { farmId: newUuid(), visualId: "  ", sex: "female" },
+        "r",
+      ),
     ).toThrow(ValidationError);
   });
 
   it("rejects an invalid sex and malformed birthDate", () => {
     expect(() =>
-      parseInput(registerAnimalInputSchema, { farmId: newUuid(), visualId: "A", sex: "F" }, "r"),
+      parseInput(
+        registerAnimalInputSchema,
+        { farmId: newUuid(), visualId: "A", sex: "F" },
+        "r",
+      ),
     ).toThrow(ValidationError);
     expect(() =>
       parseInput(

@@ -82,7 +82,12 @@ export class DeliveryDispatcher {
     clock: { nowMs: number } = { nowMs: nowMsFallback() },
   ): Promise<DispatchResult> {
     const nowSeconds = Math.floor(clock.nowMs / 1000);
-    const result: DispatchResult = { claimed: 0, delivered: 0, retried: 0, deadLettered: 0 };
+    const result: DispatchResult = {
+      claimed: 0,
+      delivered: 0,
+      retried: 0,
+      deadLettered: 0,
+    };
 
     // Claim a batch of due deliveries (skip-locked so multiple dispatchers can
     // run), joined to their subscription for url/secret. Inactive subscriptions'
@@ -102,7 +107,10 @@ export class DeliveryDispatcher {
       );
       // Mark claimed rows as 'delivering' so a concurrent pass won't re-claim.
       for (const row of rows.rows) {
-        await client.query(`UPDATE webhook_delivery SET status = 'delivering' WHERE id = $1`, [row.id]);
+        await client.query(
+          `UPDATE webhook_delivery SET status = 'delivering' WHERE id = $1`,
+          [row.id],
+        );
       }
       return rows.rows;
     });
@@ -160,7 +168,15 @@ export class DeliveryDispatcher {
             WHERE id = $1`,
           [row.id, attemptNumber, statusCode],
         );
-        await this.logAttempt(client, context.tenantId, row.id, attemptNumber, "delivered", statusCode, null);
+        await this.logAttempt(
+          client,
+          context.tenantId,
+          row.id,
+          attemptNumber,
+          "delivered",
+          statusCode,
+          null,
+        );
         return "delivered" as const;
       }
 
@@ -172,7 +188,15 @@ export class DeliveryDispatcher {
             WHERE id = $1`,
           [row.id, attemptNumber, statusCode, error ?? `http_${statusCode}`],
         );
-        await this.logAttempt(client, context.tenantId, row.id, attemptNumber, "dead_letter", statusCode, error);
+        await this.logAttempt(
+          client,
+          context.tenantId,
+          row.id,
+          attemptNumber,
+          "dead_letter",
+          statusCode,
+          error,
+        );
         return "dead_letter" as const;
       }
 
@@ -184,7 +208,15 @@ export class DeliveryDispatcher {
           WHERE id = $1`,
         [row.id, attemptNumber, statusCode, error ?? `http_${statusCode}`, nextAt],
       );
-      await this.logAttempt(client, context.tenantId, row.id, attemptNumber, "retryable_error", statusCode, error);
+      await this.logAttempt(
+        client,
+        context.tenantId,
+        row.id,
+        attemptNumber,
+        "retryable_error",
+        statusCode,
+        error,
+      );
       return "retried" as const;
     });
   }

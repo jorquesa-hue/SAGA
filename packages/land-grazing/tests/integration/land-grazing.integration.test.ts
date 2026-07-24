@@ -26,7 +26,11 @@ describe.skipIf(!available)("LandGrazingService (integration)", () => {
     db = await createTestDatabase("jk_land");
     identity = makeIdentityService(db);
     land = new LandGrazingService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Pasto", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Pasto",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 200 });
@@ -70,7 +74,10 @@ describe.skipIf(!available)("LandGrazingService (integration)", () => {
       `INSERT INTO paddock_occupation (tenant_id, paddock_id, lot_id, entry_at) VALUES ($1,$2,$3,$4)`,
       [tenantId, paddockId, lotId, daysAgo(30).toISOString()],
     );
-    for (const [vid, entry, current] of [["G-1", 200, 260], ["G-2", 210, 250]] as const) {
+    for (const [vid, entry, current] of [
+      ["G-1", 200, 260],
+      ["G-2", 210, 250],
+    ] as const) {
       const animal = newUuid();
       await db.adminPool.query(
         `INSERT INTO animal (id, tenant_id, farm_id, visual_id, sex, version) VALUES ($1,$2,$3,$4,'female',0)`,
@@ -79,7 +86,16 @@ describe.skipIf(!available)("LandGrazingService (integration)", () => {
       await db.adminPool.query(
         `INSERT INTO animal_weight (tenant_id, animal_id, occurred_at, weight_kg, eligible_for_analytics, event_id)
          VALUES ($1,$2,$3,$4,true,$5),($1,$2,$6,$7,true,$8)`,
-        [tenantId, animal, daysAgo(30).toISOString(), entry, `e-${newUuid()}`, daysAgo(0).toISOString(), current, `e-${newUuid()}`],
+        [
+          tenantId,
+          animal,
+          daysAgo(30).toISOString(),
+          entry,
+          `e-${newUuid()}`,
+          daysAgo(0).toISOString(),
+          current,
+          `e-${newUuid()}`,
+        ],
       );
       await db.adminPool.query(
         `INSERT INTO lot_membership (tenant_id, lot_id, animal_id) VALUES ($1,$2,$3)`,
@@ -103,7 +119,10 @@ describe.skipIf(!available)("LandGrazingService (integration)", () => {
       displayName: "Fin",
       role: "finance_user",
     });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "finance_user" });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "finance_user",
+    });
     const finance = makeTenantContext(tenantId, invite.userId);
     await expect(
       land.recordAssessment(finance, { paddockId, condition: "fair" }),
@@ -118,7 +137,9 @@ describe.skipIf(!available)("LandGrazingService (integration)", () => {
 
   it("does not leak assessments across tenants", async () => {
     const other = await seedTenantWithOwner(identity, "Outra", "o@example.com");
-    await expect(land.listAssessments(other.ownerContext, paddockId)).resolves.toEqual([]);
+    await expect(land.listAssessments(other.ownerContext, paddockId)).resolves.toEqual(
+      [],
+    );
   });
 });
 

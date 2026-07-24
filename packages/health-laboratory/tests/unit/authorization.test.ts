@@ -13,14 +13,24 @@ describe("health-laboratory authorization", () => {
   });
 
   it("restricts sale-clear override to vet or tenant_owner (JK-HLT-005)", () => {
-    expect(decide("override_restriction", [{ role: "veterinarian", status: "active" }]).allowed).toBe(true);
-    expect(decide("override_restriction", [{ role: "tenant_owner", status: "active" }]).allowed).toBe(true);
-    const denied = decide("override_restriction", [{ role: "technician", status: "active" }]);
+    expect(
+      decide("override_restriction", [{ role: "veterinarian", status: "active" }])
+        .allowed,
+    ).toBe(true);
+    expect(
+      decide("override_restriction", [{ role: "tenant_owner", status: "active" }])
+        .allowed,
+    ).toBe(true);
+    const denied = decide("override_restriction", [
+      { role: "technician", status: "active" },
+    ]);
     expect(denied.allowed).toBe(false);
     expect(denied.reason).toMatch(/requires one of/);
   });
 
   it("allows any active member to read", () => {
-    expect(decide("read", [{ role: "finance_user", status: "active" }]).allowed).toBe(true);
+    expect(decide("read", [{ role: "finance_user", status: "active" }]).allowed).toBe(
+      true,
+    );
   });
 });

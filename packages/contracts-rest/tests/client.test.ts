@@ -10,7 +10,11 @@ interface Captured {
 
 /** A fake fetch that records the request and returns a scripted response. */
 function fakeFetch(
-  script: (req: Captured) => { status: number; body?: unknown; headers?: Record<string, string> },
+  script: (req: Captured) => {
+    status: number;
+    body?: unknown;
+    headers?: Record<string, string>;
+  },
 ): { fetch: FetchLike; calls: Captured[] } {
   const calls: Captured[] = [];
   const fetch: FetchLike = async (url, init) => {
@@ -39,7 +43,10 @@ const idSeq = () => {
 
 describe("JkPlatformClient", () => {
   it("injects dev auth, tenant, correlation, and an idempotency key on commands", async () => {
-    const { fetch, calls } = fakeFetch(() => ({ status: 201, body: { id: "t1", name: "Fazenda" } }));
+    const { fetch, calls } = fakeFetch(() => ({
+      status: 201,
+      body: { id: "t1", name: "Fazenda" },
+    }));
     const client = new JkPlatformClient({
       baseUrl: "https://api.test/",
       auth: { mode: "dev", devUserId: "user-1", platformAdmin: true },
@@ -82,8 +89,22 @@ describe("JkPlatformClient", () => {
   });
 
   it("honors an explicit idempotency key and per-call tenant override", async () => {
-    const { fetch, calls } = fakeFetch(() => ({ status: 201, body: { id: "s1", url: "https://x", eventFamilies: ["animal"], active: true, secret: "whsec_x" } }));
-    const client = new JkPlatformClient({ baseUrl: "https://api.test", fetch, newId: idSeq(), tenantId: "default" });
+    const { fetch, calls } = fakeFetch(() => ({
+      status: 201,
+      body: {
+        id: "s1",
+        url: "https://x",
+        eventFamilies: ["animal"],
+        active: true,
+        secret: "whsec_x",
+      },
+    }));
+    const client = new JkPlatformClient({
+      baseUrl: "https://api.test",
+      fetch,
+      newId: idSeq(),
+      tenantId: "default",
+    });
 
     await client.webhooks.subscribe(
       { url: "https://x", eventFamilies: ["animal"] },
@@ -107,9 +128,15 @@ describe("JkPlatformClient", () => {
         errors: [{ field: "url", reason: "must be https" }],
       },
     }));
-    const client = new JkPlatformClient({ baseUrl: "https://api.test", fetch, newId: idSeq() });
+    const client = new JkPlatformClient({
+      baseUrl: "https://api.test",
+      fetch,
+      newId: idSeq(),
+    });
 
-    await expect(client.webhooks.subscribe({ url: "http://x", eventFamilies: ["animal"] })).rejects.toMatchObject({
+    await expect(
+      client.webhooks.subscribe({ url: "http://x", eventFamilies: ["animal"] }),
+    ).rejects.toMatchObject({
       name: "ApiError",
       status: 422,
       code: "JK-VALIDATION",
@@ -126,7 +153,14 @@ describe("JkPlatformClient", () => {
 
   it("falls back to a synthetic problem for a non-JSON error body", async () => {
     const { fetch } = fakeFetch(() => ({ status: 500, body: undefined }));
-    const client = new JkPlatformClient({ baseUrl: "https://api.test", fetch, newId: idSeq() });
-    await expect(client.animals.list()).rejects.toMatchObject({ status: 500, code: "JK-HTTP-ERROR" });
+    const client = new JkPlatformClient({
+      baseUrl: "https://api.test",
+      fetch,
+      newId: idSeq(),
+    });
+    await expect(client.animals.list()).rejects.toMatchObject({
+      status: 500,
+      code: "JK-HTTP-ERROR",
+    });
   });
 });

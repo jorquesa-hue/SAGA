@@ -106,17 +106,25 @@ export class ReportService {
           adgSum += adg;
           adgCount += 1;
         }
-        return { animalId: r.animal_id, entryWeightKg: entry, currentWeightKg: current, adgKgPerDay: adg, daysOnTest: days };
+        return {
+          animalId: r.animal_id,
+          entryWeightKg: entry,
+          currentWeightKg: current,
+          adgKgPerDay: adg,
+          daysOnTest: days,
+        };
       });
 
-      const areaHa = paddock.rows[0]?.area_ha == null ? null : Number(paddock.rows[0]!.area_ha);
+      const areaHa =
+        paddock.rows[0]?.area_ha == null ? null : Number(paddock.rows[0]!.area_ha);
       return {
         lotId,
         headCount: rows.rows.length,
         avgAdgKgPerDay: adgCount > 0 ? adgSum / adgCount : null,
         totalGainKg: Math.round(totalGainKg * 100) / 100,
         paddockAreaHa: areaHa,
-        kgPerHa: areaHa && areaHa > 0 ? Math.round((totalGainKg / areaHa) * 100) / 100 : null,
+        kgPerHa:
+          areaHa && areaHa > 0 ? Math.round((totalGainKg / areaHa) * 100) / 100 : null,
         animalsWithTwoWeights: adgCount,
         animals,
       };
@@ -124,7 +132,10 @@ export class ReportService {
   }
 
   /** Monthly genetic-nucleus monitoring (§26): weight, ADG, reproduction, health. */
-  async monthlyNucleusReport(context: TenantContext, farmId: Uuid): Promise<NucleusReportRow[]> {
+  async monthlyNucleusReport(
+    context: TenantContext,
+    farmId: Uuid,
+  ): Promise<NucleusReportRow[]> {
     return this.read(context, async (client) => {
       const result = await client.query(
         `SELECT a.id AS animal_id, a.visual_id,
@@ -160,7 +171,8 @@ export class ReportService {
         const first = r.first_kg == null ? null : Number(r.first_kg);
         let adg: number | null = null;
         if (first !== null && latest !== null && r.first_at && r.last_at) {
-          const days = (new Date(r.last_at).getTime() - new Date(r.first_at).getTime()) / 86_400_000;
+          const days =
+            (new Date(r.last_at).getTime() - new Date(r.first_at).getTime()) / 86_400_000;
           if (days > 0) adg = (latest - first) / days;
         }
         let state = "open";
@@ -180,14 +192,18 @@ export class ReportService {
     });
   }
 
-  private async read<T>(context: TenantContext, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  private async read<T>(
+    context: TenantContext,
+    fn: (client: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const outcome = await withTenantTransaction(this.appPool, context, async (client) => {
       const memberships = await loadCallerMemberships(client, context);
       const decision = decide("read", context, memberships);
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

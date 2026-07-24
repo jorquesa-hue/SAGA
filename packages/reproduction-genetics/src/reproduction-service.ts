@@ -8,11 +8,7 @@ import {
 } from "@jk/domain-kernel";
 import { appendEvent, withTenantTransaction } from "@jk/database";
 import type pg from "pg";
-import {
-  decide,
-  loadCallerMemberships,
-  type ReproAction,
-} from "./authorization.js";
+import { decide, loadCallerMemberships, type ReproAction } from "./authorization.js";
 import { defaultCalfRegistrar, type CalfRegistrar } from "./calf-registrar.js";
 import {
   addDaysIsoDate,
@@ -55,7 +51,10 @@ export class ReproductionGeneticsService {
     this.calfRegistrar = options.calfRegistrar ?? defaultCalfRegistrar;
   }
 
-  async recordService(context: TenantContext, rawInput: RecordServiceInput): Promise<ReproductionService> {
+  async recordService(
+    context: TenantContext,
+    rawInput: RecordServiceInput,
+  ): Promise<ReproductionService> {
     const input = parseInput(recordServiceInputSchema, rawInput, "recordService input");
     return this.authorized(context, "record_reproduction", async (client) => {
       await this.assertFemale(client, input.damId);
@@ -85,7 +84,11 @@ export class ReproductionGeneticsService {
           context,
           aggregateType: "animal",
           aggregateId: input.damId,
-          aggregateVersion: await this.nextAnimalVersion(client, context.tenantId, input.damId),
+          aggregateVersion: await this.nextAnimalVersion(
+            client,
+            context.tenantId,
+            input.damId,
+          ),
           occurredAt: new Date(input.serviceDate),
           source: { channel: "api" },
           idempotencyKey: input.idempotencyKey ?? `service-${id}`,
@@ -99,7 +102,10 @@ export class ReproductionGeneticsService {
         }),
         { environment: this.environment },
       );
-      await client.query(`UPDATE reproduction_service SET event_id = $2 WHERE id = $1`, [id, append.eventId]);
+      await client.query(`UPDATE reproduction_service SET event_id = $2 WHERE id = $1`, [
+        id,
+        append.eventId,
+      ]);
       const r = inserted.rows[0]!;
       return {
         id: r.id,
@@ -115,7 +121,10 @@ export class ReproductionGeneticsService {
     });
   }
 
-  async recordPregnancyCheck(context: TenantContext, rawInput: PregnancyCheckInput): Promise<PregnancyCheck> {
+  async recordPregnancyCheck(
+    context: TenantContext,
+    rawInput: PregnancyCheckInput,
+  ): Promise<PregnancyCheck> {
     const input = parseInput(pregnancyCheckInputSchema, rawInput, "pregnancyCheck input");
     return this.authorized(context, "record_reproduction", async (client) => {
       await this.assertFemale(client, input.damId);
@@ -124,9 +133,16 @@ export class ReproductionGeneticsService {
       // adjusted by a supplied gestation estimate when positive.
       let expectedCalvingDate: string | null = null;
       if (input.result === "positive") {
-        const serviceDate = await this.serviceDateFor(client, input.damId, input.serviceId);
+        const serviceDate = await this.serviceDateFor(
+          client,
+          input.damId,
+          input.serviceId,
+        );
         if (serviceDate) {
-          expectedCalvingDate = addDaysIsoDate(serviceDate.toISOString(), BOVINE_GESTATION_DAYS);
+          expectedCalvingDate = addDaysIsoDate(
+            serviceDate.toISOString(),
+            BOVINE_GESTATION_DAYS,
+          );
         } else if (input.gestationDaysEstimate != null) {
           const remaining = BOVINE_GESTATION_DAYS - input.gestationDaysEstimate;
           expectedCalvingDate = addDaysIsoDate(input.checkDate, Math.max(remaining, 0));
@@ -159,7 +175,11 @@ export class ReproductionGeneticsService {
           context,
           aggregateType: "animal",
           aggregateId: input.damId,
-          aggregateVersion: await this.nextAnimalVersion(client, context.tenantId, input.damId),
+          aggregateVersion: await this.nextAnimalVersion(
+            client,
+            context.tenantId,
+            input.damId,
+          ),
           occurredAt: new Date(input.checkDate),
           source: { channel: "api" },
           idempotencyKey: input.idempotencyKey ?? `pregcheck-${id}`,
@@ -172,7 +192,10 @@ export class ReproductionGeneticsService {
         }),
         { environment: this.environment },
       );
-      await client.query(`UPDATE pregnancy_check SET event_id = $2 WHERE id = $1`, [id, append.eventId]);
+      await client.query(`UPDATE pregnancy_check SET event_id = $2 WHERE id = $1`, [
+        id,
+        append.eventId,
+      ]);
       const r = inserted.rows[0]!;
       return {
         id: r.id,
@@ -189,12 +212,17 @@ export class ReproductionGeneticsService {
   }
 
   /** Calving workflow (JK-REP-006): create/link calf, record parentage. */
-  async recordCalving(context: TenantContext, rawInput: RecordCalvingInput): Promise<Calving> {
+  async recordCalving(
+    context: TenantContext,
+    rawInput: RecordCalvingInput,
+  ): Promise<Calving> {
     const input = parseInput(recordCalvingInputSchema, rawInput, "recordCalving input");
     return this.authorized(context, "record_reproduction", async (client) => {
       await this.assertFemale(client, input.damId);
       if (input.calf && input.outcome !== "live") {
-        throw new ValidationError("A calf can only be registered when the calving outcome is 'live'");
+        throw new ValidationError(
+          "A calf can only be registered when the calving outcome is 'live'",
+        );
       }
 
       // Determine the sire from the linked/latest service, for parentage.
@@ -227,7 +255,13 @@ export class ReproductionGeneticsService {
           await client.query(
             `INSERT INTO animal_parentage (tenant_id, child_id, parent_id, external_parent_ref, relation, confidence)
              VALUES ($1,$2,$3,$4,'sire',$5)`,
-            [context.tenantId, calfId, sire.bullId, sire.externalRef, input.sireConfidence ?? "probable"],
+            [
+              context.tenantId,
+              calfId,
+              sire.bullId,
+              sire.externalRef,
+              input.sireConfidence ?? "probable",
+            ],
           );
         }
       }
@@ -258,7 +292,11 @@ export class ReproductionGeneticsService {
           context,
           aggregateType: "animal",
           aggregateId: input.damId,
-          aggregateVersion: await this.nextAnimalVersion(client, context.tenantId, input.damId),
+          aggregateVersion: await this.nextAnimalVersion(
+            client,
+            context.tenantId,
+            input.damId,
+          ),
           occurredAt: new Date(input.calvingDate),
           source: { channel: "api" },
           idempotencyKey: input.idempotencyKey ?? `calving-${id}`,
@@ -272,7 +310,10 @@ export class ReproductionGeneticsService {
         }),
         { environment: this.environment },
       );
-      await client.query(`UPDATE calving SET event_id = $2 WHERE id = $1`, [id, append.eventId]);
+      await client.query(`UPDATE calving SET event_id = $2 WHERE id = $1`, [
+        id,
+        append.eventId,
+      ]);
       const r = inserted.rows[0]!;
       return {
         id: r.id,
@@ -290,13 +331,20 @@ export class ReproductionGeneticsService {
   }
 
   /** Current reproduction state projected from the recorded facts (§12.1). */
-  async getReproductionStatus(context: TenantContext, damId: Uuid): Promise<ReproductionStatus> {
+  async getReproductionStatus(
+    context: TenantContext,
+    damId: Uuid,
+  ): Promise<ReproductionStatus> {
     return this.authorized(context, "read", async (client) => {
       const lastService = await client.query<{ service_date: Date }>(
         `SELECT service_date FROM reproduction_service WHERE dam_id = $1 ORDER BY service_date DESC LIMIT 1`,
         [damId],
       );
-      const lastCheck = await client.query<{ result: string; check_date: Date; expected_calving_date: string | null }>(
+      const lastCheck = await client.query<{
+        result: string;
+        check_date: Date;
+        expected_calving_date: string | null;
+      }>(
         `SELECT result, check_date, expected_calving_date::text AS expected_calving_date FROM pregnancy_check
          WHERE dam_id = $1 ORDER BY check_date DESC LIMIT 1`,
         [damId],
@@ -336,7 +384,13 @@ export class ReproductionGeneticsService {
         expectedCalvingDate = null;
       }
 
-      return { damId, state, lastServiceDate: serviceDate, expectedCalvingDate, lastEventAt };
+      return {
+        damId,
+        state,
+        lastServiceDate: serviceDate,
+        expectedCalvingDate,
+        lastEventAt,
+      };
     });
   }
 
@@ -345,10 +399,15 @@ export class ReproductionGeneticsService {
   // -------------------------------------------------------------------------
 
   private async assertFemale(client: pg.PoolClient, damId: Uuid): Promise<void> {
-    const result = await client.query<{ sex: string }>(`SELECT sex FROM animal WHERE id = $1`, [damId]);
+    const result = await client.query<{ sex: string }>(
+      `SELECT sex FROM animal WHERE id = $1`,
+      [damId],
+    );
     if (result.rows.length === 0) throw new NotFoundError(`Animal ${damId} not found`);
     if (result.rows[0]!.sex !== "female") {
-      throw new ValidationError(`Animal ${damId} is not female; reproduction events require a dam`);
+      throw new ValidationError(
+        `Animal ${damId} is not female; reproduction events require a dam`,
+      );
     }
   }
 
@@ -392,7 +451,11 @@ export class ReproductionGeneticsService {
     };
   }
 
-  private async nextAnimalVersion(client: pg.PoolClient, tenantId: string, animalId: string): Promise<number> {
+  private async nextAnimalVersion(
+    client: pg.PoolClient,
+    tenantId: string,
+    animalId: string,
+  ): Promise<number> {
     const result = await client.query<{ next: number }>(
       `SELECT COALESCE(MAX(aggregate_version), 0)::int + 1 AS next
        FROM domain_event WHERE tenant_id = $1 AND aggregate_type = 'animal' AND aggregate_id = $2`,
@@ -412,7 +475,8 @@ export class ReproductionGeneticsService {
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new ReproForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new ReproForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

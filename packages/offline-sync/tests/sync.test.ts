@@ -11,7 +11,9 @@ import {
 /** A controllable transport that records what it was asked to deliver. */
 class ScriptedTransport implements SyncTransport {
   rounds: OutboxRecord[][] = [];
-  constructor(private readonly reply: (records: OutboxRecord[]) => DeliveryOutcome[] | Error) {}
+  constructor(
+    private readonly reply: (records: OutboxRecord[]) => DeliveryOutcome[] | Error,
+  ) {}
   async deliver(records: OutboxRecord[]): Promise<DeliveryOutcome[]> {
     this.rounds.push(records.map((r) => ({ ...r })));
     const r = this.reply(records);
@@ -26,7 +28,10 @@ class ScriptedTransport implements SyncTransport {
 const acceptAll = (records: OutboxRecord[]): DeliveryOutcome[] =>
   records.map((r) => ({ id: r.id, outcome: "accepted", serverId: `srv-${r.id}` }));
 
-function fixedClock(startMs = 1_000_000): { now: () => number; advance: (ms: number) => void } {
+function fixedClock(startMs = 1_000_000): {
+  now: () => number;
+  advance: (ms: number) => void;
+} {
   let t = startMs;
   return { now: () => t, advance: (ms) => (t += ms) };
 }
@@ -38,15 +43,30 @@ describe("Outbox capture", () => {
   it("captures offline without touching the network; nothing is lost", async () => {
     const store = new InMemoryLocalStore();
     const outbox = new Outbox({ store, newId: idGen });
-    for (let i = 0; i < 5; i++) await outbox.capture({ kind: "observation", operation: "weight", payload: { kg: 300 + i } });
+    for (let i = 0; i < 5; i++)
+      await outbox.capture({
+        kind: "observation",
+        operation: "weight",
+        payload: { kg: 300 + i },
+      });
     expect(await outbox.pendingCount()).toBe(5);
   });
 
   it("is idempotent for a repeated client id", async () => {
     const store = new InMemoryLocalStore();
     const outbox = new Outbox({ store });
-    const a = await outbox.capture({ id: "same", kind: "observation", operation: "weight", payload: { kg: 300 } });
-    const b = await outbox.capture({ id: "same", kind: "observation", operation: "weight", payload: { kg: 999 } });
+    const a = await outbox.capture({
+      id: "same",
+      kind: "observation",
+      operation: "weight",
+      payload: { kg: 300 },
+    });
+    const b = await outbox.capture({
+      id: "same",
+      kind: "observation",
+      operation: "weight",
+      payload: { kg: 999 },
+    });
     expect(b.id).toBe(a.id);
     expect(b.payload.kg).toBe(300); // never regressed
     expect(await outbox.pendingCount()).toBe(1);
@@ -57,7 +77,11 @@ describe("SyncEngine", () => {
   it("flushes pending records and marks them synced with server ids", async () => {
     const store = new InMemoryLocalStore();
     const outbox = new Outbox({ store, newId: idGen });
-    const rec = await outbox.capture({ kind: "observation", operation: "weight", payload: { kg: 320 } });
+    const rec = await outbox.capture({
+      kind: "observation",
+      operation: "weight",
+      payload: { kg: 320 },
+    });
     const engine = new SyncEngine({ store, transport: new ScriptedTransport(acceptAll) });
 
     const report = await engine.sync();
@@ -71,9 +95,24 @@ describe("SyncEngine", () => {
     const store = new InMemoryLocalStore();
     const clock = fixedClock();
     const outbox = new Outbox({ store, now: clock.now });
-    const a = await outbox.capture({ id: "A", kind: "observation", operation: "w", payload: {} });
-    const b = await outbox.capture({ id: "B", kind: "observation", operation: "w", payload: {} });
-    const c = await outbox.capture({ id: "C", kind: "observation", operation: "w", payload: {} });
+    const a = await outbox.capture({
+      id: "A",
+      kind: "observation",
+      operation: "w",
+      payload: {},
+    });
+    const b = await outbox.capture({
+      id: "B",
+      kind: "observation",
+      operation: "w",
+      payload: {},
+    });
+    const c = await outbox.capture({
+      id: "C",
+      kind: "observation",
+      operation: "w",
+      payload: {},
+    });
     const engine = new SyncEngine({
       store,
       now: clock.now,
@@ -85,7 +124,12 @@ describe("SyncEngine", () => {
     });
 
     const report = await engine.sync();
-    expect(report).toMatchObject({ attempted: 3, accepted: 1, retryable: 1, rejected: 1 });
+    expect(report).toMatchObject({
+      attempted: 3,
+      accepted: 1,
+      retryable: 1,
+      rejected: 1,
+    });
     expect((await store.getRecord("A"))?.status).toBe("synced");
     expect((await store.getRecord("B"))?.status).toBe("pending");
     expect((await store.getRecord("C"))?.status).toBe("rejected");
@@ -99,7 +143,10 @@ describe("SyncEngine", () => {
     const outbox = new Outbox({ store, newId: idGen });
     await outbox.capture({ kind: "observation", operation: "w", payload: {} });
     await outbox.capture({ kind: "observation", operation: "w", payload: {} });
-    const engine = new SyncEngine({ store, transport: new ScriptedTransport(() => new Error("network down")) });
+    const engine = new SyncEngine({
+      store,
+      transport: new ScriptedTransport(() => new Error("network down")),
+    });
 
     const report = await engine.sync();
     expect(report.transportFailed).toBe(true);
@@ -112,8 +159,15 @@ describe("SyncEngine", () => {
     const clock = fixedClock();
     const outbox = new Outbox({ store, now: clock.now });
     await outbox.capture({ id: "X", kind: "observation", operation: "w", payload: {} });
-    const transport = new ScriptedTransport(() => [{ id: "X", outcome: "retryable", error: "busy" }]);
-    const engine = new SyncEngine({ store, now: clock.now, transport, backoffSeconds: () => 30 });
+    const transport = new ScriptedTransport(() => [
+      { id: "X", outcome: "retryable", error: "busy" },
+    ]);
+    const engine = new SyncEngine({
+      store,
+      now: clock.now,
+      transport,
+      backoffSeconds: () => 30,
+    });
 
     await engine.sync(); // attempt 1 → retryable, next attempt in 30s
     await engine.sync(); // immediately: not due, nothing attempted
@@ -165,7 +219,11 @@ describe("scenario #1/#2 — 500-observation disconnect and replay", () => {
     const store = new InMemoryLocalStore();
     const outbox = new Outbox({ store, newId: idGen });
     for (let i = 0; i < 500; i++) {
-      await outbox.capture({ kind: "observation", operation: "weight", payload: { seq: i, kg: 200 + (i % 300) } });
+      await outbox.capture({
+        kind: "observation",
+        operation: "weight",
+        payload: { seq: i, kg: 200 + (i % 300) },
+      });
     }
     expect(await outbox.pendingCount()).toBe(500);
 
@@ -195,7 +253,12 @@ describe("scenario #1/#2 — 500-observation disconnect and replay", () => {
   it("survives an intermittent link: some batches fail, but every observation still lands", async () => {
     const store = new InMemoryLocalStore();
     const outbox = new Outbox({ store, newId: idGen });
-    for (let i = 0; i < 250; i++) await outbox.capture({ kind: "observation", operation: "weight", payload: { seq: i } });
+    for (let i = 0; i < 250; i++)
+      await outbox.capture({
+        kind: "observation",
+        operation: "weight",
+        payload: { seq: i },
+      });
 
     let round = 0;
     const transport = new ScriptedTransport((records) => {
@@ -206,7 +269,8 @@ describe("scenario #1/#2 — 500-observation disconnect and replay", () => {
     const engine = new SyncEngine({ store, transport, batchSize: 50 });
 
     // Drive until drained (syncAll stops on a failed round, so loop).
-    for (let i = 0; i < 50 && (await store.countByStatus("pending")) > 0; i++) await engine.syncAll();
+    for (let i = 0; i < 50 && (await store.countByStatus("pending")) > 0; i++)
+      await engine.syncAll();
 
     expect(await store.countByStatus("synced")).toBe(250);
     expect(await store.countByStatus("pending")).toBe(0);

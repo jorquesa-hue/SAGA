@@ -20,7 +20,10 @@ export interface ProblemDetails {
 const PROBLEM_BASE = "https://jk.example/problems/";
 
 function codeToSlug(code: string): string {
-  return code.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return code
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function toProblem(error: unknown, correlationId: string): ProblemDetails {

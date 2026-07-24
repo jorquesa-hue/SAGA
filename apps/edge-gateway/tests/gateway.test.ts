@@ -53,17 +53,35 @@ describe("FileLocalStore durability", () => {
 describe("EdgeGateway", () => {
   it("buffers readings on ingest and delivers them on flush", async () => {
     const store = new FileLocalStore(tmpFile());
-    const gateway = new EdgeGateway({ store, transport: new FakeTransport(acceptAll), gatewayId: "edge-1" });
+    const gateway = new EdgeGateway({
+      store,
+      transport: new FakeTransport(acceptAll),
+      gatewayId: "edge-1",
+    });
 
     await gateway.ingestBatch([
-      { rfid: "982A", weightKg: 305, observationId: "o1", capturedAt: "2026-07-01T10:00:00Z" },
-      { rfid: "982B", weightKg: 288, observationId: "o2", capturedAt: "2026-07-01T10:01:00Z" },
+      {
+        rfid: "982A",
+        weightKg: 305,
+        observationId: "o1",
+        capturedAt: "2026-07-01T10:00:00Z",
+      },
+      {
+        rfid: "982B",
+        weightKg: 288,
+        observationId: "o2",
+        capturedAt: "2026-07-01T10:01:00Z",
+      },
     ]);
     expect(await gateway.status(store)).toMatchObject({ buffered: 2, delivered: 0 });
 
     const report = await gateway.flush();
     expect(report.accepted).toBe(2);
-    expect(await gateway.status(store)).toMatchObject({ buffered: 0, delivered: 2, parked: 0 });
+    expect(await gateway.status(store)).toMatchObject({
+      buffered: 0,
+      delivered: 2,
+      parked: 0,
+    });
   });
 
   it("loses nothing while the upstream link is down, then drains on recovery", async () => {
@@ -84,7 +102,9 @@ describe("EdgeGateway", () => {
 
   it("parks a rejected reading for review instead of dropping it", async () => {
     const store = new FileLocalStore(tmpFile());
-    const transport = new FakeTransport((records) => records.map((r) => ({ id: r.id, outcome: "rejected", error: "unknown rfid" })));
+    const transport = new FakeTransport((records) =>
+      records.map((r) => ({ id: r.id, outcome: "rejected", error: "unknown rfid" })),
+    );
     const gateway = new EdgeGateway({ store, transport, gatewayId: "edge-1" });
     await gateway.ingest({ rfid: "BAD", weightKg: 300, observationId: "o4" });
     await gateway.flush();

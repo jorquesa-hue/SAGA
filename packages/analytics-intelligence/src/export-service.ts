@@ -88,7 +88,10 @@ export class ExportService {
   }
 
   /** Start an asynchronous export job (§27). Audited; returns pending job. */
-  async requestExport(context: TenantContext, rawInput: RequestExportInput): Promise<ExportJob> {
+  async requestExport(
+    context: TenantContext,
+    rawInput: RequestExportInput,
+  ): Promise<ExportJob> {
     const input = parse(requestExportInputSchema, rawInput);
     if (input.exportType === "animal_traceability_packet" && !input.params.animalId) {
       throw new ValidationError("animal_traceability_packet requires params.animalId");
@@ -112,9 +115,20 @@ export class ExportService {
       await client.query(
         `INSERT INTO export_job (id, tenant_id, requested_by, export_type, format, params, status, event_id)
          VALUES ($1,$2,$3,$4,$5,$6,'pending',$7)`,
-        [id, context.tenantId, actorRef(context), input.exportType, input.format, JSON.stringify(input.params), append.eventId],
+        [
+          id,
+          context.tenantId,
+          actorRef(context),
+          input.exportType,
+          input.format,
+          JSON.stringify(input.params),
+          append.eventId,
+        ],
       );
-      await this.audit(client, context, id, "requested", { exportType: input.exportType, format: input.format });
+      await this.audit(client, context, id, "requested", {
+        exportType: input.exportType,
+        format: input.format,
+      });
       return this.toJob(id, input.exportType, input.format, "pending", null, null, null);
     });
   }
@@ -128,14 +142,25 @@ export class ExportService {
     return this.authorized("read", context, async (client) => {
       const job = await this.load(client, id);
       if (job.status !== "pending") return this.rowToJob(job);
-      await client.query(`UPDATE export_job SET status = 'running', started_at = now() WHERE id = $1`, [id]);
+      await client.query(
+        `UPDATE export_job SET status = 'running', started_at = now() WHERE id = $1`,
+        [id],
+      );
 
       let content: string;
       try {
-        content = await this.assemble(client, job.export_type, job.format, job.params ?? {});
+        content = await this.assemble(
+          client,
+          job.export_type,
+          job.format,
+          job.params ?? {},
+        );
       } catch (e) {
         const message = e instanceof Error ? e.message : "assembly_failed";
-        await client.query(`UPDATE export_job SET status = 'failed', error = $2, completed_at = now() WHERE id = $1`, [id, message]);
+        await client.query(
+          `UPDATE export_job SET status = 'failed', error = $2, completed_at = now() WHERE id = $1`,
+          [id, message],
+        );
         await this.audit(client, context, id, "failed", { error: message });
         throw e instanceof Error ? e : new Error(message);
       }
@@ -163,7 +188,15 @@ export class ExportService {
         { environment: this.environment },
       );
       await this.audit(client, context, id, "completed", { checksum, byteSize });
-      return this.toJob(id, job.export_type, job.format, "completed", byteSize, checksum, job.expires_at);
+      return this.toJob(
+        id,
+        job.export_type,
+        job.format,
+        "completed",
+        byteSize,
+        checksum,
+        job.expires_at,
+      );
     });
   }
 
@@ -177,7 +210,9 @@ export class ExportService {
         return { kind: "unavailable" as const, status: job.status };
       }
       if (new Date(job.expires_at).getTime() <= Date.now()) {
-        await client.query(`UPDATE export_job SET status = 'expired' WHERE id = $1`, [id]);
+        await client.query(`UPDATE export_job SET status = 'expired' WHERE id = $1`, [
+          id,
+        ]);
         await this.audit(client, context, id, "denied_expired", {});
         return { kind: "expired" as const };
       }
@@ -194,7 +229,9 @@ export class ExportService {
     });
 
     if (outcome.kind === "unavailable") {
-      throw new ValidationError(`Export ${id} is not available for download (status ${outcome.status})`);
+      throw new ValidationError(
+        `Export ${id} is not available for download (status ${outcome.status})`,
+      );
     }
     if (outcome.kind === "expired") {
       throw new ValidationError(`Export ${id} has expired`);
@@ -203,7 +240,9 @@ export class ExportService {
   }
 
   async getExportJob(context: TenantContext, id: Uuid): Promise<ExportJob> {
-    return this.authorized("read", context, async (client) => this.rowToJob(await this.load(client, id)));
+    return this.authorized("read", context, async (client) =>
+      this.rowToJob(await this.load(client, id)),
+    );
   }
 
   async listExportJobs(context: TenantContext, status?: string): Promise<ExportJob[]> {
@@ -220,7 +259,10 @@ export class ExportService {
    * Assemble one animal's traceability packet (JK-ANI-006). Reads identity,
    * identifiers, weights, active/historic restrictions, and the event timeline.
    */
-  async buildAnimalTraceabilityPacket(client: pg.PoolClient, animalId: string): Promise<AnimalTraceabilityPacket> {
+  async buildAnimalTraceabilityPacket(
+    client: pg.PoolClient,
+    animalId: string,
+  ): Promise<AnimalTraceabilityPacket> {
     const animal = await client.query(
       `SELECT id, visual_id, species_code, breed_code, sex, birth_date, lifecycle_status FROM animal WHERE id = $1`,
       [animalId],
@@ -264,8 +306,13 @@ export class ExportService {
     params: Record<string, unknown>,
   ): Promise<string> {
     if (exportType === "animal_traceability_packet") {
-      const packet = await this.buildAnimalTraceabilityPacket(client, String(params.animalId));
-      return format === "csv" ? traceabilityToCsv(packet) : JSON.stringify(packet, null, 2);
+      const packet = await this.buildAnimalTraceabilityPacket(
+        client,
+        String(params.animalId),
+      );
+      return format === "csv"
+        ? traceabilityToCsv(packet)
+        : JSON.stringify(packet, null, 2);
     }
     if (exportType === "animal_inventory") {
       const rows = await client.query(
@@ -287,11 +334,16 @@ export class ExportService {
     const rows = await client.query(
       `SELECT id, entry_type, category, amount_minor, currency, occurred_at FROM financial_entry ORDER BY occurred_at`,
     );
-    return format === "csv" ? rowsToCsv(rows.rows as Record<string, unknown>[]) : JSON.stringify(rows.rows, null, 2);
+    return format === "csv"
+      ? rowsToCsv(rows.rows as Record<string, unknown>[])
+      : JSON.stringify(rows.rows, null, 2);
   }
 
   private async load(client: pg.PoolClient, id: string): Promise<ExportRow> {
-    const result = await client.query<ExportRow>(`SELECT * FROM export_job WHERE id = $1`, [id]);
+    const result = await client.query<ExportRow>(
+      `SELECT * FROM export_job WHERE id = $1`,
+      [id],
+    );
     if (result.rows.length === 0) throw new NotFoundError(`Export ${id} not found`);
     return result.rows[0]!;
   }
@@ -306,7 +358,14 @@ export class ExportService {
     await client.query(
       `INSERT INTO export_access_log (tenant_id, export_job_id, action, actor_type, actor_id, detail)
        VALUES ($1,$2,$3,$4,$5,$6)`,
-      [context.tenantId, exportJobId, action, context.actor.type, context.actor.id, JSON.stringify(detail)],
+      [
+        context.tenantId,
+        exportJobId,
+        action,
+        context.actor.type,
+        context.actor.id,
+        JSON.stringify(detail),
+      ],
     );
   }
 
@@ -332,7 +391,15 @@ export class ExportService {
   }
 
   private rowToJob(row: ExportRow): ExportJob {
-    return this.toJob(row.id, row.export_type, row.format, row.status, row.byte_size, row.result_checksum, row.expires_at);
+    return this.toJob(
+      row.id,
+      row.export_type,
+      row.format,
+      row.status,
+      row.byte_size,
+      row.result_checksum,
+      row.expires_at,
+    );
   }
 
   private async authorized<T>(
@@ -346,7 +413,8 @@ export class ExportService {
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

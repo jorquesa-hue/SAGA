@@ -24,7 +24,11 @@ describe.skipIf(!available)("FinanceService (integration)", () => {
     db = await createTestDatabase("jk_finance");
     identity = makeIdentityService(db);
     finance = new FinanceService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Financeira", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Financeira",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -88,7 +92,11 @@ describe.skipIf(!available)("FinanceService (integration)", () => {
   });
 
   it("tracks monthly budget variance (JK-FIN-004)", async () => {
-    await finance.setBudget(owner, { periodMonth: "2026-07", category: "fuel", planned: "5000.00" });
+    await finance.setBudget(owner, {
+      periodMonth: "2026-07",
+      category: "fuel",
+      planned: "5000.00",
+    });
     await finance.recordExpense(owner, {
       category: "fuel",
       amount: "1200.00",
@@ -102,20 +110,33 @@ describe.skipIf(!available)("FinanceService (integration)", () => {
 
   it("rejects a sale whose deductions exceed gross", async () => {
     await expect(
-      finance.recordSale(owner, { lotId: newUuid(), gross: "100.00", deductions: "150.00" }),
+      finance.recordSale(owner, {
+        lotId: newUuid(),
+        gross: "100.00",
+        deductions: "150.00",
+      }),
     ).rejects.toThrow(/negative/i);
   });
 
   it("financial entries are immutable (append-only)", async () => {
     await finance.recordExpense(owner, { category: "misc", amount: "10.00", farmId });
     await expect(
-      db.adminPool.query(`UPDATE financial_entry SET amount_minor = 1 WHERE category = 'misc'`),
+      db.adminPool.query(
+        `UPDATE financial_entry SET amount_minor = 1 WHERE category = 'misc'`,
+      ),
     ).rejects.toThrow(/append-only/);
   });
 
   it("denies a technician from recording finance (403)", async () => {
-    const invite = await identity.inviteUser(owner, { email: "tec@example.com", displayName: "Tec", role: "technician" });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "technician" });
+    const invite = await identity.inviteUser(owner, {
+      email: "tec@example.com",
+      displayName: "Tec",
+      role: "technician",
+    });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "technician",
+    });
     const tech = makeTenantContext(tenantId, invite.userId);
     await expect(
       finance.recordExpense(tech, { category: "x", amount: "1.00" }),
@@ -124,9 +145,15 @@ describe.skipIf(!available)("FinanceService (integration)", () => {
 
   it("does not leak finance across tenants", async () => {
     const lotId = newUuid();
-    await finance.recordExpense(owner, { category: "feed", amount: "500.00", allocations: [{ dimension: "lot", targetId: lotId, weight: 1 }] });
+    await finance.recordExpense(owner, {
+      category: "feed",
+      amount: "500.00",
+      allocations: [{ dimension: "lot", targetId: lotId, weight: 1 }],
+    });
     const other = await seedTenantWithOwner(identity, "Outra", "o@example.com");
-    await expect(finance.getCostForTarget(other.ownerContext, "lot", lotId)).resolves.toBe("0.00");
+    await expect(
+      finance.getCostForTarget(other.ownerContext, "lot", lotId),
+    ).resolves.toBe("0.00");
   });
 });
 

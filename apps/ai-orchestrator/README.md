@@ -10,12 +10,12 @@ evidence-bound, with confidence and provenance, pending human approval.
 - **Evidence-bound**: every finding carries the domain event ids that support
   it; a proposal with no evidence is dropped.
 - **Policy guard** (defense-in-depth): the orchestrator refuses to even
-  *propose* anything outside the safe-action allowlist — a prohibited or
+  _propose_ anything outside the safe-action allowlist — a prohibited or
   non-allowlisted category is blocked and reported, never created.
 - **Governed writes**: recommendations are created through the Phase 5
   recommendation service, which independently enforces the kill switch, the
   prohibited-autonomous-action block, and the human-approval requirement. A
-  misbehaving provider therefore *cannot* produce an autonomous action.
+  misbehaving provider therefore _cannot_ produce an autonomous action.
 - **Kill switch**: `AI_ENABLED` defaults off; with it off the orchestrator does
   no work and no recommendation is written.
 
@@ -45,6 +45,6 @@ TEST_DATABASE_ADMIN_URL=... pnpm --filter @jk/ai-orchestrator test:integration
 ```
 
 The integration suite is the safety eval: a grounded finding yields an
-evidence-bound *review* recommendation; a **rogue provider proposing euthanasia
+evidence-bound _review_ recommendation; a **rogue provider proposing euthanasia
 is blocked and nothing prohibited is ever written**; and the kill switch stops
 generation end-to-end.

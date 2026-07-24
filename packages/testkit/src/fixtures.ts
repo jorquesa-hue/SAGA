@@ -78,7 +78,9 @@ export async function countUnderTenant(
   try {
     await client.query("BEGIN");
     await client.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId ?? ""]);
-    const result = await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM ${table}`);
+    const result = await client.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM ${table}`,
+    );
     await client.query("COMMIT");
     return Number(result.rows[0]!.n);
   } finally {

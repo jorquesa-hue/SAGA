@@ -39,12 +39,24 @@ describe.skipIf(!available)("Phase 2 API — health, reproduction, lots", () => 
     const tenant = await app.inject({
       method: "POST",
       url: "/api/v1/tenants",
-      headers: { "x-dev-user-id": newUuid(), "x-dev-platform-admin": "true", "idempotency-key": newUuid() },
-      payload: { name: "Fazenda P2", owner: { email: "owner@example.com", displayName: "Owner" } },
+      headers: {
+        "x-dev-user-id": newUuid(),
+        "x-dev-platform-admin": "true",
+        "idempotency-key": newUuid(),
+      },
+      payload: {
+        name: "Fazenda P2",
+        owner: { email: "owner@example.com", displayName: "Owner" },
+      },
     });
     tenantId = tenant.json().tenant.id;
     ownerId = tenant.json().ownerUserId;
-    const farm = await app.inject({ method: "POST", url: "/api/v1/farms", headers: cmd(), payload: { name: "Sede", areaHa: 100 } });
+    const farm = await app.inject({
+      method: "POST",
+      url: "/api/v1/farms",
+      headers: cmd(),
+      payload: { name: "Sede", areaHa: 100 },
+    });
     farmId = farm.json().id;
     const animal = await app.inject({
       method: "POST",
@@ -73,7 +85,11 @@ describe.skipIf(!available)("Phase 2 API — health, reproduction, lots", () => 
     });
     expect(treat.statusCode).toBe(201);
 
-    const sale = await app.inject({ method: "GET", url: `/api/v1/animals/${dam}/sale-clear`, headers: owner() });
+    const sale = await app.inject({
+      method: "GET",
+      url: `/api/v1/animals/${dam}/sale-clear`,
+      headers: owner(),
+    });
     expect(sale.json().clear).toBe(false);
 
     const restrictionId = sale.json().activeRestrictions[0].id;
@@ -85,7 +101,11 @@ describe.skipIf(!available)("Phase 2 API — health, reproduction, lots", () => 
     });
     expect(override.statusCode).toBe(200);
 
-    const sale2 = await app.inject({ method: "GET", url: `/api/v1/animals/${dam}/sale-clear`, headers: owner() });
+    const sale2 = await app.inject({
+      method: "GET",
+      url: `/api/v1/animals/${dam}/sale-clear`,
+      headers: owner(),
+    });
     expect(sale2.json().clear).toBe(true);
   });
 
@@ -94,7 +114,11 @@ describe.skipIf(!available)("Phase 2 API — health, reproduction, lots", () => 
       method: "POST",
       url: "/api/v1/reproduction/services",
       headers: cmd(),
-      payload: { damId: dam, method: "ai", serviceDate: new Date(Date.now() - 283 * 86400000).toISOString() },
+      payload: {
+        damId: dam,
+        method: "ai",
+        serviceDate: new Date(Date.now() - 283 * 86400000).toISOString(),
+      },
     });
     expect(svc.statusCode).toBe(201);
 
@@ -102,7 +126,12 @@ describe.skipIf(!available)("Phase 2 API — health, reproduction, lots", () => 
       method: "POST",
       url: "/api/v1/reproduction/pregnancy-checks",
       headers: cmd(),
-      payload: { damId: dam, serviceId: svc.json().id, checkDate: new Date().toISOString(), result: "positive" },
+      payload: {
+        damId: dam,
+        serviceId: svc.json().id,
+        checkDate: new Date().toISOString(),
+        result: "positive",
+      },
     });
 
     const status = await app.inject({
@@ -132,7 +161,11 @@ describe.skipIf(!available)("Phase 2 API — health, reproduction, lots", () => 
     });
     expect(add.json().results[0].status).toBe("added");
 
-    const members = await app.inject({ method: "GET", url: `/api/v1/lots/${lotId}/members`, headers: owner() });
+    const members = await app.inject({
+      method: "GET",
+      url: `/api/v1/lots/${lotId}/members`,
+      headers: owner(),
+    });
     expect(members.json().items).toContain(dam);
   });
 

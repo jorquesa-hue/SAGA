@@ -34,7 +34,9 @@ export function registerIdentityRoutes(
   app.post("/api/v1/tenants", async (request: FastifyRequest, reply: FastifyReply) => {
     const idempotencyKey = requireIdempotencyKey(request);
     if (!request.principal.isPlatformAdmin) {
-      throw new ForbiddenError("Creating a tenant requires platform administrator rights");
+      throw new ForbiddenError(
+        "Creating a tenant requires platform administrator rights",
+      );
     }
     const body = (request.body ?? {}) as Record<string, unknown>;
     const result = await service.createTenant(
@@ -46,7 +48,11 @@ export function registerIdentityRoutes(
         correlationId: request.correlationId,
         idempotencyKey: `tenant-create:${idempotencyKey}`,
       },
-      { type: "user", id: request.principal.userId, display: request.principal.displayName },
+      {
+        type: "user",
+        id: request.principal.userId,
+        display: request.principal.displayName,
+      },
     );
     reply.status(201);
     return { tenant: result.tenant, ownerUserId: result.ownerUserId };
@@ -108,23 +114,26 @@ export function registerIdentityRoutes(
 
   // --- Users / invitations -------------------------------------------------
 
-  app.post("/api/v1/users/invitations", async (request: FastifyRequest, reply: FastifyReply) => {
-    const idempotencyKey = requireIdempotencyKey(request);
-    const context = buildTenantContext(
-      request.principal,
-      tenantIdHeader(request),
-      request.correlationId,
-    );
-    const body = (request.body ?? {}) as Record<string, unknown>;
-    const result = await service.inviteUser(context, {
-      email: body.email as string,
-      displayName: body.displayName as string,
-      role: body.role as never,
-      idempotencyKey: `user-invite:${idempotencyKey}`,
-    });
-    reply.status(201);
-    return result;
-  });
+  app.post(
+    "/api/v1/users/invitations",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const idempotencyKey = requireIdempotencyKey(request);
+      const context = buildTenantContext(
+        request.principal,
+        tenantIdHeader(request),
+        request.correlationId,
+      );
+      const body = (request.body ?? {}) as Record<string, unknown>;
+      const result = await service.inviteUser(context, {
+        email: body.email as string,
+        displayName: body.displayName as string,
+        role: body.role as never,
+        idempotencyKey: `user-invite:${idempotencyKey}`,
+      });
+      reply.status(201);
+      return result;
+    },
+  );
 
   app.get("/api/v1/users", async (request: FastifyRequest) => {
     const context = buildTenantContext(

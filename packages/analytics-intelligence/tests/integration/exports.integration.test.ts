@@ -1,4 +1,9 @@
-import { newUuid, ValidationError, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  newUuid,
+  ValidationError,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -49,7 +54,11 @@ describe.skipIf(!available)("ExportService (integration)", () => {
     db = await createTestDatabase("jk_exports");
     identity = makeIdentityService(db);
     exports = new ExportService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Export", "owner@example.com");
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Export",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
     const farm = await identity.createFarm(owner, { name: "Sede", areaHa: 100 });
@@ -86,7 +95,11 @@ describe.skipIf(!available)("ExportService (integration)", () => {
       `SELECT action FROM export_access_log WHERE export_job_id = $1 ORDER BY recorded_at`,
       [job.id],
     );
-    expect(audit.rows.map((r) => r.action)).toEqual(["requested", "completed", "downloaded"]);
+    expect(audit.rows.map((r) => r.action)).toEqual([
+      "requested",
+      "completed",
+      "downloaded",
+    ]);
   });
 
   it("renders a CSV traceability packet (JK-ANI-006)", async () => {
@@ -104,16 +117,29 @@ describe.skipIf(!available)("ExportService (integration)", () => {
 
   it("requires animalId for a traceability packet", async () => {
     await expect(
-      exports.requestExport(owner, { exportType: "animal_traceability_packet", format: "json", params: {} }),
+      exports.requestExport(owner, {
+        exportType: "animal_traceability_packet",
+        format: "json",
+        params: {},
+      }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("refuses to download an expired export and marks it expired (§27)", async () => {
-    const job = await exports.requestExport(owner, { exportType: "animal_inventory", format: "json", params: {} });
+    const job = await exports.requestExport(owner, {
+      exportType: "animal_inventory",
+      format: "json",
+      params: {},
+    });
     await exports.processExport(owner, job.id);
     // Force expiry in the past.
-    await db.adminPool.query(`UPDATE export_job SET expires_at = now() - interval '1 hour' WHERE id = $1`, [job.id]);
-    await expect(exports.downloadExport(owner, job.id)).rejects.toBeInstanceOf(ValidationError);
+    await db.adminPool.query(
+      `UPDATE export_job SET expires_at = now() - interval '1 hour' WHERE id = $1`,
+      [job.id],
+    );
+    await expect(exports.downloadExport(owner, job.id)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
     const after = await exports.getExportJob(owner, job.id);
     expect(after.status).toBe("expired");
   });
@@ -121,7 +147,11 @@ describe.skipIf(!available)("ExportService (integration)", () => {
   it("denies export to a caller with no active membership", async () => {
     const stranger = makeTenantContext(tenantId, newUuid());
     await expect(
-      exports.requestExport(stranger, { exportType: "animal_inventory", format: "json", params: {} }),
+      exports.requestExport(stranger, {
+        exportType: "animal_inventory",
+        format: "json",
+        params: {},
+      }),
     ).rejects.toBeInstanceOf(AnalyticsForbiddenError);
   });
 

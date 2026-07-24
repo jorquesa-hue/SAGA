@@ -1,5 +1,14 @@
-import { createTenantContext, newUuid, type TenantContext, type Uuid } from "@jk/domain-kernel";
-import { DeliveryDispatcher, type DispatchResult, type WebhookTransport } from "./delivery-dispatcher.js";
+import {
+  createTenantContext,
+  newUuid,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
+import {
+  DeliveryDispatcher,
+  type DispatchResult,
+  type WebhookTransport,
+} from "./delivery-dispatcher.js";
 
 /**
  * Per-tenant webhook dispatch scheduler (§51). Webhook tables are RLS-FORCEd
@@ -39,11 +48,18 @@ export class WebhookDispatchScheduler {
 
   /** Run one dispatch pass across all listed tenants. Never throws per tenant. */
   async runOnce(): Promise<SchedulerTickResult> {
-    const totals: DispatchResult = { claimed: 0, delivered: 0, retried: 0, deadLettered: 0 };
+    const totals: DispatchResult = {
+      claimed: 0,
+      delivered: 0,
+      retried: 0,
+      deadLettered: 0,
+    };
     const tenantIds = await this.listTenantIds();
     for (const tenantId of tenantIds) {
       try {
-        const result = await this.dispatcher.dispatchDue(this.serviceContext(tenantId), { nowMs: this.clock() });
+        const result = await this.dispatcher.dispatchDue(this.serviceContext(tenantId), {
+          nowMs: this.clock(),
+        });
         totals.claimed += result.claimed;
         totals.delivered += result.delivered;
         totals.retried += result.retried;
@@ -73,7 +89,11 @@ export function createDispatchScheduler(params: {
   clock?: () => number;
 }): WebhookDispatchScheduler {
   return new WebhookDispatchScheduler({
-    dispatcher: buildDispatcher({ appPool: params.appPool, transport: params.transport, batchSize: params.batchSize }),
+    dispatcher: buildDispatcher({
+      appPool: params.appPool,
+      transport: params.transport,
+      batchSize: params.batchSize,
+    }),
     listTenantIds: params.listTenantIds,
     clock: params.clock,
   });
@@ -84,5 +104,9 @@ function buildDispatcher(opts: {
   transport: WebhookTransport;
   batchSize?: number;
 }): DeliveryDispatcher {
-  return new DeliveryDispatcher({ appPool: opts.appPool, transport: opts.transport, batchSize: opts.batchSize });
+  return new DeliveryDispatcher({
+    appPool: opts.appPool,
+    transport: opts.transport,
+    batchSize: opts.batchSize,
+  });
 }

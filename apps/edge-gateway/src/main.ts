@@ -13,7 +13,15 @@ import { EdgeGateway, type DeviceReading } from "./gateway.js";
  * endpoints and graceful shutdown match the other services.
  */
 function log(level: string, msg: string, extra: Record<string, unknown> = {}): void {
-  process.stdout.write(JSON.stringify({ level, time: new Date().toISOString(), service: "jk-edge-gateway", msg, ...extra }) + "\n");
+  process.stdout.write(
+    JSON.stringify({
+      level,
+      time: new Date().toISOString(),
+      service: "jk-edge-gateway",
+      msg,
+      ...extra,
+    }) + "\n",
+  );
 }
 
 async function main(): Promise<void> {
@@ -46,9 +54,12 @@ async function main(): Promise<void> {
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = req.url?.split("?")[0] ?? "/";
-    if (req.method === "GET" && url === "/health/live") return json(res, 200, { status: "live" });
-    if (req.method === "GET" && url === "/health/ready") return json(res, 200, { status: "ready" });
-    if (req.method === "GET" && url === "/status") return json(res, 200, await gateway.status(store));
+    if (req.method === "GET" && url === "/health/live")
+      return json(res, 200, { status: "live" });
+    if (req.method === "GET" && url === "/health/ready")
+      return json(res, 200, { status: "ready" });
+    if (req.method === "GET" && url === "/status")
+      return json(res, 200, await gateway.status(store));
     if (req.method === "POST" && url === "/ingest") {
       const body = await readJson(req);
       const { id } = await gateway.ingest(body as DeviceReading);
@@ -56,13 +67,20 @@ async function main(): Promise<void> {
     }
     if (req.method === "POST" && url === "/ingest:batch") {
       const body = (await readJson(req)) as { readings?: DeviceReading[] };
-      const { ids } = await gateway.ingestBatch(Array.isArray(body.readings) ? body.readings : []);
+      const { ids } = await gateway.ingestBatch(
+        Array.isArray(body.readings) ? body.readings : [],
+      );
       return json(res, 202, { buffered: ids.length, ids });
     }
     json(res, 404, { status: "not_found" });
   }
 
-  server.listen(config.PORT, () => log("info", "edge_gateway_started", { port: config.PORT, gatewayId: config.EDGE_GATEWAY_ID }));
+  server.listen(config.PORT, () =>
+    log("info", "edge_gateway_started", {
+      port: config.PORT,
+      gatewayId: config.EDGE_GATEWAY_ID,
+    }),
+  );
 
   let stopping = false;
   const shutdown = async (signal: string): Promise<void> => {

@@ -8,8 +8,15 @@ export interface AsyncState<T> {
 }
 
 /** Run an async loader on mount / when `deps` change; surface a friendly error. */
-export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncState<T> & { reload: () => void } {
-  const [state, setState] = useState<AsyncState<T>>({ loading: true, data: null, error: null });
+export function useAsync<T>(
+  loader: () => Promise<T>,
+  deps: unknown[],
+): AsyncState<T> & { reload: () => void } {
+  const [state, setState] = useState<AsyncState<T>>({
+    loading: true,
+    data: null,
+    error: null,
+  });
   const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
@@ -21,7 +28,12 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[]): AsyncSta
       })
       .catch((e: unknown) => {
         if (!active) return;
-        const message = e instanceof ApiError ? `${e.code}: ${e.message}` : e instanceof Error ? e.message : "Unknown error";
+        const message =
+          e instanceof ApiError
+            ? `${e.code}: ${e.message}`
+            : e instanceof Error
+              ? e.message
+              : "Unknown error";
         setState({ loading: false, data: null, error: message });
       });
     return () => {

@@ -7,29 +7,32 @@ Tables in `database/migrations/0001-0004`. Every tenant-scoped table has RLS
 ## 0001 — core tenancy & event ledger
 
 ### `tenant`
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | `gen_random_uuid()` |
-| name | text NOT NULL | |
-| default_locale | text | default `pt-BR` |
-| default_currency | char(3) | default `BRL` |
-| status | text | CHECK active/suspended/closed |
-| created_at | timestamptz | |
+
+| Column           | Type          | Notes                         |
+| ---------------- | ------------- | ----------------------------- |
+| id               | uuid PK       | `gen_random_uuid()`           |
+| name             | text NOT NULL |                               |
+| default_locale   | text          | default `pt-BR`               |
+| default_currency | char(3)       | default `BRL`                 |
+| status           | text          | CHECK active/suspended/closed |
+| created_at       | timestamptz   |                               |
 
 RLS: visible only when `id` = active tenant.
 
 ### `farm`
-| Column | Type | Notes |
-|---|---|---|
-| id | uuid PK | |
-| tenant_id | uuid NOT NULL FK→tenant | |
-| name | text NOT NULL | UNIQUE (tenant_id, name) |
-| timezone | text | default America/Sao_Paulo |
-| area_ha | numeric(12,4) | |
+
+| Column    | Type                    | Notes                     |
+| --------- | ----------------------- | ------------------------- |
+| id        | uuid PK                 |                           |
+| tenant_id | uuid NOT NULL FK→tenant |                           |
+| name      | text NOT NULL           | UNIQUE (tenant_id, name)  |
+| timezone  | text                    | default America/Sao_Paulo |
+| area_ha   | numeric(12,4)           |                           |
 
 Composite key `(id, tenant_id)` for same-tenant FKs.
 
 ### `animal`
+
 `id`, `tenant_id` FK, `farm_id` (FK `(farm_id, tenant_id)`), `visual_id`
 (UNIQUE per tenant), `species_code`, `breed_code`, `sex` CHECK
 female/male/unknown, `birth_date`, `birth_date_precision` CHECK, `lifecycle_status`
@@ -37,6 +40,7 @@ CHECK planned/active/quarantined/sold/deceased/missing/transferred, `version`,
 `created_at`. Composite key `(id, tenant_id)`.
 
 ### `animal_identifier`
+
 `id`, `tenant_id`, `animal_id` (FK `(animal_id, tenant_id)`), `identifier_type`
 CHECK rfid/visual/official/legacy, `identifier_value`, `valid_from`, `valid_to`
 (CHECK `> valid_from`), `assigned_by`. **Partial unique index** on
@@ -44,6 +48,7 @@ CHECK rfid/visual/official/legacy, `identifier_value`, `valid_from`, `valid_to`
 JK-DOM-003 (unique among active assignments).
 
 ### `domain_event` (append-only ledger)
+
 `event_id` text PK (ULID), `tenant_id`, `farm_id`, `event_type`, `schema_version`
 (>0), `aggregate_type`, `aggregate_id`, `aggregate_version` (>0), `occurred_at`,
 `recorded_at`, `actor_type`, `actor_id`, `source_channel`, `correlation_id`,
@@ -53,6 +58,7 @@ concurrency) and `(tenant_id, idempotency_key)` (dedupe). Trigger
 `domain_event_no_update` forbids UPDATE/DELETE (JK-DOM-006).
 
 ### `outbox_message`
+
 `message_id` text PK, `tenant_id`, `event_id` UNIQUE FK→domain_event, `subject`,
 `envelope` jsonb, `created_at`, `published_at`, `publish_attempts`, `last_error`.
 Partial index on unpublished rows. `jk_worker` has scoped cross-tenant policy.

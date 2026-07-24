@@ -11,7 +11,8 @@ import { buildTenantContext } from "../request-context.js";
 function idem(request: FastifyRequest): string {
   const v = request.headers["idempotency-key"];
   const key = Array.isArray(v) ? v[0] : v;
-  if (!key) throw new MissingHeaderError("Idempotency-Key header is required for this command");
+  if (!key)
+    throw new MissingHeaderError("Idempotency-Key header is required for this command");
   return key;
 }
 function tenant(request: FastifyRequest): string | undefined {
@@ -26,7 +27,8 @@ export function registerPhase4Routes(
   farmIntelligence: FarmIntelligenceService,
   identity: IdentityService,
 ): void {
-  const ctx = (r: FastifyRequest) => buildTenantContext(r.principal, tenant(r), r.correlationId);
+  const ctx = (r: FastifyRequest) =>
+    buildTenantContext(r.principal, tenant(r), r.correlationId);
 
   /** The tenant's base currency — money is recorded and reported in it. */
   const baseCurrency = async (context: TenantContext): Promise<string> =>
@@ -37,7 +39,10 @@ export function registerPhase4Routes(
    * base currency. A body that names a different currency is rejected (no FX);
    * an absent currency is filled in with the base so the row is explicit.
    */
-  const withBaseCurrency = (body: Record<string, unknown>, base: string): Record<string, unknown> => {
+  const withBaseCurrency = (
+    body: Record<string, unknown>,
+    base: string,
+  ): Record<string, unknown> => {
     const provided = body.currency;
     if (typeof provided === "string" && provided.toUpperCase() !== base) {
       throw new CurrencyMismatchError(
@@ -51,24 +56,42 @@ export function registerPhase4Routes(
   app.post("/api/v1/finance/expenses", async (r: FastifyRequest, reply: FastifyReply) => {
     const key = idem(r);
     const context = ctx(r);
-    const body = withBaseCurrency((r.body ?? {}) as Record<string, unknown>, await baseCurrency(context));
-    const out = await finance.recordExpense(context, { ...body, idempotencyKey: `exp:${key}` } as never);
+    const body = withBaseCurrency(
+      (r.body ?? {}) as Record<string, unknown>,
+      await baseCurrency(context),
+    );
+    const out = await finance.recordExpense(context, {
+      ...body,
+      idempotencyKey: `exp:${key}`,
+    } as never);
     reply.status(201);
     return out;
   });
   app.post("/api/v1/finance/revenue", async (r: FastifyRequest, reply: FastifyReply) => {
     const key = idem(r);
     const context = ctx(r);
-    const body = withBaseCurrency((r.body ?? {}) as Record<string, unknown>, await baseCurrency(context));
-    const out = await finance.recordRevenue(context, { ...body, idempotencyKey: `rev:${key}` } as never);
+    const body = withBaseCurrency(
+      (r.body ?? {}) as Record<string, unknown>,
+      await baseCurrency(context),
+    );
+    const out = await finance.recordRevenue(context, {
+      ...body,
+      idempotencyKey: `rev:${key}`,
+    } as never);
     reply.status(201);
     return out;
   });
   app.post("/api/v1/sales", async (r: FastifyRequest, reply: FastifyReply) => {
     const key = idem(r);
     const context = ctx(r);
-    const body = withBaseCurrency((r.body ?? {}) as Record<string, unknown>, await baseCurrency(context));
-    const out = await finance.recordSale(context, { ...body, idempotencyKey: `sale:${key}` } as never);
+    const body = withBaseCurrency(
+      (r.body ?? {}) as Record<string, unknown>,
+      await baseCurrency(context),
+    );
+    const out = await finance.recordSale(context, {
+      ...body,
+      idempotencyKey: `sale:${key}`,
+    } as never);
     reply.status(201);
     return out;
   });
@@ -82,7 +105,10 @@ export function registerPhase4Routes(
   app.post("/api/v1/finance/budgets", async (r: FastifyRequest, reply: FastifyReply) => {
     idem(r);
     const context = ctx(r);
-    const body = withBaseCurrency((r.body ?? {}) as Record<string, unknown>, await baseCurrency(context));
+    const body = withBaseCurrency(
+      (r.body ?? {}) as Record<string, unknown>,
+      await baseCurrency(context),
+    );
     await finance.setBudget(context, body as never);
     reply.status(204);
   });
@@ -90,28 +116,45 @@ export function registerPhase4Routes(
     const q = r.query as { periodMonth: string; category: string };
     const context = ctx(r);
     const currency = await baseCurrency(context);
-    const variance = await finance.getBudgetVariance(context, q.periodMonth, q.category, currency);
+    const variance = await finance.getBudgetVariance(
+      context,
+      q.periodMonth,
+      q.category,
+      currency,
+    );
     return { ...variance, currency };
   });
 
   // --- Genetics ---
-  app.post("/api/v1/genetics/evaluations", async (r: FastifyRequest, reply: FastifyReply) => {
-    const key = idem(r);
-    const out = await genetics.importEvaluation(ctx(r), { ...(r.body as object), idempotencyKey: `eval:${key}` } as never);
-    reply.status(201);
-    return out;
-  });
-  app.post("/api/v1/genetics/selection-indexes", async (r: FastifyRequest, reply: FastifyReply) => {
-    idem(r);
-    const out = await genetics.defineSelectionIndex(ctx(r), (r.body ?? {}) as never);
-    reply.status(201);
-    return out;
-  });
-  app.post("/api/v1/genetics/selection-indexes/:indexId/rank", async (r: FastifyRequest) => {
-    const { indexId } = r.params as { indexId: string };
-    const body = (r.body ?? {}) as { animalIds?: string[] };
-    return { items: await genetics.rankAnimals(ctx(r), indexId, body.animalIds ?? []) };
-  });
+  app.post(
+    "/api/v1/genetics/evaluations",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      const key = idem(r);
+      const out = await genetics.importEvaluation(ctx(r), {
+        ...(r.body as object),
+        idempotencyKey: `eval:${key}`,
+      } as never);
+      reply.status(201);
+      return out;
+    },
+  );
+  app.post(
+    "/api/v1/genetics/selection-indexes",
+    async (r: FastifyRequest, reply: FastifyReply) => {
+      idem(r);
+      const out = await genetics.defineSelectionIndex(ctx(r), (r.body ?? {}) as never);
+      reply.status(201);
+      return out;
+    },
+  );
+  app.post(
+    "/api/v1/genetics/selection-indexes/:indexId/rank",
+    async (r: FastifyRequest) => {
+      const { indexId } = r.params as { indexId: string };
+      const body = (r.body ?? {}) as { animalIds?: string[] };
+      return { items: await genetics.rankAnimals(ctx(r), indexId, body.animalIds ?? []) };
+    },
+  );
   app.get("/api/v1/genetics/progress", async (r: FastifyRequest) => {
     const q = r.query as { trait: string };
     return { items: await genetics.geneticProgress(ctx(r), q.trait) };

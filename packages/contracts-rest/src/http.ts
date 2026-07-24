@@ -41,7 +41,8 @@ function defaultNewId(): string {
   if (c?.randomUUID) return c.randomUUID();
   // Deterministic-length fallback (non-crypto) — only hit in exotic runtimes.
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
-    const r = (Math.floor((performance.now?.() ?? 0) * 1000) + Math.floor(Date.now() / 7)) % 16;
+    const r =
+      (Math.floor((performance.now?.() ?? 0) * 1000) + Math.floor(Date.now() / 7)) % 16;
     const v = ch === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
@@ -86,7 +87,12 @@ export class HttpClient {
     this.newId = config.newId ?? defaultNewId;
   }
 
-  async request<T>(method: string, path: string, body?: unknown, options: RequestOptions = {}): Promise<Response<T>> {
+  async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    options: RequestOptions = {},
+  ): Promise<Response<T>> {
     const correlationId = options.correlationId ?? this.newId();
     const headers: Record<string, string> = {
       accept: "application/json",
@@ -135,7 +141,9 @@ export class HttpClient {
   }
 }
 
-function buildQuery(query?: Record<string, string | number | boolean | undefined>): string {
+function buildQuery(
+  query?: Record<string, string | number | boolean | undefined>,
+): string {
   if (!query) return "";
   const parts: string[] = [];
   for (const [k, v] of Object.entries(query)) {

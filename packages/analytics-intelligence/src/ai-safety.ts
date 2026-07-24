@@ -33,7 +33,10 @@ export interface ActionAssessment {
   highImpact: boolean;
 }
 
-export function assessAction(category: string, riskClass: "low" | "medium" | "high"): ActionAssessment {
+export function assessAction(
+  category: string,
+  riskClass: "low" | "medium" | "high",
+): ActionAssessment {
   const prohibited = PROHIBITED_AUTONOMOUS.has(category);
   const highImpact = prohibited || riskClass === "high" || !SAFE_ACTIONS.has(category);
   return { category, prohibited, highImpact };

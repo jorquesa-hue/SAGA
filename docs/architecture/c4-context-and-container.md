@@ -53,15 +53,15 @@ flowchart TB
 
 ## Implemented today vs specified
 
-| Container | Spec (§30) | Status |
-|---|---|---|
-| API | NestJS/Fastify | **implemented** on Fastify (ADR-013) |
-| Worker/sync | outbox relay, projections | **implemented** (relay + event-stats projector) |
-| PostgreSQL + PostGIS | system of record | **implemented** (migrations 0001-0004, RLS) |
-| NATS JetStream | durable events | **implemented** publisher (LogPublisher default; NATS when configured) |
-| Redis | cache/locks | specified; not yet used |
-| Object storage (S3/MinIO) | attachments | specified; compose service present |
-| Web / Mobile / Edge / AI | apps | **planned** (Volume XII phases) |
+| Container                 | Spec (§30)                | Status                                                                 |
+| ------------------------- | ------------------------- | ---------------------------------------------------------------------- |
+| API                       | NestJS/Fastify            | **implemented** on Fastify (ADR-013)                                   |
+| Worker/sync               | outbox relay, projections | **implemented** (relay + event-stats projector)                        |
+| PostgreSQL + PostGIS      | system of record          | **implemented** (migrations 0001-0004, RLS)                            |
+| NATS JetStream            | durable events            | **implemented** publisher (LogPublisher default; NATS when configured) |
+| Redis                     | cache/locks               | specified; not yet used                                                |
+| Object storage (S3/MinIO) | attachments               | specified; compose service present                                     |
+| Web / Mobile / Edge / AI  | apps                      | **planned** (Volume XII phases)                                        |
 
 ## Command → event → projection flow (§31.1)
 

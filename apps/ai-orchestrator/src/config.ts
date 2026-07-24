@@ -26,6 +26,8 @@ export const orchestratorConfigSchema = z.object({
 
 export type OrchestratorConfig = z.infer<typeof orchestratorConfigSchema>;
 
-export function loadOrchestratorConfig(env: NodeJS.ProcessEnv = process.env): OrchestratorConfig {
+export function loadOrchestratorConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): OrchestratorConfig {
   return loadConfig(orchestratorConfigSchema, env);
 }

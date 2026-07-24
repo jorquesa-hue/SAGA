@@ -28,12 +28,12 @@ LIMIT 50;
 
 ## Common causes & actions
 
-| Cause | Action |
-|---|---|
-| Worker not running | start `apps/worker`; check `/health/ready` on its port (default 4100) |
-| Broker unreachable (NATS) | verify `NATS_URL`; the relay records `last_error` and retries; fix connectivity |
-| Poison message (validation) | inspect `envelope`; the relay isolates per-message via SAVEPOINT so one bad row does not block the batch |
-| Throughput | raise `OUTBOX_BATCH_SIZE` / lower `POLL_INTERVAL_MS`; scale worker replicas (SKIP LOCKED makes this safe) |
+| Cause                       | Action                                                                                                    |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Worker not running          | start `apps/worker`; check `/health/ready` on its port (default 4100)                                     |
+| Broker unreachable (NATS)   | verify `NATS_URL`; the relay records `last_error` and retries; fix connectivity                           |
+| Poison message (validation) | inspect `envelope`; the relay isolates per-message via SAVEPOINT so one bad row does not block the batch  |
+| Throughput                  | raise `OUTBOX_BATCH_SIZE` / lower `POLL_INTERVAL_MS`; scale worker replicas (SKIP LOCKED makes this safe) |
 
 ## Replay / recovery
 

@@ -44,9 +44,19 @@ export class SearchService {
     this.appPool = options.appPool;
   }
 
-  async search(context: TenantContext, rawQuery: string, limit = 8): Promise<SearchResults> {
+  async search(
+    context: TenantContext,
+    rawQuery: string,
+    limit = 8,
+  ): Promise<SearchResults> {
     const query = (rawQuery ?? "").trim();
-    const empty: SearchResults = { query, animals: [], lots: [], paddocks: [], people: [] };
+    const empty: SearchResults = {
+      query,
+      animals: [],
+      lots: [],
+      paddocks: [],
+      people: [],
+    };
     if (query.length < 1) return empty;
     const pattern = likePattern(query);
     const cap = Math.min(Math.max(limit, 1), 25);
@@ -57,7 +67,12 @@ export class SearchService {
       if (!decision.allowed) return { ok: false as const, decision };
 
       // Animals: by visual id or by any assigned identifier value (RFID/official).
-      const animals = await client.query<{ id: string; visual_id: string; lifecycle_status: string; identifier_value: string | null }>(
+      const animals = await client.query<{
+        id: string;
+        visual_id: string;
+        lifecycle_status: string;
+        identifier_value: string | null;
+      }>(
         `SELECT a.id, a.visual_id, a.lifecycle_status,
                 (SELECT ai.identifier_value FROM animal_identifier ai
                   WHERE ai.animal_id = a.id AND ai.identifier_value ILIKE $1 LIMIT 1) AS identifier_value
@@ -77,7 +92,12 @@ export class SearchService {
         [pattern, cap],
       );
       // People: only this tenant's members (join through the RLS-scoped table).
-      const people = await client.query<{ id: string; display_name: string; email: string; role: string }>(
+      const people = await client.query<{
+        id: string;
+        display_name: string;
+        email: string;
+        role: string;
+      }>(
         `SELECT u.id, u.display_name, u.email, m.role
            FROM tenant_membership m
            JOIN user_account u ON u.id = m.user_id
@@ -94,16 +114,34 @@ export class SearchService {
           type: "animal",
           id: r.id,
           label: r.visual_id,
-          sublabel: r.identifier_value ? `RFID ${r.identifier_value}` : r.lifecycle_status,
+          sublabel: r.identifier_value
+            ? `RFID ${r.identifier_value}`
+            : r.lifecycle_status,
         })),
-        lots: lots.rows.map((r) => ({ type: "lot", id: r.id, label: r.name, sublabel: r.status })),
-        paddocks: paddocks.rows.map((r) => ({ type: "paddock", id: r.id, label: r.name, sublabel: r.status })),
-        people: people.rows.map((r) => ({ type: "person", id: r.id, label: r.display_name, sublabel: `${r.role} · ${r.email}` })),
+        lots: lots.rows.map((r) => ({
+          type: "lot",
+          id: r.id,
+          label: r.name,
+          sublabel: r.status,
+        })),
+        paddocks: paddocks.rows.map((r) => ({
+          type: "paddock",
+          id: r.id,
+          label: r.name,
+          sublabel: r.status,
+        })),
+        people: people.rows.map((r) => ({
+          type: "person",
+          id: r.id,
+          label: r.display_name,
+          sublabel: `${r.role} · ${r.email}`,
+        })),
       };
       return { ok: true as const, results };
     });
 
-    if (!outcome.ok) throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.results;
   }
 }

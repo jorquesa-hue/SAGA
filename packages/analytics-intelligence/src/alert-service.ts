@@ -1,11 +1,7 @@
 import { NotFoundError, type TenantContext, type Uuid } from "@jk/domain-kernel";
 import { withTenantTransaction } from "@jk/database";
 import type pg from "pg";
-import {
-  decide,
-  loadCallerMemberships,
-  type AnalyticsAction,
-} from "./authorization.js";
+import { decide, loadCallerMemberships, type AnalyticsAction } from "./authorization.js";
 import { AnalyticsForbiddenError } from "./errors.js";
 
 /**
@@ -52,7 +48,10 @@ export class AlertService {
   }
 
   /** Scan current state and raise any missing alerts (idempotent, deduped). */
-  async generateAlerts(context: TenantContext, options: GenerateOptions = {}): Promise<GenerateResult> {
+  async generateAlerts(
+    context: TenantContext,
+    options: GenerateOptions = {},
+  ): Promise<GenerateResult> {
     const nucleus = options.nucleusCadenceDays ?? 30;
     const beef = options.beefCadenceDays ?? 60;
     const window = options.calvingWindowDays ?? 21;
@@ -133,7 +132,8 @@ export class AlertService {
         withdrawal: withdrawal.rowCount ?? 0,
         weighingOverdue: weighing.rowCount ?? 0,
         calvingDue: calving.rowCount ?? 0,
-        total: (withdrawal.rowCount ?? 0) + (weighing.rowCount ?? 0) + (calving.rowCount ?? 0),
+        total:
+          (withdrawal.rowCount ?? 0) + (weighing.rowCount ?? 0) + (calving.rowCount ?? 0),
       };
     });
   }
@@ -187,7 +187,8 @@ export class AlertService {
             (context.actor.type === "user" ? "$3" : "NULL")
           : "";
       const params: unknown[] = [alertId, status];
-      if (status === "acknowledged" && context.actor.type === "user") params.push(context.actor.id);
+      if (status === "acknowledged" && context.actor.type === "user")
+        params.push(context.actor.id);
       const result = await client.query(
         `UPDATE alert SET status = $2 ${setResolved} ${setAck} WHERE id = $1 RETURNING id`,
         params,
@@ -207,7 +208,8 @@ export class AlertService {
       if (!decision.allowed) return { ok: false as const, decision };
       return { ok: true as const, value: await fn(client) };
     });
-    if (!outcome.ok) throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
+    if (!outcome.ok)
+      throw new AnalyticsForbiddenError(outcome.decision.reason, outcome.decision);
     return outcome.value;
   }
 }

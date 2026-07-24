@@ -1,4 +1,9 @@
-import { createTenantContext, newUuid, type TenantContext, type Uuid } from "@jk/domain-kernel";
+import {
+  createTenantContext,
+  newUuid,
+  type TenantContext,
+  type Uuid,
+} from "@jk/domain-kernel";
 import {
   createTestDatabase,
   databaseAvailable,
@@ -9,7 +14,10 @@ import {
 } from "@jk/testkit";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { WebhookService } from "../../src/webhook-service.js";
-import { ConnectorRegistryService, WEBHOOK_ADAPTER } from "../../src/connector-registry.js";
+import {
+  ConnectorRegistryService,
+  WEBHOOK_ADAPTER,
+} from "../../src/connector-registry.js";
 import { createDispatchScheduler } from "../../src/dispatch-scheduler.js";
 import {
   DeliveryDispatcher,
@@ -43,7 +51,10 @@ function serviceContext(tenantId: Uuid): TenantContext {
 class FakeTransport implements WebhookTransport {
   last: WebhookTransportRequest | null = null;
   requests: WebhookTransportRequest[] = [];
-  constructor(public statusCode: number = 200, public throwError = false) {}
+  constructor(
+    public statusCode: number = 200,
+    public throwError = false,
+  ) {}
   async deliver(request: WebhookTransportRequest): Promise<WebhookTransportResponse> {
     this.last = request;
     this.requests.push(request);
@@ -67,8 +78,15 @@ describe.skipIf(!available)("Webhooks + connectors (integration)", () => {
     db = await createTestDatabase("jk_webhooks");
     identity = makeIdentityService(db);
     webhooks = new WebhookService({ appPool: db.appPool, environment: "test" });
-    connectors = new ConnectorRegistryService({ appPool: db.appPool, environment: "test" });
-    const seeded = await seedTenantWithOwner(identity, "Fazenda Webhooks", "owner@example.com");
+    connectors = new ConnectorRegistryService({
+      appPool: db.appPool,
+      environment: "test",
+    });
+    const seeded = await seedTenantWithOwner(
+      identity,
+      "Fazenda Webhooks",
+      "owner@example.com",
+    );
     tenantId = seeded.tenantId;
     owner = seeded.ownerContext;
   }, 90_000);
@@ -94,21 +112,37 @@ describe.skipIf(!available)("Webhooks + connectors (integration)", () => {
 
   it("rejects a subscription to a non-allowlisted family (§51)", async () => {
     await expect(
-      webhooks.subscribe(owner, { url: "https://example.com/h", eventFamilies: ["identity"] }),
+      webhooks.subscribe(owner, {
+        url: "https://example.com/h",
+        eventFamilies: ["identity"],
+      }),
     ).rejects.toBeInstanceOf(EventFamilyNotAllowedError);
   });
 
   it("denies subscription management to a non-management role (technician)", async () => {
-    const invite = await identity.inviteUser(owner, { email: "tec@example.com", displayName: "Tec", role: "technician" });
-    await identity.activateMembership(owner, { userId: invite.userId, role: "technician" });
+    const invite = await identity.inviteUser(owner, {
+      email: "tec@example.com",
+      displayName: "Tec",
+      role: "technician",
+    });
+    await identity.activateMembership(owner, {
+      userId: invite.userId,
+      role: "technician",
+    });
     const tech = makeTenantContext(tenantId, invite.userId);
     await expect(
-      webhooks.subscribe(tech, { url: "https://example.com/h", eventFamilies: ["animal"] }),
+      webhooks.subscribe(tech, {
+        url: "https://example.com/h",
+        eventFamilies: ["animal"],
+      }),
     ).rejects.toBeInstanceOf(IntegrationForbiddenError);
   });
 
   it("rotates the secret with an overlap window (§51)", async () => {
-    const sub = await webhooks.subscribe(owner, { url: "https://example.com/rot", eventFamilies: ["finance"] });
+    const sub = await webhooks.subscribe(owner, {
+      url: "https://example.com/rot",
+      eventFamilies: ["finance"],
+    });
     const rotated = await webhooks.rotateSecret(owner, sub.id);
     expect(rotated.secret).not.toBe(sub.secret);
 
@@ -158,17 +192,29 @@ describe.skipIf(!available)("Webhooks + connectors (integration)", () => {
   });
 
   it("fans an event out only to subscriptions of the matching family", async () => {
-    const animalSub = await webhooks.subscribe(owner, { url: "https://example.com/a", eventFamilies: ["animal"] });
-    await webhooks.subscribe(owner, { url: "https://example.com/f", eventFamilies: ["finance"] });
+    const animalSub = await webhooks.subscribe(owner, {
+      url: "https://example.com/a",
+      eventFamilies: ["animal"],
+    });
+    await webhooks.subscribe(owner, {
+      url: "https://example.com/f",
+      eventFamilies: ["finance"],
+    });
 
     const enqueued = await webhooks.enqueueForEvent(serviceContext(tenantId), {
       eventId: newUuid(),
       eventType: "animal.animal_registered.v1",
-      payload: { animalId: newUuid(), registrationCode: "BR-001", secretNote: "should be dropped" },
+      payload: {
+        animalId: newUuid(),
+        registrationCode: "BR-001",
+        secretNote: "should be dropped",
+      },
     });
     expect(enqueued).toBeGreaterThanOrEqual(1);
 
-    const deliveries = await webhooks.listDeliveries(owner, { subscriptionId: animalSub.id });
+    const deliveries = await webhooks.listDeliveries(owner, {
+      subscriptionId: animalSub.id,
+    });
     expect(deliveries.length).toBe(1);
     expect(deliveries[0]!.eventFamily).toBe("animal");
   });
@@ -183,7 +229,10 @@ describe.skipIf(!available)("Webhooks + connectors (integration)", () => {
   });
 
   it("delivers on a 2xx ack with a verifiable signature and minimized body", async () => {
-    const sub = await webhooks.subscribe(owner, { url: "https://example.com/ok", eventFamilies: ["genetics"] });
+    const sub = await webhooks.subscribe(owner, {
+      url: "https://example.com/ok",
+      eventFamilies: ["genetics"],
+    });
     const eventId = newUuid();
     await webhooks.enqueueForEvent(serviceContext(tenantId), {
       eventId,
@@ -193,7 +242,9 @@ describe.skipIf(!available)("Webhooks + connectors (integration)", () => {
 
     const transport = new FakeTransport(200);
     const dispatcher = new DeliveryDispatcher({ appPool: db.appPool, transport });
-    const result = await dispatcher.dispatchDue(serviceContext(tenantId), { nowMs: 2_100_000_000_000 });
+    const result = await dispatcher.dispatchDue(serviceContext(tenantId), {
+      nowMs: 2_100_000_000_000,
+    });
     expect(result.delivered).toBeGreaterThanOrEqual(1);
 
     // The receiver can verify the signature with the subscription secret.
@@ -214,7 +265,10 @@ describe.skipIf(!available)("Webhooks + connectors (integration)", () => {
   });
 
   it("retries with backoff and dead-letters after max attempts, then replays (§51)", async () => {
-    const sub = await webhooks.subscribe(owner, { url: "https://example.com/fail", eventFamilies: ["pasture"] });
+    const sub = await webhooks.subscribe(owner, {
+      url: "https://example.com/fail",
+      eventFamilies: ["pasture"],
+    });
     const eventId = newUuid();
     await webhooks.enqueueForEvent(serviceContext(tenantId), {
       eventId,
@@ -251,14 +305,20 @@ describe.skipIf(!available)("Webhooks + connectors (integration)", () => {
 
     // And a subsequent success delivers it.
     const okTransport = new FakeTransport(200);
-    const okDispatcher = new DeliveryDispatcher({ appPool: db.appPool, transport: okTransport });
+    const okDispatcher = new DeliveryDispatcher({
+      appPool: db.appPool,
+      transport: okTransport,
+    });
     await okDispatcher.dispatchDue(serviceContext(tenantId), { nowMs: clock });
     const after = await webhooks.listDeliveries(owner, { subscriptionId: sub.id });
     expect(after[0]!.status).toBe("delivered");
   });
 
   it("dispatches per tenant via the scheduler with a pluggable tenant source", async () => {
-    const sub = await webhooks.subscribe(owner, { url: "https://example.com/sched", eventFamilies: ["asset"] });
+    const sub = await webhooks.subscribe(owner, {
+      url: "https://example.com/sched",
+      eventFamilies: ["asset"],
+    });
     await webhooks.enqueueForEvent(serviceContext(tenantId), {
       eventId: newUuid(),
       eventType: "asset.maintenance_due.v1",

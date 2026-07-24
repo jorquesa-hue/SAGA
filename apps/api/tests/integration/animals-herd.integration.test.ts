@@ -41,12 +41,24 @@ describe.skipIf(!available)("Animal + Herd API (integration)", () => {
     const tenant = await app.inject({
       method: "POST",
       url: "/api/v1/tenants",
-      headers: { "x-dev-user-id": newUuid(), "x-dev-platform-admin": "true", "idempotency-key": newUuid() },
-      payload: { name: "Fazenda API", owner: { email: "owner@example.com", displayName: "Owner" } },
+      headers: {
+        "x-dev-user-id": newUuid(),
+        "x-dev-platform-admin": "true",
+        "idempotency-key": newUuid(),
+      },
+      payload: {
+        name: "Fazenda API",
+        owner: { email: "owner@example.com", displayName: "Owner" },
+      },
     });
     tenantId = tenant.json().tenant.id;
     ownerId = tenant.json().ownerUserId;
-    const farm = await app.inject({ method: "POST", url: "/api/v1/farms", headers: cmd(), payload: { name: "Sede", areaHa: 100 } });
+    const farm = await app.inject({
+      method: "POST",
+      url: "/api/v1/farms",
+      headers: cmd(),
+      payload: { name: "Sede", areaHa: 100 },
+    });
     farmId = farm.json().id;
   }, 90_000);
 
@@ -66,15 +78,29 @@ describe.skipIf(!available)("Animal + Herd API (integration)", () => {
     animalId = res.json().id;
     expect(res.json().version).toBe(1);
 
-    const get = await app.inject({ method: "GET", url: `/api/v1/animals/${animalId}`, headers: owner() });
+    const get = await app.inject({
+      method: "GET",
+      url: `/api/v1/animals/${animalId}`,
+      headers: owner(),
+    });
     expect(get.statusCode).toBe(200);
     expect(get.json().visualId).toBe("BR-API-1");
   });
 
   it("returns the animal timeline", async () => {
-    const res = await app.inject({ method: "GET", url: `/api/v1/animals/${animalId}/timeline`, headers: owner() });
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/v1/animals/${animalId}/timeline`,
+      headers: owner(),
+    });
     expect(res.statusCode).toBe(200);
-    expect(res.json().items.some((e: { eventType: string }) => e.eventType === "animal.animal_registered.v1")).toBe(true);
+    expect(
+      res
+        .json()
+        .items.some(
+          (e: { eventType: string }) => e.eventType === "animal.animal_registered.v1",
+        ),
+    ).toBe(true);
   });
 
   it("runs a handling session: start, record weight, weights, ADG, close", async () => {
@@ -115,13 +141,25 @@ describe.skipIf(!available)("Animal + Herd API (integration)", () => {
       },
     });
 
-    const weights = await app.inject({ method: "GET", url: `/api/v1/animals/${animalId}/weights`, headers: owner() });
+    const weights = await app.inject({
+      method: "GET",
+      url: `/api/v1/animals/${animalId}/weights`,
+      headers: owner(),
+    });
     expect(weights.json().items).toHaveLength(2);
 
-    const adg = await app.inject({ method: "GET", url: `/api/v1/animals/${animalId}/adg`, headers: owner() });
+    const adg = await app.inject({
+      method: "GET",
+      url: `/api/v1/animals/${animalId}/adg`,
+      headers: owner(),
+    });
     expect(adg.json().adgKgPerDay).toBeCloseTo(1.0, 1);
 
-    const close = await app.inject({ method: "POST", url: `/api/v1/handling-sessions/${sessionId}/close`, headers: cmd() });
+    const close = await app.inject({
+      method: "POST",
+      url: `/api/v1/handling-sessions/${sessionId}/close`,
+      headers: cmd(),
+    });
     expect(close.statusCode).toBe(200);
     expect(close.json().summary.accepted).toBe(2);
   });
@@ -133,9 +171,30 @@ describe.skipIf(!available)("Animal + Herd API (integration)", () => {
       headers: owner(),
       payload: {
         observations: [
-          { observationId: "b1", gatewayId: "gw", capturedAt: new Date().toISOString(), value: 305, unit: "kg", rfid: "982000000000501" },
-          { observationId: "b2", gatewayId: "gw", capturedAt: new Date().toISOString(), value: 0, unit: "kg", rfid: "982000000000501" },
-          { observationId: "b3", gatewayId: "gw", capturedAt: new Date().toISOString(), value: 288, unit: "kg", rfid: "982000000009999" },
+          {
+            observationId: "b1",
+            gatewayId: "gw",
+            capturedAt: new Date().toISOString(),
+            value: 305,
+            unit: "kg",
+            rfid: "982000000000501",
+          },
+          {
+            observationId: "b2",
+            gatewayId: "gw",
+            capturedAt: new Date().toISOString(),
+            value: 0,
+            unit: "kg",
+            rfid: "982000000000501",
+          },
+          {
+            observationId: "b3",
+            gatewayId: "gw",
+            capturedAt: new Date().toISOString(),
+            value: 288,
+            unit: "kg",
+            rfid: "982000000009999",
+          },
         ],
       },
     });
@@ -163,7 +222,11 @@ describe.skipIf(!available)("Animal + Herd API (integration)", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/v1/animals",
-      headers: { "x-dev-user-id": auditorId, "x-tenant-id": tenantId, "idempotency-key": newUuid() },
+      headers: {
+        "x-dev-user-id": auditorId,
+        "x-tenant-id": tenantId,
+        "idempotency-key": newUuid(),
+      },
       payload: { farmId, visualId: "BR-NO", sex: "female" },
     });
     expect(res.statusCode).toBe(403);
