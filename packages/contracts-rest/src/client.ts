@@ -103,6 +103,9 @@ export class JkPlatformClient {
       this.post<Record<string, unknown>>("/api/v1/finance/revenue", body, o),
     recordSale: (body: Record<string, unknown>, o?: RequestOptions) => this.post<Record<string, unknown>>("/api/v1/sales", body, o),
     lotMargin: (lotId: string, o?: RequestOptions) => this.get<Record<string, unknown>>(`/api/v1/lots/${lotId}/margin`, o),
+    setBudget: (body: Record<string, unknown>, o?: RequestOptions) => this.post<void>("/api/v1/finance/budgets", body, o),
+    budgetVariance: (periodMonth: string, category: string, o?: RequestOptions) =>
+      this.get<Record<string, unknown>>("/api/v1/finance/budget-variance", { ...o, query: { ...o?.query, periodMonth, category } }),
   };
 
   // -- Identity & tenancy --
