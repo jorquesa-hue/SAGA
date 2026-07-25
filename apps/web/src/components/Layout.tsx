@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LOCALES, useI18n } from "../i18n/index.js";
 import { useSession } from "../session.js";
 import { TenantSettingsLoader } from "./TenantSettingsLoader.js";
+import { Mark } from "./Mark.js";
 
 const NAV = [
   { to: "/", key: "nav.dashboard", end: true },
@@ -37,7 +38,10 @@ export function Layout(): JSX.Element {
     <div className="app">
       <TenantSettingsLoader />
       <header className="topbar">
-        <span className="brand">SAGA</span>
+        <span className="brand">
+          <Mark size={22} title="SAGA" />
+          SAGA
+        </span>
         <nav className="nav">
           {NAV.map((item) => (
             <NavLink

@@ -13,7 +13,10 @@ import { useAsync } from "../use-async.js";
 export function Recommendations(): JSX.Element {
   const client = useClient();
   const { t, td } = useI18n();
-  const { loading, data, error, reload } = useAsync(() => client.recommendations.list("pending"), []);
+  const { loading, data, error, reload } = useAsync(
+    () => client.recommendations.list("pending"),
+    [],
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<Record<string, string>>({});
 
@@ -46,15 +49,28 @@ export function Recommendations(): JSX.Element {
           <li className="card" key={rec.id}>
             <div className="card-head">
               <strong>{rec.proposedActionCategory}</strong>
-              <span className={`badge risk-${rec.riskClass ?? "low"}`}>{td(rec.riskClass ?? "low")}</span>
-              {rec.prohibited && <span className="badge prohibited">{t("rec.prohibited")}</span>}
-              {rec.highImpact && !rec.prohibited && <span className="badge high">{t("rec.highImpact")}</span>}
+              <span className={`badge risk-${rec.riskClass ?? "low"}`}>
+                {td(rec.riskClass ?? "low")}
+              </span>
+              {rec.prohibited && (
+                <span className="badge prohibited">{t("rec.prohibited")}</span>
+              )}
+              {rec.highImpact && !rec.prohibited && (
+                <span className="badge high">{t("rec.highImpact")}</span>
+              )}
             </div>
             <p className="muted">
-              {t("rec.confidence", { pct: Math.round(rec.confidence * 100), n: rec.evidenceEventIds.length })}
+              {t("rec.confidence", {
+                pct: Math.round(rec.confidence * 100),
+                n: rec.evidenceEventIds.length,
+              })}
             </p>
             <div className="card-actions">
-              <button type="button" disabled={rec.prohibited || busy === rec.id} onClick={() => void approve(rec)}>
+              <button
+                type="button"
+                disabled={rec.prohibited || busy === rec.id}
+                onClick={() => void approve(rec)}
+              >
                 {t("rec.approve")}
               </button>
               {note[rec.id] && <span className="hint">{note[rec.id]}</span>}

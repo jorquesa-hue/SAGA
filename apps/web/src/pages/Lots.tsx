@@ -40,11 +40,17 @@ export function Lots(): JSX.Element {
       .split(/[\s,]+/)
       .map((s) => s.trim())
       .filter(Boolean);
-    void add.run(() => client.lots.addAnimals(addLotId, ids), t("lots.addedMsg", { n: ids.length }));
+    void add.run(
+      () => client.lots.addAnimals(addLotId, ids),
+      t("lots.addedMsg", { n: ids.length }),
+    );
   };
 
   const moveLot = (): void => {
-    void move.run(() => client.lots.move({ lotId: moveLotId, paddockId }), t("lots.movedMsg"));
+    void move.run(
+      () => client.lots.move({ lotId: moveLotId, paddockId }),
+      t("lots.movedMsg"),
+    );
   };
 
   return (
@@ -58,7 +64,12 @@ export function Lots(): JSX.Element {
             if (lookupId.trim()) navigate(`/lots/${lookupId.trim()}`);
           }}
         >
-          <input value={lookupId} onChange={(e) => setLookupId(e.target.value)} placeholder={t("lots.lookupPlaceholder")} style={{ minWidth: 220 }} />
+          <input
+            value={lookupId}
+            onChange={(e) => setLookupId(e.target.value)}
+            placeholder={t("lots.lookupPlaceholder")}
+            style={{ minWidth: 220 }}
+          />
           <button type="submit" disabled={!lookupId.trim()}>
             {t("lots.open")}
           </button>
@@ -68,7 +79,12 @@ export function Lots(): JSX.Element {
       <div className="form">
         <h3>{t("lots.createTitle")}</h3>
         <Field label={t("lots.farmId")} value={farmId} onChange={setFarmId} />
-        <Field label={t("lots.name")} value={name} onChange={setName} placeholder={t("lots.namePlaceholder")} />
+        <Field
+          label={t("lots.name")}
+          value={name}
+          onChange={setName}
+          placeholder={t("lots.namePlaceholder")}
+        />
         <SelectField
           label={t("lots.purpose")}
           value={purpose}
@@ -80,7 +96,11 @@ export function Lots(): JSX.Element {
             { value: "quarantine", label: t("lots.purposeQuarantine") },
           ]}
         />
-        <button type="button" disabled={create.busy || !farmId || !name} onClick={createLot}>
+        <button
+          type="button"
+          disabled={create.busy || !farmId || !name}
+          onClick={createLot}
+        >
           {t("lots.create")}
         </button>
         <FormMessage state={create} />
@@ -95,7 +115,11 @@ export function Lots(): JSX.Element {
         <h3>{t("lots.addTitle")}</h3>
         <Field label={t("lots.lotId")} value={addLotId} onChange={setAddLotId} />
         <Field label={t("lots.animalIds")} value={animalIds} onChange={setAnimalIds} />
-        <button type="button" disabled={add.busy || !addLotId || !animalIds} onClick={addAnimals}>
+        <button
+          type="button"
+          disabled={add.busy || !addLotId || !animalIds}
+          onClick={addAnimals}
+        >
           {t("lots.add")}
         </button>
         <FormMessage state={add} />
@@ -105,7 +129,11 @@ export function Lots(): JSX.Element {
         <h3>{t("lots.moveTitle")}</h3>
         <Field label={t("lots.lotId")} value={moveLotId} onChange={setMoveLotId} />
         <Field label={t("lots.paddockId")} value={paddockId} onChange={setPaddockId} />
-        <button type="button" disabled={move.busy || !moveLotId || !paddockId} onClick={moveLot}>
+        <button
+          type="button"
+          disabled={move.busy || !moveLotId || !paddockId}
+          onClick={moveLot}
+        >
           {t("lots.move")}
         </button>
         <FormMessage state={move} />

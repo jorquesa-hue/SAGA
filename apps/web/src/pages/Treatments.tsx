@@ -29,7 +29,9 @@ export function Treatments(): JSX.Element {
           ...(dose ? { dose: Number(dose), doseUnit } : {}),
           ...(withdrawalDays ? { withdrawalDays: Number(withdrawalDays) } : {}),
         }),
-      Number(withdrawalDays) > 0 ? t("treatments.recordedWithRestriction") : t("treatments.recorded"),
+      Number(withdrawalDays) > 0
+        ? t("treatments.recordedWithRestriction")
+        : t("treatments.recorded"),
     );
   };
 
@@ -39,7 +41,12 @@ export function Treatments(): JSX.Element {
         <h2>{t("treatments.title")}</h2>
       </div>
       <div className="form">
-        <Field label={t("treatments.animalId")} value={animalId} onChange={setAnimalId} placeholder={t("treatments.animalPlaceholder")} />
+        <Field
+          label={t("treatments.animalId")}
+          value={animalId}
+          onChange={setAnimalId}
+          placeholder={t("treatments.animalPlaceholder")}
+        />
         <SelectField
           label={t("treatments.kind")}
           value={kind}
@@ -49,12 +56,36 @@ export function Treatments(): JSX.Element {
             { value: "vaccination", label: t("treatments.kindVaccination") },
           ]}
         />
-        <Field label={t("treatments.product")} value={productName} onChange={setProductName} placeholder={t("treatments.productPlaceholder")} />
-        <Field label={t("treatments.dose")} value={dose} onChange={setDose} placeholder={t("treatments.dosePlaceholder")} type="number" />
+        <Field
+          label={t("treatments.product")}
+          value={productName}
+          onChange={setProductName}
+          placeholder={t("treatments.productPlaceholder")}
+        />
+        <Field
+          label={t("treatments.dose")}
+          value={dose}
+          onChange={setDose}
+          placeholder={t("treatments.dosePlaceholder")}
+          type="number"
+        />
         <Field label={t("treatments.doseUnit")} value={doseUnit} onChange={setDoseUnit} />
-        <Field label={t("treatments.withdrawal")} value={withdrawalDays} onChange={setWithdrawalDays} type="number" />
-        <Field label={t("treatments.administeredAt")} value={administeredAt} onChange={setAdministeredAt} />
-        <button type="button" disabled={cmd.busy || !animalId || !productName} onClick={submit}>
+        <Field
+          label={t("treatments.withdrawal")}
+          value={withdrawalDays}
+          onChange={setWithdrawalDays}
+          type="number"
+        />
+        <Field
+          label={t("treatments.administeredAt")}
+          value={administeredAt}
+          onChange={setAdministeredAt}
+        />
+        <button
+          type="button"
+          disabled={cmd.busy || !animalId || !productName}
+          onClick={submit}
+        >
           {t("treatments.submit")}
         </button>
         <FormMessage state={cmd} />

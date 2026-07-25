@@ -9,7 +9,8 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
  * the operator signed in.
  */
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:4000";
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:4000";
 const STORAGE_KEY = "jk.session.v1";
 
 export interface Session {
@@ -58,7 +59,11 @@ function defaultClient(session: Session): JkPlatformClient {
   });
 }
 
-export function SessionProvider({ children, clientFactory, initialSession }: SessionProviderProps): JSX.Element {
+export function SessionProvider({
+  children,
+  clientFactory,
+  initialSession,
+}: SessionProviderProps): JSX.Element {
   const [session, setSession] = useState<Session | null>(() =>
     initialSession !== undefined ? initialSession : loadStored(),
   );
@@ -94,6 +99,7 @@ export function useSession(): SessionContextValue {
 /** The authenticated client, or throws — for use inside guarded routes. */
 export function useClient(): JkPlatformClient {
   const { client } = useSession();
-  if (!client) throw new Error("No authenticated client; render inside a RequireSession route");
+  if (!client)
+    throw new Error("No authenticated client; render inside a RequireSession route");
   return client;
 }

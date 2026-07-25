@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout.js";
 import { Alerts } from "./pages/Alerts.js";
 import { AnimalDetail } from "./pages/AnimalDetail.js";
+import { TraceabilityRecord } from "./pages/TraceabilityRecord.js";
 import { Animals } from "./pages/Animals.js";
 import { Budgets } from "./pages/Budgets.js";
 import { Dashboard } from "./pages/Dashboard.js";
@@ -38,6 +39,7 @@ export function App(): JSX.Element {
         <Route path="search" element={<SearchResults />} />
         <Route path="animals" element={<Animals />} />
         <Route path="animals/:id" element={<AnimalDetail />} />
+        <Route path="animals/:id/record" element={<TraceabilityRecord />} />
         <Route path="weighing" element={<Weighing />} />
         <Route path="treatments" element={<Treatments />} />
         <Route path="reproduction" element={<Reproduction />} />

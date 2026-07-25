@@ -94,7 +94,11 @@ function detectHeaders(csv: string): string[] {
     .filter(Boolean);
 }
 
-function UploadStep({ onReady }: { onReady: (job: ImportJob, headers: string[]) => void }): JSX.Element {
+function UploadStep({
+  onReady,
+}: {
+  onReady: (job: ImportJob, headers: string[]) => void;
+}): JSX.Element {
   const client = useClient();
   const { t } = useI18n();
   const cmd = useCommand();
@@ -104,7 +108,12 @@ function UploadStep({ onReady }: { onReady: (job: ImportJob, headers: string[]) 
 
   const submit = (): void => {
     void cmd.run(async () => {
-      const uploaded = await client.imports.upload({ importType: "animals", content, filename, ...(farmId ? { farmId } : {}) });
+      const uploaded = await client.imports.upload({
+        importType: "animals",
+        content,
+        filename,
+        ...(farmId ? { farmId } : {}),
+      });
       const parsed = await client.imports.parse(uploaded.id);
       onReady(parsed, detectHeaders(content));
     }, t("imports.uploadMsg"));
@@ -120,12 +129,28 @@ function UploadStep({ onReady }: { onReady: (job: ImportJob, headers: string[]) 
           onChange={(e) => setContent(e.target.value)}
           rows={8}
           placeholder={"tag,gender,breed,born\nBR-0100,female,BRANGUS,2024-05-01"}
-          style={{ fontFamily: "monospace", background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 6, padding: 8 }}
+          style={{
+            fontFamily: "monospace",
+            background: "var(--bg)",
+            color: "var(--text)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            padding: 8,
+          }}
         />
       </label>
       <Field label={t("imports.filename")} value={filename} onChange={setFilename} />
-      <Field label={t("imports.farmId")} value={farmId} onChange={setFarmId} placeholder={t("imports.farmPlaceholder")} />
-      <button type="button" disabled={cmd.busy || !content.trim() || !farmId} onClick={submit}>
+      <Field
+        label={t("imports.farmId")}
+        value={farmId}
+        onChange={setFarmId}
+        placeholder={t("imports.farmPlaceholder")}
+      />
+      <button
+        type="button"
+        disabled={cmd.busy || !content.trim() || !farmId}
+        onClick={submit}
+      >
         {t("imports.uploadBtn")}
       </button>
       <FormMessage state={cmd} />
@@ -133,7 +158,11 @@ function UploadStep({ onReady }: { onReady: (job: ImportJob, headers: string[]) 
   );
 }
 
-const TARGETS: { key: keyof AnimalImportMapping; labelKey: string; required?: boolean }[] = [
+const TARGETS: {
+  key: keyof AnimalImportMapping;
+  labelKey: string;
+  required?: boolean;
+}[] = [
   { key: "visualId", labelKey: "imports.targetVisual", required: true },
   { key: "sex", labelKey: "imports.targetSex", required: true },
   { key: "breedCode", labelKey: "imports.targetBreed" },
@@ -141,11 +170,20 @@ const TARGETS: { key: keyof AnimalImportMapping; labelKey: string; required?: bo
   { key: "rfid", labelKey: "imports.targetRfid" },
 ];
 
-function MapStep({ job, headers, onValidated }: { job: ImportJob; headers: string[]; onValidated: (p: ImportPreview) => void }): JSX.Element {
+function MapStep({
+  job,
+  headers,
+  onValidated,
+}: {
+  job: ImportJob;
+  headers: string[];
+  onValidated: (p: ImportPreview) => void;
+}): JSX.Element {
   const client = useClient();
   const { t } = useI18n();
   const cmd = useCommand();
-  const guess = (target: string): string => headers.find((h) => h.toLowerCase().includes(target.toLowerCase())) ?? "";
+  const guess = (target: string): string =>
+    headers.find((h) => h.toLowerCase().includes(target.toLowerCase())) ?? "";
   const [mapping, setMapping] = useState<Record<string, string>>({
     visualId: guess("tag") || guess("visual") || headers[0] || "",
     sex: guess("sex") || guess("gender") || "",
@@ -154,11 +192,17 @@ function MapStep({ job, headers, onValidated }: { job: ImportJob; headers: strin
     rfid: guess("rfid") || "",
   });
 
-  const options = [{ value: "", label: t("imports.noMap") }, ...headers.map((h) => ({ value: h, label: h }))];
+  const options = [
+    { value: "", label: t("imports.noMap") },
+    ...headers.map((h) => ({ value: h, label: h })),
+  ];
 
   const submit = (): void => {
     void cmd.run(async () => {
-      const clean: AnimalImportMapping = { visualId: mapping.visualId!, sex: mapping.sex! };
+      const clean: AnimalImportMapping = {
+        visualId: mapping.visualId!,
+        sex: mapping.sex!,
+      };
       if (mapping.breedCode) clean.breedCode = mapping.breedCode;
       if (mapping.birthDate) clean.birthDate = mapping.birthDate;
       if (mapping.rfid) clean.rfid = mapping.rfid;
@@ -180,7 +224,11 @@ function MapStep({ job, headers, onValidated }: { job: ImportJob; headers: strin
           options={options}
         />
       ))}
-      <button type="button" disabled={cmd.busy || !mapping.visualId || !mapping.sex} onClick={submit}>
+      <button
+        type="button"
+        disabled={cmd.busy || !mapping.visualId || !mapping.sex}
+        onClick={submit}
+      >
         {t("imports.validate")}
       </button>
       <FormMessage state={cmd} />
@@ -188,7 +236,13 @@ function MapStep({ job, headers, onValidated }: { job: ImportJob; headers: strin
   );
 }
 
-function PreviewStep({ preview, onExecuted }: { preview: ImportPreview; onExecuted: (p: ImportPreview) => void }): JSX.Element {
+function PreviewStep({
+  preview,
+  onExecuted,
+}: {
+  preview: ImportPreview;
+  onExecuted: (p: ImportPreview) => void;
+}): JSX.Element {
   const client = useClient();
   const { t, td } = useI18n();
   const cmd = useCommand();
@@ -206,8 +260,12 @@ function PreviewStep({ preview, onExecuted }: { preview: ImportPreview; onExecut
       <div className="counts">
         <span className="badge">{t("imports.total", { n: job.totalRows })}</span>
         <span className="badge risk-low">{t("imports.valid", { n: job.validRows })}</span>
-        <span className="badge risk-medium">{t("imports.duplicate", { n: job.duplicateRows })}</span>
-        <span className="badge risk-high">{t("imports.invalid", { n: job.invalidRows })}</span>
+        <span className="badge risk-medium">
+          {t("imports.duplicate", { n: job.duplicateRows })}
+        </span>
+        <span className="badge risk-high">
+          {t("imports.invalid", { n: job.invalidRows })}
+        </span>
       </div>
 
       {preview.sample.length > 0 && (
@@ -256,8 +314,14 @@ function DoneStep({ preview }: { preview: ImportPreview }): JSX.Element {
   return (
     <div>
       <div className="counts">
-        <span className="badge risk-low">{t("imports.created", { n: job.executedRows })}</span>
-        {job.failedRows > 0 && <span className="badge risk-high">{t("imports.failures", { n: job.failedRows })}</span>}
+        <span className="badge risk-low">
+          {t("imports.created", { n: job.executedRows })}
+        </span>
+        {job.failedRows > 0 && (
+          <span className="badge risk-high">
+            {t("imports.failures", { n: job.failedRows })}
+          </span>
+        )}
         <span className="badge">{t("imports.statusBadge", { s: td(job.status) })}</span>
       </div>
       {preview.sample.length > 0 && (
@@ -271,7 +335,13 @@ function DoneStep({ preview }: { preview: ImportPreview }): JSX.Element {
   );
 }
 
-function RowsTable({ rows, showServerId }: { rows: ImportPreview["sample"]; showServerId?: boolean }): JSX.Element {
+function RowsTable({
+  rows,
+  showServerId,
+}: {
+  rows: ImportPreview["sample"];
+  showServerId?: boolean;
+}): JSX.Element {
   const { t, td } = useI18n();
   return (
     <table className="grid">

@@ -4,7 +4,18 @@ import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 
-const FAMILIES = ["animal", "weight", "health", "reproduction", "herd", "inventory", "finance", "genetics", "pasture", "asset"];
+const FAMILIES = [
+  "animal",
+  "weight",
+  "health",
+  "reproduction",
+  "herd",
+  "inventory",
+  "finance",
+  "genetics",
+  "pasture",
+  "asset",
+];
 
 /**
  * Webhooks & connectors administration (§33, §51). Create allowlisted-family
@@ -64,16 +75,28 @@ export function Integrations(): JSX.Element {
 
       <h3>{t("integrations.newSubTitle")}</h3>
       <form className="inline-form" onSubmit={subscribe}>
-        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder={t("integrations.urlPlaceholder")} style={{ minWidth: 260 }} />
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder={t("integrations.urlPlaceholder")}
+          style={{ minWidth: 260 }}
+        />
         <div className="chips">
           {FAMILIES.map((f) => (
             <label key={f} className={`chip ${families.includes(f) ? "on" : ""}`}>
-              <input type="checkbox" checked={families.includes(f)} onChange={() => toggle(f)} />
+              <input
+                type="checkbox"
+                checked={families.includes(f)}
+                onChange={() => toggle(f)}
+              />
               {f}
             </label>
           ))}
         </div>
-        <button type="submit" disabled={!url.startsWith("https://") || families.length === 0}>
+        <button
+          type="submit"
+          disabled={!url.startsWith("https://") || families.length === 0}
+        >
           {t("integrations.subscribe")}
         </button>
       </form>
@@ -110,7 +133,9 @@ export function Integrations(): JSX.Element {
                   <button
                     type="button"
                     disabled={!s.active}
-                    onClick={() => void client.webhooks.deactivate(s.id).then(() => subs.reload())}
+                    onClick={() =>
+                      void client.webhooks.deactivate(s.id).then(() => subs.reload())
+                    }
                   >
                     {t("integrations.deactivate")}
                   </button>
@@ -122,7 +147,9 @@ export function Integrations(): JSX.Element {
       )}
 
       <h3>{t("integrations.deliveriesTitle")}</h3>
-      {deliveries.data && deliveries.data.items.length === 0 && <p className="muted">{t("integrations.noDeliveries")}</p>}
+      {deliveries.data && deliveries.data.items.length === 0 && (
+        <p className="muted">{t("integrations.noDeliveries")}</p>
+      )}
       {deliveries.data && deliveries.data.items.length > 0 && (
         <table className="grid">
           <thead>
@@ -138,7 +165,9 @@ export function Integrations(): JSX.Element {
               <tr key={d.id}>
                 <td>{d.eventType}</td>
                 <td>
-                  <span className={d.status === "dead_letter" ? "error" : ""}>{td(d.status)}</span>
+                  <span className={d.status === "dead_letter" ? "error" : ""}>
+                    {td(d.status)}
+                  </span>
                 </td>
                 <td>
                   {d.attempts}/{d.maxAttempts}
@@ -169,7 +198,9 @@ export function Integrations(): JSX.Element {
               </p>
             </li>
           ))}
-          {connectors.data.items.length === 0 && <p className="muted">{t("integrations.noConnectors")}</p>}
+          {connectors.data.items.length === 0 && (
+            <p className="muted">{t("integrations.noConnectors")}</p>
+          )}
         </ul>
       )}
     </section>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useI18n } from "../i18n/index.js";
 import { useSession } from "../session.js";
+import { Mark } from "../components/Mark.js";
 
 /**
  * Local dev sign-in: the operator provides the user id and active tenant id
@@ -22,7 +23,10 @@ export function SignIn(): JSX.Element {
 
   return (
     <div className="signin">
-      <h1>SAGA</h1>
+      <h1 className="brand-lockup">
+        <Mark size={40} title="SAGA" />
+        SAGA
+      </h1>
       <p className="muted">{t("signin.subtitle")}</p>
       <form onSubmit={submit}>
         <label>

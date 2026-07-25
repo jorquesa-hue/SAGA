@@ -70,7 +70,9 @@ export function hasStoredLocalePreference(): boolean {
 
 function interpolate(template: string, vars?: Record<string, string | number>): string {
   if (!vars) return template;
-  return template.replace(/\{(\w+)\}/g, (_m, k: string) => (k in vars ? String(vars[k]) : `{${k}}`));
+  return template.replace(/\{(\w+)\}/g, (_m, k: string) =>
+    k in vars ? String(vars[k]) : `{${k}}`,
+  );
 }
 
 /**
@@ -98,18 +100,25 @@ function toDate(value: unknown): Date | null {
 function buildFormatters(locale: Locale, defaultCurrency: string): Formatters {
   const tag = BCP47[locale];
   const dateFmt = new Intl.DateTimeFormat(tag, { dateStyle: "medium" });
-  const dateTimeFmt = new Intl.DateTimeFormat(tag, { dateStyle: "medium", timeStyle: "short" });
+  const dateTimeFmt = new Intl.DateTimeFormat(tag, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
   const number = (value: unknown, opts?: Intl.NumberFormatOptions): string => {
     if (value === null || value === undefined || value === "") return "—";
     const n = typeof value === "number" ? value : Number(value);
-    return Number.isFinite(n) ? new Intl.NumberFormat(tag, opts).format(n) : String(value);
+    return Number.isFinite(n)
+      ? new Intl.NumberFormat(tag, opts).format(n)
+      : String(value);
   };
 
   const currency = (value: unknown, cur: string = defaultCurrency): string => {
     if (value === null || value === undefined || value === "") return "—";
     const n = typeof value === "number" ? value : Number(value);
-    return Number.isFinite(n) ? new Intl.NumberFormat(tag, { style: "currency", currency: cur }).format(n) : String(value);
+    return Number.isFinite(n)
+      ? new Intl.NumberFormat(tag, { style: "currency", currency: cur }).format(n)
+      : String(value);
   };
 
   const date = (value: unknown): string => {
@@ -128,7 +137,10 @@ function buildFormatters(locale: Locale, defaultCurrency: string): Formatters {
     if (value === null || value === undefined) return "—";
     const d = toDate(value);
     if (d) return dateFmt.format(d);
-    if (typeof value === "number" || (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)))) {
+    if (
+      typeof value === "number" ||
+      (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)))
+    ) {
       return number(value);
     }
     return String(value);
@@ -147,7 +159,9 @@ export function I18nProvider({
   initialCurrency?: string;
 }): JSX.Element {
   const [locale, setLocaleState] = useState<Locale>(() => initialLocale ?? loadLocale());
-  const [currency, setCurrencyState] = useState<string>(() => initialCurrency ?? DEFAULT_CURRENCY);
+  const [currency, setCurrencyState] = useState<string>(
+    () => initialCurrency ?? DEFAULT_CURRENCY,
+  );
 
   const value = useMemo<I18nValue>(() => {
     const dict = messages[locale];

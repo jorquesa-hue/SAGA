@@ -6,6 +6,7 @@ import { Dashboard } from "../src/pages/Dashboard.js";
 import { I18nProvider, type Locale } from "../src/i18n/index.js";
 import { SessionProvider, type Session } from "../src/session.js";
 import { messages } from "../src/i18n/messages.js";
+import { metricLabel } from "../src/i18n/labels.js";
 
 const session: Session = { userId: "u1", tenantId: "t-1", platformAdmin: false };
 
@@ -73,16 +74,37 @@ describe("dashboard KPI labels", () => {
     }
   });
 
-  it("labels a dynamic enum group by translating both parts", async () => {
-    renderDashboard("pt-BR");
-    // herd.byStatus.{active,sold} → group label + the translated enum leaf,
-    // one tile per status the API happened to return.
-    const tiles = await screen.findAllByText(/^Rebanho por situação · /);
-    expect(tiles).toHaveLength(2);
-    const suffixes = tiles.map((n) => (n.textContent ?? "").split(" · ")[1]);
-    // Leaves are translated data, not raw enum values.
-    expect(suffixes).not.toContain("active");
-    expect(suffixes).not.toContain("sold");
+  it("renders a distribution as a chart, not one tile per category", async () => {
+    const { container } = renderDashboard("pt-BR");
+    const caption = await screen.findByText("Rebanho por situação");
+    const figure = caption.closest("figure")!;
+
+    // Both distributions render; this one has two categories.
+    expect(container.querySelectorAll("figure.dist")).toHaveLength(2);
+    expect(figure.querySelectorAll(".dist-row")).toHaveLength(2);
+
+    // Identity is carried by a translated label, never colour alone.
+    const names = [...figure.querySelectorAll(".dist-name")].map((n) => n.textContent);
+    expect(names).not.toContain("active");
+    expect(names).not.toContain("sold");
+
+    // Series colours come from the validated palette in fixed order.
+    const bars = [...figure.querySelectorAll<HTMLElement>(".dist-bar")];
+    expect(bars[0]?.style.background).toContain("--saga-series-1");
+    expect(bars[1]?.style.background).toContain("--saga-series-2");
+  });
+
+  it("still labels a dynamic enum group where one is rendered as tiles", () => {
+    // The helper backs the animal reproduction summary too, so the group path
+    // is exercised directly rather than through the dashboard's charts.
+    const t = (key: string) => (key === "x.herd.byStatus" ? "Rebanho por situação" : key);
+    const td = (v: unknown) => (v === "active" ? "Ativo" : String(v));
+    expect(metricLabel("x", "herd.byStatus.active", t, td)).toBe(
+      "Rebanho por situação · Ativo",
+    );
+    expect(metricLabel("x", "nutrition.openOrders", t, td)).toBe(
+      "Nutrition · open orders",
+    );
   });
 
   it("humanises a metric the catalogue does not know yet", async () => {

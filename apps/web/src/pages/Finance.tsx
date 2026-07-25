@@ -22,16 +22,28 @@ export function Finance(): JSX.Element {
   const submitEntry = (): void => {
     // Record the amount in the tenant's active currency so the stored subledger
     // entry is self-describing (JK-DOM-008), not silently defaulted server-side.
-    const body = { category, amount, currency, ...(counterparty ? { counterparty } : {}) };
+    const body = {
+      category,
+      amount,
+      currency,
+      ...(counterparty ? { counterparty } : {}),
+    };
     void entry.run(
-      () => (entryType === "expense" ? client.finance.recordExpense(body) : client.finance.recordRevenue(body)),
+      () =>
+        entryType === "expense"
+          ? client.finance.recordExpense(body)
+          : client.finance.recordRevenue(body),
       t("finance.entryMsg", { amount: fmt.currency(amount) }),
     );
   };
 
   const submitSale = (): void => {
-    const target = saleKind === "animal" ? { animalId: saleTarget } : { lotId: saleTarget };
-    void sale.run(() => client.finance.recordSale({ ...target, gross, currency }), t("finance.saleMsg", { amount: fmt.currency(gross) }));
+    const target =
+      saleKind === "animal" ? { animalId: saleTarget } : { lotId: saleTarget };
+    void sale.run(
+      () => client.finance.recordSale({ ...target, gross, currency }),
+      t("finance.saleMsg", { amount: fmt.currency(gross) }),
+    );
   };
 
   return (
@@ -51,10 +63,23 @@ export function Finance(): JSX.Element {
             { value: "revenue", label: t("finance.typeRevenue") },
           ]}
         />
-        <Field label={t("finance.category")} value={category} onChange={setCategory} placeholder={t("finance.categoryPlaceholder")} />
+        <Field
+          label={t("finance.category")}
+          value={category}
+          onChange={setCategory}
+          placeholder={t("finance.categoryPlaceholder")}
+        />
         <Field label={t("finance.amount")} value={amount} onChange={setAmount} />
-        <Field label={t("finance.counterparty")} value={counterparty} onChange={setCounterparty} />
-        <button type="button" disabled={entry.busy || !category || !amount} onClick={submitEntry}>
+        <Field
+          label={t("finance.counterparty")}
+          value={counterparty}
+          onChange={setCounterparty}
+        />
+        <button
+          type="button"
+          disabled={entry.busy || !category || !amount}
+          onClick={submitEntry}
+        >
           {t("finance.record")}
         </button>
         <FormMessage state={entry} />
@@ -71,9 +96,17 @@ export function Finance(): JSX.Element {
             { value: "lot", label: t("finance.targetLot") },
           ]}
         />
-        <Field label={saleKind === "animal" ? t("finance.animalId") : t("finance.lotId")} value={saleTarget} onChange={setSaleTarget} />
+        <Field
+          label={saleKind === "animal" ? t("finance.animalId") : t("finance.lotId")}
+          value={saleTarget}
+          onChange={setSaleTarget}
+        />
         <Field label={t("finance.gross")} value={gross} onChange={setGross} />
-        <button type="button" disabled={sale.busy || !saleTarget || !gross} onClick={submitSale}>
+        <button
+          type="button"
+          disabled={sale.busy || !saleTarget || !gross}
+          onClick={submitSale}
+        >
           {t("finance.recordSale")}
         </button>
         <FormMessage state={sale} />

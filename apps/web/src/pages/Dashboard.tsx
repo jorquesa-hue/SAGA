@@ -1,6 +1,8 @@
 import { useClient } from "../session.js";
 import { useAsync } from "../use-async.js";
 import { useI18n } from "../i18n/index.js";
+import { isFigure, metricLabel } from "../i18n/labels.js";
+import { Distribution } from "../components/Distribution.js";
 
 /**
  * Executive dashboard — reads the Farm Intelligence summary (§59, Phase 4).
@@ -27,28 +29,15 @@ export function Dashboard(): JSX.Element {
     return enumLabel !== String(value ?? "—") ? enumLabel : fmt.auto(value);
   };
 
-  /**
-   * A rancher reads these tiles, so they carry names rather than the API's
-   * key paths (docs/brand §2.3). The dashboard still renders whatever shape
-   * the API returns, so resolution degrades in steps instead of failing:
-   * an exact translation, then a translated group with the enum leaf
-   * appended, then a humanised key.
-   */
-  const label = (key: string): string => {
-    const exact = t(`dashboard.kpi.${key}`);
-    if (exact !== `dashboard.kpi.${key}`) return exact;
+  const label = (key: string): string => metricLabel("dashboard.kpi", key, t, td);
 
-    // Dynamic groups keyed by an enum: herd.byStatus.active, alerts.bySeverity.high.
-    const lastDot = key.lastIndexOf(".");
-    if (lastDot > 0) {
-      const group = key.slice(0, lastDot);
-      const groupLabel = t(`dashboard.kpi.${group}`);
-      if (groupLabel !== `dashboard.kpi.${group}`) {
-        return `${groupLabel} · ${td(key.slice(lastDot + 1))}`;
-      }
-    }
-    return humanize(key);
-  };
+  // A distribution is chart-shaped data: as tiles it scatters into one card
+  // per category and never shows its shape (docs/brand §3.4). Pull the known
+  // ones out and let the rest of the payload keep rendering as tiles.
+  const distributions = DISTRIBUTIONS.map((path) => ({
+    path,
+    values: pick(data as Record<string, unknown> | null, path),
+  })).filter((d) => d.values !== null);
 
   return (
     <section>
@@ -62,7 +51,7 @@ export function Dashboard(): JSX.Element {
       {error && <p className="error">{t("dashboard.error", { error })}</p>}
       {data && (
         <div className="kpi-grid">
-          {Object.entries(flatten(data)).map(([key, value]) => (
+          {Object.entries(flatten(data, "", DISTRIBUTIONS)).map(([key, value]) => (
             <div className="kpi" key={key}>
               <span className="kpi-label">{label(key)}</span>
               <span
@@ -74,42 +63,52 @@ export function Dashboard(): JSX.Element {
           ))}
         </div>
       )}
+      {distributions.length > 0 && (
+        <div className="dist-grid">
+          {distributions.map((d) => (
+            <Distribution key={d.path} title={label(d.path)} data={d.values!} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
 
 /**
- * docs/brand §3.3 reserves the monospace face for figures — identifiers,
- * weights, currency and dates — so prose like "all farms" is set in the body
- * face instead of being forced into a numeric column.
+ * Payload paths that hold a category → count map. These render as charts;
+ * everything else stays a tile.
  */
-function isFigure(value: unknown): boolean {
-  if (typeof value === "number") return true;
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value);
-}
+const DISTRIBUTIONS = ["herd.byStatus", "alerts.bySeverity"];
 
-/**
- * Last-resort label for a KPI the catalogue does not know yet:
- * `nutrition.openOrders` → `Nutrition · open orders`. Readable enough to ship
- * while the translation is added, and never a bare key path.
- */
-function humanize(key: string): string {
-  return key
-    .split(".")
-    .map((part, i) => {
-      const words = part.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
-      return i === 0 ? words.charAt(0).toUpperCase() + words.slice(1) : words;
-    })
-    .join(" · ");
+/** Reads a dotted path and returns it only if it is a category → count map. */
+function pick(
+  source: Record<string, unknown> | null,
+  path: string,
+): Record<string, number> | null {
+  let node: unknown = source;
+  for (const part of path.split(".")) {
+    if (!node || typeof node !== "object") return null;
+    node = (node as Record<string, unknown>)[part];
+  }
+  if (!node || typeof node !== "object" || Array.isArray(node)) return null;
+  const entries = Object.entries(node as Record<string, unknown>);
+  if (entries.length === 0 || !entries.every(([, v]) => typeof v === "number"))
+    return null;
+  return Object.fromEntries(entries) as Record<string, number>;
 }
 
 /** Flatten one nested level so KPI objects render as labelled tiles. */
-function flatten(obj: Record<string, unknown>, prefix = ""): Record<string, unknown> {
+function flatten(
+  obj: Record<string, unknown>,
+  prefix = "",
+  exclude: readonly string[] = [],
+): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
     const key = prefix ? `${prefix}.${k}` : k;
+    if (exclude.includes(key)) continue;
     if (v && typeof v === "object" && !Array.isArray(v)) {
-      Object.assign(out, flatten(v as Record<string, unknown>, key));
+      Object.assign(out, flatten(v as Record<string, unknown>, key, exclude));
     } else {
       out[key] = v;
     }

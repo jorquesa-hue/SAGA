@@ -30,6 +30,33 @@
   box-sizing: border-box;
 }
 
+/* docs/brand §3.3 — identifiers, weights, currency and dates are always set
+ * in the mono face with tabular figures, so columns of them line up and a
+ * seven-digit ear-tag number can be read in a corral. */
+.mono {
+  font-family: var(--saga-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* docs/brand §3.3 — display type is the expanded width, uppercase, tracked
+ * tight. Headings are the only place it appears besides the wordmark. */
+h1,
+h2 {
+  font-family: var(--saga-font-display);
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+/* Keyboard focus must be visible on the light ground: §1.6 names the
+ * technician — gloves, glare — as the reader we cannot fail. */
+:focus-visible {
+  outline: 2px solid var(--saga-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -49,13 +76,31 @@ body {
   border-bottom: 1px solid var(--border);
 }
 /* The wordmark is drawn, not typed: tracked caps per docs/brand §3.3.
- * font-stretch drives the variable width axis to Archivo Expanded. */
+ * font-stretch drives the variable width axis to Archivo Expanded.
+ * Mark and wordmark form the horizontal lockup (§3.1). */
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--saga-font-display);
   font-stretch: 125%;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;
+}
+
+/* Stacked lockup — the mark sits above the wordmark in square-ish space. */
+.brand-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--saga-font-display);
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  margin: 0 0 0.25rem;
 }
 .nav {
   display: flex;
@@ -256,8 +301,15 @@ button:disabled {
 a {
   color: var(--saga-link);
 }
+/* A back link lives inside an h2 but is navigation, not display type —
+ * opt it back out of the uppercase/expanded heading treatment. */
 .back {
   font-size: 0.85rem;
+  font-family: var(--saga-font-body);
+  font-stretch: normal;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
 }
 .inline-form {
   display: flex;
@@ -303,7 +355,11 @@ a {
 }
 h3 {
   margin: 1.5rem 0 0.5rem;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-family: var(--saga-font-display);
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .nav {
@@ -405,4 +461,242 @@ textarea {
 .locale button.on {
   border-color: var(--accent);
   color: var(--text);
+}
+
+/* ---------------------------------------------------------------------------
+ * Traceability record (docs/brand §4.2)
+ * The artefact a buyer or auditor carries away. It must look like a record,
+ * not a brochure: ruled, chronological, identifiers in the mono face, and
+ * printable on one page.
+ * ------------------------------------------------------------------------- */
+.record {
+  background: var(--panel);
+  border: 1px solid var(--rule-strong, var(--border));
+  padding: 1.5rem;
+  max-width: 46rem;
+}
+.record-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  border-bottom: 2px solid var(--text);
+  padding-bottom: 0.8rem;
+  margin-bottom: 1rem;
+}
+.record-title {
+  font-family: var(--saga-font-display);
+  font-stretch: 125%;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+.record-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.record-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.9rem;
+  margin: 0 0 1.25rem;
+}
+.record-fields dt {
+  font-family: var(--saga-font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.record-fields dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+}
+.record-h {
+  margin: 0 0 0.4rem;
+}
+.record-chain {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.record-chain li {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.record-chain li .mono {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.record-note {
+  margin: 1.1rem 0 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.button-link {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* The record is a document: print it without the console around it. */
+@media print {
+  .topbar,
+  .no-print,
+  .button-link {
+    display: none !important;
+  }
+  body,
+  .content {
+    background: #fff;
+    padding: 0;
+    margin: 0;
+  }
+  .record {
+    border: 0;
+    padding: 0;
+    max-width: none;
+  }
+  .record-chain li {
+    break-inside: avoid;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion (docs/brand §3.6) — motion confirms, never decorates.
+ * 160–240ms, ease-out, nothing bounces.
+ * ------------------------------------------------------------------------- */
+a,
+button,
+.button-link,
+.chip,
+.nav a {
+  transition:
+    background-color 180ms ease-out,
+    border-color 180ms ease-out,
+    color 180ms ease-out;
+}
+
+/* A captured value gets one stamp-down — the single moment of delight the
+ * brand allows, and it means "this is saved". */
+@keyframes saga-stamp {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.success {
+  animation: saga-stamp 200ms ease-out;
+}
+
+/* A pending offline queue pulses slowly. Never an indeterminate spinner: it
+ * reads as data loss to someone who has just captured work in a corral. */
+@keyframes saga-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.pending {
+  animation: saga-pulse 2s ease-in-out infinite;
+}
+
+/* Honoured everywhere, no exceptions (§3.6). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Icons sit on the text baseline beside their label, never alone as the
+ * only signal (docs/brand §3.5, §4.1). */
+button,
+.button-link,
+.record-h {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Categorical distribution (docs/brand §3.4)
+ * Thin marks, recessive track, direct labels, mono figures. Identity is
+ * carried by the label beside each bar, never by colour alone.
+ * ------------------------------------------------------------------------- */
+.dist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.dist {
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem;
+}
+.dist-title {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+.dist-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.dist-row {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 8rem) minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+}
+.dist-name {
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dist-track {
+  background: var(--panel-2);
+  height: 16px;
+  display: block;
+  border-radius: 2px;
+}
+.dist-bar {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+}
+.dist-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 2.5rem;
+  text-align: right;
 }
