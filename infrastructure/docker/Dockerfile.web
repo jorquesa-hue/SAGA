@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# JK Platform — web console image (Volume V). Builds the Vite SPA in the pnpm
+# SAGA — web console image (Volume V). Builds the Vite SPA in the pnpm
 # workspace, then serves the static bundle with nginx and proxies /api to the
 # API service (same-origin → no CORS needed inside the compose network).
 #

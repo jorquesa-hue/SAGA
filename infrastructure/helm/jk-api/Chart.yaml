@@ -1,7 +1,7 @@
 apiVersion: v2
 name: jk-api
 description: >-
-  JK Platform application API (NestJS modular monolith). Kubernetes baseline
+  SAGA application API (NestJS modular monolith). Kubernetes baseline
   per JK-PLT-EES-001 §76 and Appendix H.3: non-root, read-only filesystem,
   dropped capabilities, digest-pinned images, startup/readiness/liveness
   probes, default-deny network policy.
@@ -14,4 +14,4 @@ keywords:
   - api
 home: https://github.com/jorquesa/SAGA
 maintainers:
-  - name: JK Platform Engineering
+  - name: SAGA Engineering

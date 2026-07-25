@@ -1,6 +1,6 @@
 # Observability baseline
 
-Local telemetry backbone for JK Platform per **JK-PLT-EES-001 §77** and the
+Local telemetry backbone for SAGA per **JK-PLT-EES-001 §77** and the
 §30 technology baseline (OpenTelemetry, Prometheus-compatible metrics,
 structured logs).
 

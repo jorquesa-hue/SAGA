@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contracts.jk.example/json-schema/domain-event-envelope.schema.json",
-  "title": "JK Platform Domain Event Envelope",
+  "title": "SAGA Domain Event Envelope",
   "description": "Immutable domain event envelope (JK-PLT-EES-001 §39). Mirrors packages/domain-kernel/src/event-envelope.ts (eventEnvelopeSchema); the zod schema is the executable source of truth and this document is its published JSON Schema form.",
   "type": "object",
   "required": [

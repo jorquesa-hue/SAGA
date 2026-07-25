@@ -2,7 +2,7 @@
   "name": "@jk/worker",
   "version": "0.1.0",
   "private": true,
-  "description": "JK Platform worker: transactional outbox relay with pluggable publishers (NATS JetStream / in-memory) and idempotent projection consumers. \u00a731.1-\u00a731.2, \u00a777.",
+  "description": "SAGA worker: transactional outbox relay with pluggable publishers (NATS JetStream / in-memory) and idempotent projection consumers. \u00a731.1-\u00a731.2, \u00a777.",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",

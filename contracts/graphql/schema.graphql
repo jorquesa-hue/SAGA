@@ -1,4 +1,4 @@
-# JK Platform GraphQL read schema (JK-PLT-EES-001 §48, Appendix D baseline).
+# SAGA GraphQL read schema (JK-PLT-EES-001 §48, Appendix D baseline).
 #
 # GraphQL is read-first: it shares authorization and application services with
 # REST and implements no independent business logic. Types referenced but not

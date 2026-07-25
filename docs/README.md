@@ -1,6 +1,6 @@
-# JK Platform (SAGA) — Documentation
+# SAGA — Documentation
 
-Engineering documentation for the JK Platform implementation of
+Engineering documentation for the SAGA implementation of
 **JK-PLT-EES-001**. Start here.
 
 ## Map

@@ -2,7 +2,7 @@
   "name": "jk-platform",
   "private": true,
   "version": "0.1.0",
-  "description": "JK Platform (working name: SAGA) — enterprise farm operating system for livestock enterprises. Implements JK-PLT-EES-001.",
+  "description": "SAGA — enterprise farm operating system for livestock enterprises. Implements JK-PLT-EES-001.",
   "type": "module",
   "engines": {
     "node": ">=22",

@@ -20,7 +20,7 @@ import type {
 } from "./types.js";
 
 /**
- * Typed client for the JK Platform REST API (Volume VI). Groups operations by
+ * Typed client for the SAGA REST API (Volume VI). Groups operations by
  * resource; every mutating call carries an idempotency key and every call
  * propagates a correlation id and the tenant header (see HttpClient).
  */

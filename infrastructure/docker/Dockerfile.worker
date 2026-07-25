@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# JK Platform — worker image (outbox relay + idempotent projections),
+# SAGA — worker image (outbox relay + idempotent projections),
 # spec JK-PLT-EES-001 Appendix H.1 pattern.
 #
 # Build from the REPOSITORY ROOT (the pnpm workspace root):

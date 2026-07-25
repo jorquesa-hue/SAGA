@@ -1,4 +1,4 @@
-# JK Platform REST API contract (JK-PLT-EES-001 Volume VI §45-§47, Appendix C).
+# SAGA REST API contract (JK-PLT-EES-001 Volume VI §45-§47, Appendix C).
 #
 # Source of truth for the REST surface. Phase 0 adds the identity surface
 # (tenants, farms, users) on top of the Appendix C baseline (animals and
@@ -14,9 +14,9 @@
 #     a client-chosen request parameter.
 openapi: 3.1.0
 info:
-  title: JK Platform API
+  title: SAGA API
   version: 1.0.0
-  description: Command and integration API for JK Platform.
+  description: Command and integration API for SAGA.
 servers:
   - url: https://api.example.com/api/v1
 security:

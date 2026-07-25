@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# JK Platform — migrate/seed init image. Applies database/policies +
+# SAGA — migrate/seed init image. Applies database/policies +
 # database/migrations and loads the synthetic reference farm, then exits. Used
 # as a one-shot init dependency by the app services in the compose stack so a
 # single `up` brings the whole stack to a ready, seeded state.

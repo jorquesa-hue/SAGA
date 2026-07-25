@@ -1,4 +1,4 @@
-# JK Platform Terraform module contract (JK-PLT-EES-001 §75, Appendix H.4).
+# SAGA Terraform module contract (JK-PLT-EES-001 §75, Appendix H.4).
 # Inputs are validated here so every future provider binding (ADR-001)
 # inherits the same secure, validated interface.
 

@@ -1,6 +1,6 @@
 # Deployment
 
-Container images and a one-command local stack for JK Platform. All images
+Container images and a one-command local stack for SAGA. All images
 build from the **repository root** (the pnpm workspace root) and bake **no
 secrets** — configuration is injected at runtime (Appendix G).
 

@@ -21,7 +21,7 @@ $COMPOSE --profile app up -d --build
 
 cat <<'URLS'
 
-JK Platform is starting. Once healthy:
+SAGA is starting. Once healthy:
   Web console   http://localhost:8080
   API           http://localhost:4000  (health: /health/live)
   Worker        http://localhost:4100/health/live

@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Decision log for JK Platform, per **JK-PLT-EES-001 §93 (Open Architecture
+Decision log for SAGA, per **JK-PLT-EES-001 §93 (Open Architecture
 Decisions)** and the CLAUDE.md rule: _stop and create a visible blocker/ADR
 when an unresolved vendor, legal, cloud, identity, or model-provider decision
 is required._

@@ -2,7 +2,7 @@
   "name": "@jk/mobile",
   "version": "0.1.0",
   "private": true,
-  "description": "JK Platform field app (React Native, offline-first). Ships the testable device glue \u2014 an AsyncStorage LocalStore adapter, an HTTP SyncTransport to device-observations:batch, and a capture controller \u2014 plus the RN capture/queue screens (in ui/, built with the RN toolchain).",
+  "description": "SAGA field app (React Native, offline-first). Ships the testable device glue \u2014 an AsyncStorage LocalStore adapter, an HTTP SyncTransport to device-observations:batch, and a capture controller \u2014 plus the RN capture/queue screens (in ui/, built with the RN toolchain).",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

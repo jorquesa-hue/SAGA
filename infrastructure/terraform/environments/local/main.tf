@@ -1,4 +1,4 @@
-# JK Platform — local environment stack (JK-PLT-EES-001 Appendix H.4).
+# SAGA — local environment stack (JK-PLT-EES-001 Appendix H.4).
 #
 # This stack exercises the jk-platform module contract without any cloud
 # provider (ADR-001 is open; the actual local runtime is Docker Compose —
