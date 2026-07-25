@@ -13,6 +13,12 @@ export interface Finding {
   animalId?: string;
   farmId?: string | null;
   summary: string;
+  /**
+   * The facts behind the summary, as data rather than prose. The client
+   * composes the sentence in the reader's language from these
+   * (docs/brand §2.4), so they must never contain rendered text.
+   */
+  facts: Record<string, string | number>;
   /** Domain event ids that ground this finding (≥1 for a usable proposal). */
   evidenceEventIds: string[];
   severity: "low" | "medium" | "high";
@@ -21,7 +27,17 @@ export interface Finding {
 /** A proposed recommendation, before governance. */
 export interface Draft {
   agentName: string;
+  /**
+   * Rendered fallback, kept so a client that cannot resolve the key (or a row
+   * written before migration 0020) still has something to show.
+   */
   recommendationText: string;
+  /** Message catalogue key the client renders in the reader's locale. */
+  recommendationKey: string;
+  /** Facts interpolated into the key. Data only, never prose. */
+  recommendationParams: Record<string, string | number>;
+  /** Message key for the assumptions line, when there is one. */
+  assumptionsKey?: string;
   proposedActionCategory: string;
   confidence: number;
   riskClass: "low" | "medium" | "high";
@@ -59,6 +75,9 @@ export class DeterministicProvider implements ModelProvider {
         return {
           agentName: "Herd Weight Analyst",
           recommendationText: `Revisar ${f.summary} — peso abaixo do esperado; verificar sanidade e nutrição.`,
+          recommendationKey: "rec.msg.lowWeight",
+          recommendationParams: f.facts ?? {},
+          assumptionsKey: "rec.assume.recentWeights",
           proposedActionCategory: "review",
           confidence: f.severity === "high" ? 0.8 : 0.6,
           riskClass: "low",
@@ -70,6 +89,11 @@ export class DeterministicProvider implements ModelProvider {
         return {
           agentName: "Sanitary Compliance Analyst",
           recommendationText: `Não vender ${f.summary} — carência de medicamento ativa; conferir liberação antes de qualquer venda.`,
+          recommendationKey: f.facts?.clearedAfter
+            ? "rec.msg.withdrawalActiveUntil"
+            : "rec.msg.withdrawalActive",
+          recommendationParams: f.facts ?? {},
+          assumptionsKey: "rec.assume.withdrawalRestriction",
           proposedActionCategory: "review",
           confidence: 0.9,
           riskClass: "low",
@@ -81,6 +105,8 @@ export class DeterministicProvider implements ModelProvider {
         return {
           agentName: "Reproduction Analyst",
           recommendationText: `Avaliar aptidão reprodutiva e agendar cobertura: ${f.summary}.`,
+          recommendationKey: "rec.msg.reproductionGap",
+          recommendationParams: f.facts ?? {},
           proposedActionCategory: "task",
           confidence: 0.6,
           riskClass: "low",
@@ -92,6 +118,8 @@ export class DeterministicProvider implements ModelProvider {
         return {
           agentName: "Herd Coverage Analyst",
           recommendationText: `Agendar pesagem: ${f.summary}.`,
+          recommendationKey: "rec.msg.missingWeight",
+          recommendationParams: f.facts ?? {},
           proposedActionCategory: "task",
           confidence: 0.7,
           riskClass: "low",

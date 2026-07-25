@@ -10,6 +10,7 @@ const finding = (over: Partial<Finding> = {}): Finding => ({
   kind: "low_weight",
   animalId: "a-1",
   summary: "animal BR-1 (200 kg)",
+  facts: { visualId: "BR-1", weightKg: 200 },
   evidenceEventIds: ["evt-1"],
   severity: "high",
   ...over,
@@ -107,5 +108,42 @@ describe("policy guard", () => {
   it("blocks an evidence-less draft", () => {
     const { blocked } = applyPolicy([{ ...base, evidenceEventIds: [] }]);
     expect(blocked[0]!.reason).toBe("no_evidence");
+  });
+});
+
+/**
+ * docs/brand §2.4 — recommendations are read by operators in three
+ * languages, so the provider emits a message key and its facts rather than
+ * rendered prose. The prose stays as a fallback for clients that cannot
+ * resolve the key and for rows written before migration 0020.
+ */
+describe("recommendation localisation", () => {
+  it("emits a message key and data-only facts, never prose in params", () => {
+    const [draft] = new DeterministicProvider().propose([finding()]);
+    expect(draft!.recommendationKey).toBe("rec.msg.lowWeight");
+    expect(draft!.recommendationParams).toEqual({ visualId: "BR-1", weightKg: 200 });
+    for (const value of Object.values(draft!.recommendationParams)) {
+      expect(String(value)).not.toMatch(/\s(kg|animal|matriz)\b/i);
+    }
+  });
+
+  it("picks the dated withdrawal message only when a clearance date is known", () => {
+    const withDate = new DeterministicProvider().propose([
+      finding({
+        kind: "withdrawal_active",
+        facts: { visualId: "BR-2", clearedAfter: "2026-03-01" },
+      }),
+    ]);
+    expect(withDate[0]!.recommendationKey).toBe("rec.msg.withdrawalActiveUntil");
+
+    const withoutDate = new DeterministicProvider().propose([
+      finding({ kind: "withdrawal_active", facts: { visualId: "BR-2" } }),
+    ]);
+    expect(withoutDate[0]!.recommendationKey).toBe("rec.msg.withdrawalActive");
+  });
+
+  it("still carries rendered text so a client without the key can render", () => {
+    const [draft] = new DeterministicProvider().propose([finding()]);
+    expect(draft!.recommendationText.length).toBeGreaterThan(0);
   });
 });

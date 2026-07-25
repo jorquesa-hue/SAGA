@@ -51,6 +51,16 @@ export interface Animal {
 export interface Recommendation {
   id: string;
   agentName?: string;
+  /** Rendered fallback for a client that cannot resolve the key. */
+  recommendationText?: string;
+  /**
+   * Message catalogue key and its facts, so the client renders the
+   * recommendation in the reader's language (docs/brand §2.4). Absent for
+   * recommendations written before migration 0020.
+   */
+  recommendationKey?: string;
+  recommendationParams?: Record<string, string | number>;
+  assumptionsKey?: string;
   proposedActionCategory: string;
   confidence: number;
   riskClass?: string;
@@ -65,7 +75,16 @@ export interface CreateRecommendationRequest {
   modelProvider: string;
   modelVersion: string;
   promptVersion: string;
+  /** Rendered fallback for clients that cannot resolve the key. */
   recommendationText: string;
+  /**
+   * Message catalogue key and its facts. Present from migration 0020 on;
+   * absent for older recommendations, where the client renders
+   * recommendationText instead (docs/brand §2.4).
+   */
+  recommendationKey?: string;
+  recommendationParams?: Record<string, string | number>;
+  assumptionsKey?: string;
   proposedActionCategory: string;
   evidenceEventIds: string[];
   confidence: number;

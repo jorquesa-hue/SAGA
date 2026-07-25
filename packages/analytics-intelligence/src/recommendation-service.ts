@@ -43,6 +43,15 @@ export const createRecommendationInputSchema = z
     modelVersion: z.string().min(1).max(120),
     promptVersion: z.string().min(1).max(120),
     recommendationText: z.string().min(1).max(4000),
+    /**
+     * Message catalogue key plus its facts, so the client renders the
+     * recommendation in the reader's language (docs/brand §2.4). Optional:
+     * a caller that only has prose still works, and the client falls back
+     * to recommendationText.
+     */
+    recommendationKey: z.string().min(1).max(120).optional(),
+    recommendationParams: z.record(z.union([z.string(), z.number()])).default({}),
+    assumptionsKey: z.string().min(1).max(120).optional(),
     proposedActionCategory: z.string().min(1).max(60),
     proposedAction: z.record(z.unknown()).default({}),
     evidenceEventIds: z
@@ -61,7 +70,11 @@ export type CreateRecommendationInput = z.input<typeof createRecommendationInput
 export interface Recommendation {
   id: Uuid;
   agentName: string;
+  /** Rendered fallback; prefer recommendationKey where the client can. */
   recommendationText: string;
+  recommendationKey?: string;
+  recommendationParams?: Record<string, string | number>;
+  assumptionsKey?: string;
   proposedActionCategory: string;
   confidence: number;
   riskClass: string;
@@ -125,9 +138,10 @@ export class RecommendationService {
       await client.query(
         `INSERT INTO recommendation
            (id, tenant_id, farm_id, agent_name, model_provider, model_version, prompt_version,
-            recommendation_text, proposed_action_category, proposed_action, evidence_event_ids,
+            recommendation_text, recommendation_key, recommendation_params, assumptions_key,
+            proposed_action_category, proposed_action, evidence_event_ids,
             confidence, assumptions, risk_class, status, expires_at, event_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'pending',$15,$16)`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'pending',$18,$19)`,
         [
           id,
           context.tenantId,
@@ -137,6 +151,9 @@ export class RecommendationService {
           input.modelVersion,
           input.promptVersion,
           input.recommendationText,
+          input.recommendationKey ?? null,
+          JSON.stringify(input.recommendationParams ?? {}),
+          input.assumptionsKey ?? null,
           input.proposedActionCategory,
           JSON.stringify(input.proposedAction),
           input.evidenceEventIds,
@@ -265,6 +282,9 @@ export class RecommendationService {
         id: rec.id,
         agentName: rec.agent_name,
         recommendationText: rec.recommendation_text,
+        recommendationKey: rec.recommendation_key ?? undefined,
+        recommendationParams: rec.recommendation_params ?? {},
+        assumptionsKey: rec.assumptions_key ?? undefined,
         proposedActionCategory: rec.proposed_action_category,
         confidence: Number(rec.confidence),
         riskClass: rec.risk_class,
@@ -291,6 +311,9 @@ export class RecommendationService {
           id: rec.id,
           agentName: rec.agent_name,
           recommendationText: rec.recommendation_text,
+          recommendationKey: rec.recommendation_key ?? undefined,
+          recommendationParams: rec.recommendation_params ?? {},
+          assumptionsKey: rec.assumptions_key ?? undefined,
           proposedActionCategory: rec.proposed_action_category,
           confidence: Number(rec.confidence),
           riskClass: rec.risk_class,
@@ -314,6 +337,9 @@ export class RecommendationService {
       id,
       agentName: input.agentName,
       recommendationText: input.recommendationText,
+      recommendationKey: input.recommendationKey,
+      recommendationParams: input.recommendationParams,
+      assumptionsKey: input.assumptionsKey,
       proposedActionCategory: input.proposedActionCategory,
       confidence: input.confidence,
       riskClass: input.riskClass,
@@ -434,6 +460,10 @@ interface RecommendationRow {
   id: string;
   agent_name: string;
   recommendation_text: string;
+  /** NULL for rows written before migration 0020; the client falls back. */
+  recommendation_key: string | null;
+  recommendation_params: Record<string, string | number> | null;
+  assumptions_key: string | null;
   proposed_action_category: string;
   confidence: string;
   risk_class: "low" | "medium" | "high";

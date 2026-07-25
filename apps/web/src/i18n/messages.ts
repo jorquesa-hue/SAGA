@@ -46,6 +46,19 @@ export const messages: Record<Locale, Record<string, string>> = {
     "dashboard.loading": "Carregando…",
     "dashboard.error": "Não foi possível carregar o painel — {error}",
     "dashboard.itemsCount": "{n} itens",
+    "rec.msg.lowWeight":
+      "Revisar o animal {visualId} ({weightKg} kg) — peso abaixo do esperado; verificar sanidade e nutrição.",
+    "rec.msg.withdrawalActive":
+      "Não vender o animal {visualId} — carência de medicamento ativa; conferir a liberação antes de qualquer venda.",
+    "rec.msg.withdrawalActiveUntil":
+      "Não vender o animal {visualId} — carência ativa até {clearedAfter}; conferir a liberação antes de qualquer venda.",
+    "rec.msg.reproductionGap":
+      "Avaliar a aptidão reprodutiva da matriz {visualId} e agendar cobertura.",
+    "rec.msg.missingWeight":
+      "Agendar pesagem do animal {visualId} — nenhuma pesagem registrada.",
+    "rec.assume.recentWeights": "Baseado nas pesagens elegíveis mais recentes.",
+    "rec.assume.withdrawalRestriction":
+      "Restrição de carência ativa vinculada a um tratamento.",
     "chrome.searchLabel": "Buscar no rebanho",
     "chrome.tenantTitle": "Organização ativa",
     "signin.tenantPlaceholder": "identificador da organização",
@@ -420,6 +433,19 @@ export const messages: Record<Locale, Record<string, string>> = {
     "dashboard.loading": "Loading…",
     "dashboard.error": "Could not load the dashboard — {error}",
     "dashboard.itemsCount": "{n} items",
+    "rec.msg.lowWeight":
+      "Review animal {visualId} ({weightKg} kg) — below expected weight; check health and nutrition.",
+    "rec.msg.withdrawalActive":
+      "Do not sell animal {visualId} — a medicine withdrawal period is active; confirm clearance before any sale.",
+    "rec.msg.withdrawalActiveUntil":
+      "Do not sell animal {visualId} — withdrawal active until {clearedAfter}; confirm clearance before any sale.",
+    "rec.msg.reproductionGap":
+      "Assess breeding fitness for dam {visualId} and schedule service.",
+    "rec.msg.missingWeight":
+      "Schedule a weighing for animal {visualId} — no weight recorded.",
+    "rec.assume.recentWeights": "Based on the most recent eligible weighings.",
+    "rec.assume.withdrawalRestriction":
+      "An active withdrawal restriction linked to a treatment.",
     "chrome.searchLabel": "Search the herd",
     "chrome.tenantTitle": "Active organisation",
     "signin.tenantPlaceholder": "organisation identifier",
@@ -773,6 +799,19 @@ export const messages: Record<Locale, Record<string, string>> = {
     "dashboard.loading": "Cargando…",
     "dashboard.error": "No se pudo cargar el panel — {error}",
     "dashboard.itemsCount": "{n} elementos",
+    "rec.msg.lowWeight":
+      "Revisar el animal {visualId} ({weightKg} kg) — peso por debajo de lo esperado; verificar sanidad y nutrición.",
+    "rec.msg.withdrawalActive":
+      "No vender el animal {visualId} — período de retiro activo; confirmar la liberación antes de cualquier venta.",
+    "rec.msg.withdrawalActiveUntil":
+      "No vender el animal {visualId} — retiro activo hasta {clearedAfter}; confirmar la liberación antes de cualquier venta.",
+    "rec.msg.reproductionGap":
+      "Evaluar la aptitud reproductiva de la madre {visualId} y programar servicio.",
+    "rec.msg.missingWeight":
+      "Programar pesaje del animal {visualId} — sin pesaje registrado.",
+    "rec.assume.recentWeights": "Basado en los pesajes elegibles más recientes.",
+    "rec.assume.withdrawalRestriction":
+      "Restricción de retiro activa vinculada a un tratamiento.",
     "chrome.searchLabel": "Buscar en el rodeo",
     "chrome.tenantTitle": "Organización activa",
     "signin.tenantPlaceholder": "identificador de la organización",
