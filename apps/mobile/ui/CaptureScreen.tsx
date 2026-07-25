@@ -4,11 +4,20 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Button, FlatList, StyleSheet } from "react-native";
 import type { CaptureController, QueueStatus } from "../src/index.js";
+import { theme } from "../src/theme.js";
 
-export function CaptureScreen({ controller }: { controller: CaptureController }): React.ReactElement {
+export function CaptureScreen({
+  controller,
+}: {
+  controller: CaptureController;
+}): React.ReactElement {
   const [rfid, setRfid] = useState("");
   const [weight, setWeight] = useState("");
-  const [status, setStatus] = useState<QueueStatus>({ pending: 0, synced: 0, rejected: 0 });
+  const [status, setStatus] = useState<QueueStatus>({
+    pending: 0,
+    synced: 0,
+    rejected: 0,
+  });
   const [recent, setRecent] = useState<string[]>([]);
 
   const refresh = async (): Promise<void> => setStatus(await controller.status());
@@ -36,11 +45,25 @@ export function CaptureScreen({ controller }: { controller: CaptureController })
       <Text style={styles.h1}>Pesagem</Text>
       <View style={styles.badges}>
         <Text style={styles.badge}>fila: {status.pending}</Text>
-        <Text style={styles.badge}>enviadas: {status.synced}</Text>
-        {status.rejected > 0 && <Text style={[styles.badge, styles.warn]}>revisar: {status.rejected}</Text>}
+        <Text style={[styles.badge, styles.synced]}>enviadas: {status.synced}</Text>
+        {status.rejected > 0 && (
+          <Text style={[styles.badge, styles.warn]}>revisar: {status.rejected}</Text>
+        )}
       </View>
-      <TextInput style={styles.input} placeholder="RFID" value={rfid} onChangeText={setRfid} autoCapitalize="none" />
-      <TextInput style={styles.input} placeholder="Peso (kg)" value={weight} onChangeText={setWeight} keyboardType="numeric" />
+      <TextInput
+        style={styles.input}
+        placeholder="RFID"
+        value={rfid}
+        onChangeText={setRfid}
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Peso (kg)"
+        value={weight}
+        onChangeText={setWeight}
+        keyboardType="numeric"
+      />
       <Button title="Capturar" onPress={capture} />
       <View style={styles.sync}>
         <Button title={`Sincronizar (${status.pending})`} onPress={sync} />
@@ -54,13 +77,53 @@ export function CaptureScreen({ controller }: { controller: CaptureController })
   );
 }
 
+// Every value comes from ../src/theme.ts, which derives from @jk/brand.
+// Never hard-code a colour here: the console and the field app share one
+// source of truth (docs/brand §3.2).
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 10 },
-  h1: { fontSize: 22, fontWeight: "700" },
-  badges: { flexDirection: "row", gap: 8 },
-  badge: { backgroundColor: "#1e2b38", color: "#e6edf3", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  warn: { backgroundColor: "#6b2b2b" },
-  input: { borderWidth: 1, borderColor: "#2b3947", borderRadius: 8, padding: 10 },
-  sync: { marginTop: 4 },
-  row: { paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: "#2b3947" },
+  container: {
+    flex: 1,
+    padding: theme.space.lg,
+    gap: theme.space.md,
+    backgroundColor: theme.color.ground,
+  },
+  h1: {
+    fontSize: theme.fontSize.title,
+    fontWeight: "700",
+    color: theme.color.text,
+  },
+  badges: { flexDirection: "row", gap: theme.space.sm, flexWrap: "wrap" },
+  // Chips are labelled as well as coloured, so state survives sun glare and
+  // colour-blindness (docs/brand §4.1).
+  badge: {
+    backgroundColor: theme.color.pendingWash,
+    color: theme.color.text,
+    fontSize: theme.fontSize.caption,
+    paddingHorizontal: theme.space.md,
+    paddingVertical: theme.space.xs,
+    borderRadius: theme.radius.chip,
+    overflow: "hidden",
+  },
+  synced: { backgroundColor: theme.color.positiveWash },
+  warn: { backgroundColor: theme.color.attentionWash },
+  input: {
+    borderWidth: 1,
+    borderColor: theme.color.rule,
+    borderRadius: theme.radius.control,
+    padding: theme.space.md,
+    minHeight: theme.hitSize,
+    fontSize: theme.fontSize.data,
+    fontFamily: theme.fontFamily.data,
+    backgroundColor: theme.color.surface,
+    color: theme.color.text,
+  },
+  sync: { marginTop: theme.space.xs },
+  row: {
+    paddingVertical: theme.space.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.color.rule,
+    fontFamily: theme.fontFamily.data,
+    fontSize: theme.fontSize.body,
+    color: theme.color.text,
+  },
 });

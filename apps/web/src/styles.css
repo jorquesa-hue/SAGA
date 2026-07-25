@@ -1,4 +1,10 @@
-@import "./brand-tokens.css";
+/* Self-hosted OFL faces (docs/brand §3.3) — no third-party font CDN.
+ * Archivo ships as a variable font with a width axis, so the display width
+ * is real Archivo Expanded (font-stretch: 125%) rather than a substitute. */
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@jk/brand/tokens.css";
 
 /*
  * App-semantic aliases over the SAGA brand primitives (see brand-tokens.css).
@@ -30,18 +36,23 @@ body {
   color: var(--text);
 }
 
+/* The nav carries 14 destinations and wraps on narrow viewports, so the bar
+ * grows with its contents. A fixed height clipped the wrapped row entirely. */
 .topbar {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding: 0 1.25rem;
-  height: 56px;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  padding: 0.5rem 1.25rem;
+  min-height: 56px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
 }
-/* The wordmark is drawn, not typed: tracked caps per docs/brand §3.3. */
+/* The wordmark is drawn, not typed: tracked caps per docs/brand §3.3.
+ * font-stretch drives the variable width axis to Archivo Expanded. */
 .brand {
   font-family: var(--saga-font-display);
+  font-stretch: 125%;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;

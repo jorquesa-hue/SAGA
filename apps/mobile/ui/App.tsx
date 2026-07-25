@@ -19,7 +19,9 @@ export default function App(): React.ReactElement {
       tenantId: getActiveTenantId(),
     });
     const store = new AsyncKvLocalStore(AsyncStorage);
-    return new CaptureController(store, new HttpSyncTransport(client), { gatewayId: "mobile" });
+    return new CaptureController(store, new HttpSyncTransport(client), {
+      gatewayId: "mobile",
+    });
   }, []);
 
   return (
