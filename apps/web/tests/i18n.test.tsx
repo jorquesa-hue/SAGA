@@ -6,15 +6,30 @@ import { App } from "../src/App.js";
 import { I18nProvider } from "../src/i18n/index.js";
 import { SessionProvider, type Session } from "../src/session.js";
 
-const session: Session = { userId: "u1", tenantId: "11111111-2222-3333-4444-555555555555", platformAdmin: false };
+const session: Session = {
+  userId: "u1",
+  tenantId: "11111111-2222-3333-4444-555555555555",
+  platformAdmin: false,
+};
 
 function client(): JkPlatformClient {
   const fetch: FetchLike = async (url) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "");
-    const body = path.startsWith("/api/v1/dashboards/executive") ? { herd: { active: 7 } } : { items: [] };
-    return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify(body) };
+    const body = path.startsWith("/api/v1/dashboards/executive")
+      ? { herd: { active: 7 } }
+      : { items: [] };
+    return {
+      status: 200,
+      headers: { get: () => "c" },
+      text: async () => JSON.stringify(body),
+    };
   };
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 function renderApp(initialLocale: "pt-BR" | "en") {
@@ -39,7 +54,9 @@ describe("i18n", () => {
 
     // Toggle to English.
     fireEvent.click(screen.getByRole("button", { name: "EN" }));
-    await waitFor(() => expect(screen.getByText("Executive dashboard")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Executive dashboard")).toBeInTheDocument(),
+    );
     expect(screen.getByText("Animals")).toBeInTheDocument();
     expect(screen.getByText("Sign out")).toBeInTheDocument();
     expect(screen.queryByText("Painel executivo")).not.toBeInTheDocument();
@@ -53,7 +70,9 @@ describe("i18n", () => {
 
   it("starts in English when that locale is active", async () => {
     renderApp("en");
-    await waitFor(() => expect(screen.getByText("Executive dashboard")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Executive dashboard")).toBeInTheDocument(),
+    );
     expect(screen.getByText("Import")).toBeInTheDocument();
   });
 });

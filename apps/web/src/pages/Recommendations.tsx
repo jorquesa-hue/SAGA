@@ -27,7 +27,10 @@ export function Recommendations(): JSX.Element {
       setNote((n) => ({ ...n, [rec.id]: t("rec.approved") }));
       reload();
     } catch (e) {
-      setNote((n) => ({ ...n, [rec.id]: e instanceof ApiError ? e.code : "erro" }));
+      setNote((n) => ({
+        ...n,
+        [rec.id]: e instanceof ApiError ? e.code : t("common.unexpectedError"),
+      }));
     } finally {
       setBusy(null);
     }

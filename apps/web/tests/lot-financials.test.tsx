@@ -13,11 +13,22 @@ function client(): JkPlatformClient {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
     let body: unknown = { items: [] };
     if (path.endsWith("/current-paddock")) body = { paddockName: "Piquete 3" };
-    else if (path.endsWith("/members")) body = { items: [{ animalId: "an-1", status: "active" }] };
-    else if (path.endsWith("/margin")) body = { revenue: "8200.00", cost: "5000.00", margin: "3200.00", currency: "USD" };
-    return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify(body) };
+    else if (path.endsWith("/members"))
+      body = { items: [{ animalId: "an-1", status: "active" }] };
+    else if (path.endsWith("/margin"))
+      body = { revenue: "8200.00", cost: "5000.00", margin: "3200.00", currency: "USD" };
+    return {
+      status: 200,
+      headers: { get: () => "c" },
+      text: async () => JSON.stringify(body),
+    };
   };
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 function wrap(route: string) {
@@ -36,7 +47,9 @@ function wrap(route: string) {
 describe("LotDetail financials", () => {
   it("shows lot revenue/cost/margin formatted in the returned currency (USD)", async () => {
     wrap("/lots/lot-1");
-    await waitFor(() => expect(screen.getByText("Financeiro (lote)")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Financeiro (lote)")).toBeInTheDocument(),
+    );
     // pt-BR grouping + USD symbol: "US$ 8.200,00" etc.
     expect(screen.getByText(/US\$\s?8\.200,00/)).toBeInTheDocument();
     expect(screen.getByText(/US\$\s?5\.000,00/)).toBeInTheDocument();

@@ -57,7 +57,7 @@ export function Animals(): JSX.Element {
       setExportState((s) => ({
         ...s,
         [animalId]: t("animals.failCode", {
-          code: e instanceof ApiError ? e.code : "erro",
+          code: e instanceof ApiError ? e.code : t("common.unexpectedError"),
         }),
       }));
     }

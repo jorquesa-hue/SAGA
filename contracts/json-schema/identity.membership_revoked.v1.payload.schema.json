@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://contracts.jk.example/json-schema/identity.membership_revoked.v1.payload.schema.json",
+  "$id": "https://contracts.saga.example/json-schema/identity.membership_revoked.v1.payload.schema.json",
   "title": "identity.membership_revoked.v1 payload",
   "description": "Payload of identity.membership_revoked.v1 (aggregate: user). Membership history is append-only: revocation is a new fact, never a deletion.",
   "type": "object",

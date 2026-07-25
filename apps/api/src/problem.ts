@@ -17,7 +17,16 @@ export interface ProblemDetails {
   errors?: Array<{ field: string; reason: string }>;
 }
 
-const PROBLEM_BASE = "https://jk.example/problems/";
+/**
+ * Problem-type namespace. `.example` is the RFC 2606 reserved TLD, so this
+ * deliberately does not resolve and asserts no domain ownership.
+ *
+ * It is a CONSTANT, not configuration: RFC 9457 `type` is the stable
+ * identifier consumers match on, so it must not vary per deployment. When a
+ * real domain is registered this becomes that domain in a versioned contract
+ * change — see docs/brand §5.1.
+ */
+const PROBLEM_BASE = "https://saga.example/problems/";
 
 function codeToSlug(code: string): string {
   return code

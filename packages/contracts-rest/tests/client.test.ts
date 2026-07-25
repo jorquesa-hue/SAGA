@@ -119,7 +119,7 @@ describe("JkPlatformClient", () => {
     const { fetch } = fakeFetch(() => ({
       status: 422,
       body: {
-        type: "https://jk.example/problems/jk-validation",
+        type: "https://saga.example/problems/jk-validation",
         title: "ValidationError",
         status: 422,
         detail: "Invalid input",

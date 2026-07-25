@@ -11,9 +11,18 @@ function client(result: unknown): JkPlatformClient {
   const fetch: FetchLike = async (url) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "");
     const body = path.startsWith("/api/v1/search") ? result : {};
-    return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify(body) };
+    return {
+      status: 200,
+      headers: { get: () => "c" },
+      text: async () => JSON.stringify(body),
+    };
   };
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 describe("SearchResults page", () => {
@@ -34,7 +43,9 @@ describe("SearchResults page", () => {
     );
     await waitFor(() => expect(screen.getByText("BR-0001")).toBeInTheDocument());
     expect(screen.getByText("Lote 1")).toBeInTheDocument();
-    expect(screen.getByText("BR-0001").closest("a")?.getAttribute("href")).toBe("/animals/a-1");
+    expect(screen.getByText("BR-0001").closest("a")?.getAttribute("href")).toBe(
+      "/animals/a-1",
+    );
   });
 
   it("shows an empty state when nothing matches", async () => {
@@ -46,6 +57,8 @@ describe("SearchResults page", () => {
         </SessionProvider>
       </MemoryRouter>,
     );
-    await waitFor(() => expect(screen.getByText("Nenhum resultado.")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Nenhum resultado.")).toBeInTheDocument(),
+    );
   });
 });

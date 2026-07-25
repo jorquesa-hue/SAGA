@@ -40,7 +40,9 @@ export function Budgets(): JSX.Element {
       setVariance(await client.finance.budgetVariance(qPeriod, qCategory));
     } catch (e) {
       setVariance(null);
-      setQError(e instanceof ApiError ? `${e.code}: ${e.message}` : "erro");
+      setQError(
+        e instanceof ApiError ? `${e.code}: ${e.message}` : t("common.unexpectedError"),
+      );
     } finally {
       setQBusy(false);
     }

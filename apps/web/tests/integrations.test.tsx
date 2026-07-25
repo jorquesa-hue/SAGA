@@ -8,14 +8,26 @@ import { SessionProvider, type Session } from "../src/session.js";
 
 const session: Session = { userId: "u1", tenantId: "t-1", platformAdmin: false };
 
-function client(routes: Record<string, unknown>, onPost?: (path: string) => unknown): JkPlatformClient {
+function client(
+  routes: Record<string, unknown>,
+  onPost?: (path: string) => unknown,
+): JkPlatformClient {
   const fetch: FetchLike = async (url, init) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
     const method = init?.method ?? "GET";
-    const body = method === "GET" ? routes[path] ?? {} : onPost?.(path) ?? {};
-    return { status: method === "DELETE" ? 204 : 200, headers: { get: () => "c" }, text: async () => JSON.stringify(body) };
+    const body = method === "GET" ? (routes[path] ?? {}) : (onPost?.(path) ?? {});
+    return {
+      status: method === "DELETE" ? 204 : 200,
+      headers: { get: () => "c" },
+      text: async () => JSON.stringify(body),
+    };
   };
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 function renderWith(node: JSX.Element, c: JkPlatformClient) {
@@ -38,7 +50,13 @@ describe("Integrations page", () => {
       },
       (path) =>
         path === "/api/v1/webhooks/subscriptions"
-          ? { id: "s1", url: "https://x", eventFamilies: ["animal"], active: true, secret: "whsec_shown_once" }
+          ? {
+              id: "s1",
+              url: "https://x",
+              eventFamilies: ["animal"],
+              active: true,
+              secret: "whsec_shown_once",
+            }
           : {},
     );
     renderWith(<Integrations />, c);
@@ -52,10 +70,21 @@ describe("Exports page", () => {
   it("lists export jobs and their download links", async () => {
     const c = client({
       "/api/v1/exports": {
-        items: [{ id: "e1", exportType: "animal_inventory", format: "json", status: "completed", byteSize: 12, resolvableUrl: "/api/v1/exports/e1/download" }],
+        items: [
+          {
+            id: "e1",
+            exportType: "animal_inventory",
+            format: "json",
+            status: "completed",
+            byteSize: 12,
+            resolvableUrl: "/api/v1/exports/e1/download",
+          },
+        ],
       },
     });
     renderWith(<Exports />, c);
-    await waitFor(() => expect(screen.getByText("/api/v1/exports/e1/download")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("/api/v1/exports/e1/download")).toBeInTheDocument(),
+    );
   });
 });

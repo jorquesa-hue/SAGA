@@ -1,5 +1,5 @@
 {
-  "type": "https://jk.example/problems/identifier-conflict",
+  "type": "https://saga.example/problems/identifier-conflict",
   "title": "RFID already assigned",
   "status": 409,
   "detail": "RFID 982000123456789 is active on another animal.",
