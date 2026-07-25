@@ -71,6 +71,27 @@ twice produces a byte-identical file. Ids are fixed literals in obviously-fake
 ranges (`10……` tenant, `16……` animal, and so on — see the `NS` map in the
 generator). Idempotent: re-running the SQL yields identical counts.
 
+## Seeing it without a database
+
+`pnpm demo:static` builds the genuine console together with a captured snapshot
+of every GET it makes against the seeded JQ Farm tenant, and writes the result
+to `apps/web/dist/` with routing rules for Vercel and for Netlify/Cloudflare.
+Drop that directory on any static host and the console runs with real seeded
+data and no database behind it.
+
+It is **read-only by construction**: nothing in the snapshot answers a POST, so
+every command form fails against it. Reads are real; writes need the API and the
+database. Sign in with the seeded owner and tenant ids:
+
+```
+user  12000000-0000-4000-8000-000000000001   (Joaquim Queiroz Andrade)
+org   10000000-0000-4000-8000-000000000001   (JQ Farm)
+```
+
+Those are not credentials in any meaningful sense — they are the local
+development auth seam (`apps/api/src/auth.ts`), which refuses to start outside
+`APP_ENV=local`. A deployed environment authenticates through OIDC.
+
 ## Determinism (`0001_reference_farm.sql`)
 
 All primary keys are fixed literal UUIDs in the obviously-fake range
