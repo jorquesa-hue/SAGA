@@ -57,7 +57,11 @@ export function Exports(): JSX.Element {
       </div>
 
       <form className="inline-form" onSubmit={request}>
-        <select value={type} onChange={(e) => setType(e.target.value as ExportType)}>
+        <select
+          value={type}
+          aria-label={t("common.type")}
+          onChange={(e) => setType(e.target.value as ExportType)}
+        >
           {TYPES.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {t(opt.labelKey)}
@@ -69,11 +73,13 @@ export function Exports(): JSX.Element {
             value={animalId}
             onChange={(e) => setAnimalId(e.target.value)}
             placeholder={t("exports.animalPlaceholder")}
+            aria-label={t("exports.animalPlaceholder")}
             style={{ minWidth: 240 }}
           />
         )}
         <select
           value={format}
+          aria-label={t("exports.format")}
           onChange={(e) => setFormat(e.target.value as "json" | "csv")}
         >
           <option value="json">JSON</option>
