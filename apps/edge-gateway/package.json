@@ -17,7 +17,7 @@
     "@jk/domain-kernel": "workspace:*",
     "@jk/offline-sync": "workspace:*",
     "@jk/sync-http": "workspace:*",
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.4.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {

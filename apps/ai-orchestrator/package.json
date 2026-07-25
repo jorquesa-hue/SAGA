@@ -16,7 +16,7 @@
     "@jk/analytics-intelligence": "workspace:*",
     "@jk/database": "workspace:*",
     "@jk/domain-kernel": "workspace:*",
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.4.2",
     "pg": "^8.12.0",
     "zod": "^3.23.8"
   },
