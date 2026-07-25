@@ -288,7 +288,7 @@ function PreviewStep({
             <tbody>
               {preview.invalidSample.map((r) => (
                 <tr key={r.rowNumber}>
-                  <td>{r.rowNumber}</td>
+                  <td className="mono">{r.rowNumber}</td>
                   <td>{td(r.validationStatus)}</td>
                   <td>{r.errors.map((e) => `${e.field}: ${e.reason}`).join("; ")}</td>
                 </tr>
@@ -357,11 +357,13 @@ function RowsTable({
       <tbody>
         {rows.map((r) => (
           <tr key={r.rowNumber}>
-            <td>{r.rowNumber}</td>
-            <td>{String(r.mapped?.visualId ?? "—")}</td>
+            <td className="mono">{r.rowNumber}</td>
+            <td className="mono">{String(r.mapped?.visualId ?? "—")}</td>
             <td>{td(r.mapped?.sex)}</td>
             <td>{String(r.mapped?.breedCode ?? "—")}</td>
-            {showServerId && <td>{r.serverId ? r.serverId.slice(0, 8) + "…" : "—"}</td>}
+            {showServerId && (
+              <td className="mono">{r.serverId ? r.serverId.slice(0, 8) + "…" : "—"}</td>
+            )}
           </tr>
         ))}
       </tbody>

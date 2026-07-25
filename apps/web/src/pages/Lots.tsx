@@ -68,6 +68,7 @@ export function Lots(): JSX.Element {
             value={lookupId}
             onChange={(e) => setLookupId(e.target.value)}
             placeholder={t("lots.lookupPlaceholder")}
+            aria-label={t("lots.lookupPlaceholder")}
             style={{ minWidth: 220 }}
           />
           <button type="submit" disabled={!lookupId.trim()}>

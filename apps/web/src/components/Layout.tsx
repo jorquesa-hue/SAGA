@@ -59,7 +59,7 @@ export function Layout(): JSX.Element {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("chrome.searchPlaceholder")}
-            aria-label="Search"
+            aria-label={t("chrome.searchLabel")}
           />
         </form>
         <div className="locale">
@@ -77,7 +77,7 @@ export function Layout(): JSX.Element {
         <div className="session">
           {session && (
             <>
-              <span className="tenant" title="tenant">
+              <span className="tenant" title={t("chrome.tenantTitle")}>
                 {t("chrome.tenant")}: {session.tenantId.slice(0, 8)}…
               </span>
               <button type="button" onClick={signOut}>

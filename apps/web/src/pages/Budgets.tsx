@@ -75,7 +75,13 @@ export function Budgets(): JSX.Element {
           label={t("budgets.planned")}
           value={planned}
           onChange={setPlanned}
-          placeholder="1250.00"
+          // A placeholder teaches the expected format, so it has to be the
+          // reader's own: pt-BR writes 1.250,00 where en-US writes 1,250.00
+          // (docs/brand §2.4).
+          placeholder={fmt.number(1250, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         />
         <button
           type="button"

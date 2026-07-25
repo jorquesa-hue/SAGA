@@ -42,7 +42,7 @@ export function SignIn(): JSX.Element {
           <input
             value={tenantId}
             onChange={(e) => setTenantId(e.target.value)}
-            placeholder="tenant uuid"
+            placeholder={t("signin.tenantPlaceholder")}
           />
         </label>
         <label className="checkbox">

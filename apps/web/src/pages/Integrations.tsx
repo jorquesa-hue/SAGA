@@ -83,6 +83,7 @@ export function Integrations(): JSX.Element {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder={t("integrations.urlPlaceholder")}
+          aria-label={t("integrations.urlPlaceholder")}
           style={{ minWidth: 260 }}
         />
         <div className="chips">
@@ -127,7 +128,7 @@ export function Integrations(): JSX.Element {
           <tbody>
             {subs.data.items.map((s) => (
               <tr key={s.id}>
-                <td>{s.url}</td>
+                <td className="mono">{s.url}</td>
                 <td>{s.eventFamilies.join(", ")}</td>
                 <td>{s.active ? t("integrations.yes") : t("integrations.no")}</td>
                 <td>
@@ -167,7 +168,7 @@ export function Integrations(): JSX.Element {
           <tbody>
             {deliveries.data.items.map((d) => (
               <tr key={d.id}>
-                <td>{d.eventType}</td>
+                <td className="mono">{d.eventType}</td>
                 <td>
                   <span className={d.status === "dead_letter" ? "error" : ""}>
                     {td(d.status)}

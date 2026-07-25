@@ -86,9 +86,14 @@ export function Animals(): JSX.Element {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("animals.searchPlaceholder")}
+          aria-label={t("animals.searchPlaceholder")}
           style={{ minWidth: 220 }}
         />
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select
+          value={status}
+          aria-label={t("common.status")}
+          onChange={(e) => setStatus(e.target.value)}
+        >
           <option value="all">{t("animals.allStatus")}</option>
           <option value="active">{td("active")}</option>
           <option value="sold">{td("sold")}</option>
