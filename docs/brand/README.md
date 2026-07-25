@@ -10,9 +10,12 @@ brand and the outfit entitled to burn it. That is what this document is, and
 why it is structured as a numbered register: sections are meant to be cited
 ("per §3.2 the accent never carries body copy").
 
-**Machine-readable tokens live at
-[`apps/web/src/brand-tokens.css`](../../apps/web/src/brand-tokens.css)** — treat
-that file and this document as one change. Assets are in [`assets/`](assets).
+**The tokens are code.** [`packages/brand`](../../packages/brand) (`@jk/brand`)
+is the single source of truth: TypeScript is authored, `tokens.css` is
+generated from it, and a unit test fails if the two drift. The web console
+consumes the CSS custom properties and the field app consumes the TypeScript,
+so they cannot disagree about what the brand is. Treat this document and that
+package as one change. Assets are in [`assets/`](assets).
 
 ---
 
@@ -224,13 +227,30 @@ minimum, drop the wordmark and use the mark alone.
 shadow or bevel, set the wordmark in sentence case, or add a container the mark
 does not have.
 
-Assets: [`saga-mark-bar-s-ink.svg`](assets/saga-mark-bar-s-ink.svg) ·
-[`saga-mark-bar-s-paper.svg`](assets/saga-mark-bar-s-paper.svg) ·
-[`saga-app-icon.svg`](assets/saga-app-icon.svg)
+In the lockups the wordmark sits on the bar's ground line. That is the point of
+the bar: it is the line the S is written on, so the whole lockup is written on
+it too, and mark and wordmark read as one object rather than two.
 
-> **Lockup files are not committed.** The wordmark requires Archivo Expanded
-> outlined; generate lockups in the design tool with the licensed face rather
-> than substituting a system font.
+| Asset                                                           | Use                     |
+| --------------------------------------------------------------- | ----------------------- |
+| [`saga-lockup-h-ink.svg`](assets/saga-lockup-h-ink.svg)         | Primary, horizontal     |
+| [`saga-lockup-h-paper.svg`](assets/saga-lockup-h-paper.svg)     | Horizontal, reversed    |
+| [`saga-lockup-v-ink.svg`](assets/saga-lockup-v-ink.svg)         | Stacked, square formats |
+| [`saga-lockup-v-paper.svg`](assets/saga-lockup-v-paper.svg)     | Stacked, reversed       |
+| [`saga-mark-bar-s-ink.svg`](assets/saga-mark-bar-s-ink.svg)     | Mark alone              |
+| [`saga-mark-bar-s-paper.svg`](assets/saga-mark-bar-s-paper.svg) | Mark alone, reversed    |
+| [`saga-app-icon.svg`](assets/saga-app-icon.svg)                 | App icon / favicon      |
+
+The lockups carry **outlined** type, not a font reference, so they cannot
+silently fall back to a system face. They are generated from the licensed
+variable font — instanced to weight 800 at `wdth` 125 and tracked +0.09em — by
+[`packages/brand/scripts/emit-lockups.py`](../../packages/brand/scripts/emit-lockups.py).
+Regenerate rather than hand-editing:
+
+```bash
+pip install fonttools brotli      # not a repository dependency
+python3 packages/brand/scripts/emit-lockups.py
+```
 
 ### §3.2 Colour — Paper and Tag
 

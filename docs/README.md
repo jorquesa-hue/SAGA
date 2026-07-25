@@ -18,7 +18,9 @@ Engineering documentation for the SAGA implementation of
     tenancy, Fastify-first API).
 - **Brand**
   - [brand/README.md](brand/README.md) — identity, voice, palette, applications.
-    Tokens are code: [`apps/web/src/brand-tokens.css`](../apps/web/src/brand-tokens.css).
+    Tokens are code: [`packages/brand`](../packages/brand) (`@jk/brand`) is the
+    single source; `tokens.css` is generated from the TypeScript and a test
+    fails on drift.
 - **Security**
   - [security/threat-model.md](security/threat-model.md) — STRIDE + §65.1 + §67 checklist.
 - **Operations**

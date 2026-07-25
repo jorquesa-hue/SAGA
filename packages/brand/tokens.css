@@ -1,0 +1,37 @@
+/*
+ * GENERATED FILE — do not edit.
+ * Source: packages/brand/src/index.ts
+ * Regenerate: pnpm --filter @jk/brand run tokens
+ *
+ * Two rules these tokens encode, because they are the ones that get broken:
+ *   1. --saga-tag is a FILL. It is 1.8:1 on paper and must never carry text;
+ *      use --saga-tag-text where an ochre has to read as type.
+ *   2. --saga-ink is a TYPE colour. It does not ground large fields.
+ */
+:root {
+  --saga-paper: #f4f6f1;
+  --saga-surface: #ffffff;
+  --saga-surface-sunk: #eaede5;
+  --saga-rule: #d3d9ce;
+  --saga-tag: #e8b317;
+  --saga-tag-wash: #fbf1d2;
+  --saga-tag-text: #8a6a0e;
+  --saga-pasto: #2e7d4f;
+  --saga-pasto-wash: #e2ede4;
+  --saga-hide: #c0491f;
+  --saga-hide-wash: #f7e2da;
+  --saga-ink: #222b26;
+  --saga-slate: #5a6560;
+  --saga-link: #1f6fa8;
+
+  --saga-series-1: #c0491f;
+  --saga-series-2: #1f6fa8;
+  --saga-series-3: #2e7d4f;
+  --saga-series-4: #7b4fa8;
+  --saga-series-5: #b07a0b;
+  --saga-series-6: #b23a6f;
+
+  --saga-font-body: "Archivo Variable", "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --saga-font-display: "Archivo Variable", "Archivo", system-ui, sans-serif;
+  --saga-font-data: "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
