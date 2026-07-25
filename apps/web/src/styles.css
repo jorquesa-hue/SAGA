@@ -142,6 +142,11 @@ button:disabled {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+/* ...but a prose value is not a figure, so it keeps the body face. */
+.kpi-value-text {
+  font-family: var(--saga-font-body);
+  font-size: 1.1rem;
+}
 
 .grid {
   width: 100%;
