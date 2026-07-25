@@ -38,6 +38,7 @@ export function lowWeightTool(thresholdKg = 250): EvidenceTool {
       animalId: r.animal_id,
       farmId: r.farm_id,
       summary: `animal ${r.visual_id} (${Number(r.weight_kg)} kg)`,
+      facts: { visualId: String(r.visual_id), weightKg: Number(r.weight_kg) },
       evidenceEventIds: [r.event_id],
       severity: Number(r.weight_kg) < thresholdKg * 0.8 ? "high" : "medium",
     }));
@@ -68,6 +69,7 @@ export function missingWeightTool(): EvidenceTool {
         animalId: r.animal_id,
         farmId: r.farm_id,
         summary: `animal ${r.visual_id} sem pesagem registrada`,
+        facts: { visualId: String(r.visual_id) },
         evidenceEventIds: [r.reg_event_id as string],
         severity: "low" as const,
       }));
@@ -99,6 +101,10 @@ export function withdrawalNearSaleTool(): EvidenceTool {
       animalId: r.animal_id,
       farmId: r.farm_id,
       summary: `animal ${r.visual_id}${r.valid_to ? ` (liberado após ${r.valid_to.slice(0, 10)})` : ""}`,
+      facts: {
+        visualId: String(r.visual_id),
+        ...(r.valid_to ? { clearedAfter: r.valid_to.slice(0, 10) } : {}),
+      },
       evidenceEventIds: [r.event_id],
       severity: "medium" as const,
     }));
@@ -132,6 +138,7 @@ export function reproductionGapTool(): EvidenceTool {
         animalId: r.animal_id,
         farmId: r.farm_id,
         summary: `matriz ${r.visual_id} sem serviço reprodutivo registrado`,
+        facts: { visualId: String(r.visual_id) },
         evidenceEventIds: [r.reg_event_id as string],
         severity: "low" as const,
       }));

@@ -62,6 +62,18 @@ export function Recommendations(): JSX.Element {
                 <span className="badge high">{t("rec.highImpact")}</span>
               )}
             </div>
+            {/*
+              The substance of the recommendation. Rendered from the message
+              key so it reads in the operator's language; a row written before
+              migration 0020 has no key and falls back to its stored prose
+              (docs/brand §2.4).
+            */}
+            <p>
+              {rec.recommendationKey
+                ? t(rec.recommendationKey, rec.recommendationParams ?? {})
+                : rec.recommendationText}
+            </p>
+            {rec.assumptionsKey && <p className="hint">{t(rec.assumptionsKey)}</p>}
             <p className="muted">
               {t("rec.confidence", {
                 pct: Math.round(rec.confidence * 100),
