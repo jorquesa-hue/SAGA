@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ApiError } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
+import { RecordList } from "../components/RecordList.js";
+import type { BudgetLineView } from "@jk/contracts-rest";
 import { Field, FormMessage, useCommand } from "../components/Form.js";
 
 /**
@@ -12,7 +14,7 @@ import { Field, FormMessage, useCommand } from "../components/Form.js";
  */
 export function Budgets(): JSX.Element {
   const client = useClient();
-  const { t, fmt, currency } = useI18n();
+  const { t, td, fmt, currency } = useI18n();
   const set = useCommand();
 
   const [period, setPeriod] = useState("");
@@ -132,6 +134,37 @@ export function Budgets(): JSX.Element {
           </div>
         )}
       </div>
+
+      <RecordList<BudgetLineView>
+        titleKey="budgets.lines"
+        load={() => client.overview.budgetLines()}
+        rowKey={(b) => `${b.periodMonth}:${b.category}`}
+        emptyKey="budgets.empty"
+        columns={[
+          { headerKey: "budgets.periodCol", figure: true, render: (b) => b.periodMonth },
+          { headerKey: "finance.category", render: (b) => td(b.category) },
+          {
+            headerKey: "budgets.plannedLabel",
+            figure: true,
+            render: (b) => fmt.currency(b.plannedMinor / 100, b.currency),
+          },
+          {
+            headerKey: "budgets.actual",
+            figure: true,
+            render: (b) => fmt.currency(b.actualMinor / 100, b.currency),
+          },
+          {
+            headerKey: "budgets.variance",
+            figure: true,
+            // Over plan is the state worth colouring; under plan is not news.
+            render: (b) => {
+              const delta = b.plannedMinor - b.actualMinor;
+              const text = fmt.currency(delta / 100, b.currency);
+              return delta < 0 ? <span className="warn">{text}</span> : text;
+            },
+          },
+        ]}
+      />
     </section>
   );
 }

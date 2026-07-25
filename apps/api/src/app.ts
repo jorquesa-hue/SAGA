@@ -52,6 +52,7 @@ import { registerExportRoutes } from "./routes/exports.routes.js";
 import { registerSearchRoutes } from "./routes/search.routes.js";
 import { registerImportRoutes } from "./routes/imports.routes.js";
 import { registerReproductionRoutes } from "./routes/reproduction.routes.js";
+import { registerOverviewRoutes } from "./routes/overview.routes.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -268,6 +269,18 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerExportRoutes(app, exportService);
   registerSearchRoutes(app, searchService);
   registerImportRoutes(app, importService, animalRegistry);
+  registerOverviewRoutes(app, {
+    lots: lotsService,
+    weighing,
+    health: healthService,
+    reproduction: reproductionService,
+    genetics: geneticsService,
+    finance: financeService,
+    land: landService,
+    inventory: inventoryService,
+    assets: assetsService,
+    alerts: alertService,
+  });
 
   // Surface a typed unauthorized when auth decoration is somehow missing.
   app.decorateRequest("principal", null as unknown as AuthenticatedPrincipal);

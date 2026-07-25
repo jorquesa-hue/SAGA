@@ -700,3 +700,64 @@ button,
   min-width: 2.5rem;
   text-align: right;
 }
+
+/* ---------------------------------------------------------------------------
+ * Record panels (docs/brand §3.4)
+ *
+ * A screen now shows what a module holds, not only a form for adding to it.
+ * Each list is a panel: a titled surface with its own reload, so a long screen
+ * reads as a stack of separable records rather than one undifferentiated wall.
+ * ------------------------------------------------------------------------- */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem 1rem;
+  margin-top: 1.25rem;
+}
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+.panel-head h3 {
+  margin: 0;
+}
+
+/* A wide table scrolls inside its panel; the page itself never scrolls
+ * sideways, which is what makes these screens usable on a phone in a corral. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Figures right-align so decimal points line up down the column. */
+.grid th.num,
+.grid td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Two states worth colouring, and only two: something needs attention, or
+ * something is already wrong. Anything else stays in the body colour. */
+.warn {
+  color: var(--warn);
+}
+.error-text {
+  color: var(--danger);
+}
+.badge.ok {
+  color: var(--success);
+  border-color: var(--success);
+}
+.badge.risk-urgent {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.badge.risk-normal,
+.badge.risk-low {
+  color: var(--muted);
+}

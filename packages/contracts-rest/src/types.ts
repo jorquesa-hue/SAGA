@@ -210,3 +210,237 @@ export interface SearchResults {
   paddocks: SearchHit[];
   people: SearchHit[];
 }
+
+// ---------------------------------------------------------------------------
+// Collection reads (§47). One shape per list endpoint, each already carrying
+// the names the console shows, so no screen has to resolve a UUID itself.
+// ---------------------------------------------------------------------------
+
+export interface LotSummaryView {
+  id: string;
+  farmId: string;
+  farmName: string;
+  name: string;
+  purpose: "genetic_nucleus" | "beef" | "rearing" | "quarantine" | "other";
+  target: string | null;
+  status: "open" | "closed";
+  startedAt: string;
+  endedAt: string | null;
+  headCount: number;
+  currentPaddockId: string | null;
+  currentPaddockName: string | null;
+  inPaddockSince: string | null;
+}
+
+export interface HandlingSessionView {
+  id: string;
+  farmId: string;
+  farmName: string;
+  purpose: string;
+  status: string;
+  deviceId: string | null;
+  expectedCount: number | null;
+  recordedCount: number;
+  unresolvedCount: number;
+  startedAt: string;
+  closedAt: string | null;
+}
+
+export interface WeightView {
+  id: string;
+  animalId: string;
+  visualId: string;
+  occurredAt: string;
+  weightKg: number;
+  eligibleForAnalytics: boolean;
+  qualityFlags: string[];
+}
+
+export interface TreatmentView {
+  id: string;
+  animalId: string;
+  visualId: string;
+  kind: string;
+  productName: string;
+  medicineBatch: string | null;
+  dose: number | null;
+  doseUnit: string | null;
+  route: string | null;
+  administeredAt: string;
+  withdrawalUntil: string | null;
+  protocolName: string | null;
+}
+
+export interface RestrictionView {
+  id: string;
+  animalId: string;
+  visualId: string;
+  restrictionType: string;
+  reason: string | null;
+  validFrom: string;
+  validTo: string | null;
+}
+
+export interface HealthProtocolView {
+  id: string;
+  name: string;
+  appliesTo: string | null;
+  version: number;
+  status: string;
+  treatmentCount: number;
+}
+
+export interface HealthCaseView {
+  id: string;
+  animalId: string;
+  visualId: string;
+  symptom: string | null;
+  diagnosis: string | null;
+  status: string;
+  outcome: string | null;
+  openedAt: string;
+  closedAt: string | null;
+}
+
+export interface ReproductionEventView {
+  id: string;
+  kind: "service" | "pregnancy_check" | "calving";
+  damId: string;
+  damVisualId: string;
+  occurredAt: string;
+  detail: string | null;
+  result: string | null;
+  expectedCalvingDate: string | null;
+  calfVisualId: string | null;
+  birthWeightKg: number | null;
+}
+
+export interface EvaluationView {
+  animalId: string;
+  visualId: string;
+  sex: string;
+  provider: string;
+  evaluationDate: string;
+  traits: Array<{
+    trait: string;
+    value: number;
+    percentile: number | null;
+    reliability: number | null;
+  }>;
+}
+
+export interface LedgerEntryView {
+  id: string;
+  farmId: string | null;
+  farmName: string | null;
+  entryType: "expense" | "revenue";
+  category: string;
+  counterparty: string | null;
+  amountMinor: number;
+  currency: string;
+  capexOpex: string | null;
+  reversesEntryId: string | null;
+  occurredAt: string;
+  allocations: Array<{ dimension: string; targetId: string | null; minor: number }>;
+}
+
+export interface SaleView {
+  id: string;
+  animalId: string | null;
+  visualId: string | null;
+  lotId: string | null;
+  lotName: string | null;
+  weightKg: number | null;
+  priceBasis: string | null;
+  grossMinor: number;
+  deductionsMinor: number;
+  freightMinor: number;
+  netReceiptMinor: number;
+  currency: string;
+  soldAt: string;
+}
+
+export interface BudgetLineView {
+  periodMonth: string;
+  category: string;
+  plannedMinor: number;
+  actualMinor: number;
+  currency: string;
+}
+
+export interface PaddockView {
+  id: string;
+  farmId: string;
+  farmName: string;
+  name: string;
+  areaHa: number | null;
+  pastureType: string | null;
+  waterAvailable: boolean;
+  status: string;
+  currentLotId: string | null;
+  currentLotName: string | null;
+  headCount: number | null;
+  occupiedSince: string | null;
+  lastAssessedAt: string | null;
+  lastCondition: string | null;
+  lastAvailabilityKgDmHa: number | null;
+}
+
+export interface ItemView {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  supplier: string | null;
+  reorderLevel: number | null;
+  balance: number;
+  belowReorder: boolean;
+  lastMovementAt: string | null;
+  expiringBatches: number;
+}
+
+export interface AssetView {
+  id: string;
+  farmId: string | null;
+  farmName: string | null;
+  name: string;
+  assetType: string;
+  model: string | null;
+  serial: string | null;
+  location: string | null;
+  status: string;
+  calibrationValidUntil: string | null;
+  calibrationOverdue: boolean;
+  nextMaintenanceDueAt: string | null;
+  openWorkOrders: number;
+}
+
+export interface WorkOrderView {
+  id: string;
+  assetId: string;
+  assetName: string;
+  priority: string;
+  description: string;
+  status: string;
+  laborCost: number | null;
+  partsCost: number | null;
+  downtimeHours: number | null;
+  openedAt: string;
+  closedAt: string | null;
+}
+
+export interface TaskView {
+  id: string;
+  farmId: string | null;
+  animalId: string | null;
+  animalVisualId: string | null;
+  lotId: string | null;
+  lotName: string | null;
+  sourceRule: string;
+  taskType: string;
+  dueAt: string | null;
+  status: string;
+  detail: Record<string, unknown>;
+  createdAt: string;
+  completedAt: string | null;
+}

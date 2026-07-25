@@ -1,6 +1,11 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout.js";
 import { Alerts } from "./pages/Alerts.js";
+import { Assets } from "./pages/Assets.js";
+import { Genetics } from "./pages/Genetics.js";
+import { Inventory } from "./pages/Inventory.js";
+import { Pasture } from "./pages/Pasture.js";
+import { Tasks } from "./pages/Tasks.js";
 import { AnimalDetail } from "./pages/AnimalDetail.js";
 import { TraceabilityRecord } from "./pages/TraceabilityRecord.js";
 import { Animals } from "./pages/Animals.js";
@@ -45,6 +50,11 @@ export function App(): JSX.Element {
         <Route path="reproduction" element={<Reproduction />} />
         <Route path="lots" element={<Lots />} />
         <Route path="lots/:id" element={<LotDetail />} />
+        <Route path="pasture" element={<Pasture />} />
+        <Route path="inventory" element={<Inventory />} />
+        <Route path="assets" element={<Assets />} />
+        <Route path="genetics" element={<Genetics />} />
+        <Route path="tasks" element={<Tasks />} />
         <Route path="finance" element={<Finance />} />
         <Route path="budgets" element={<Budgets />} />
         <Route path="imports" element={<Imports />} />

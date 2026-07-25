@@ -100,6 +100,26 @@ describe("brand compliance", () => {
     expect(offenders).toEqual([]);
   });
 
+  /**
+   * §2.4 — a declarative list column names itself with a catalogue key. If the
+   * key is absent, `t()` falls through to the key path and the table header
+   * silently reads `finance.amountCol`, which no review catches because the
+   * screen still renders. Every key a RecordList names must exist.
+   */
+  it("resolves every list title, column and empty-state key", () => {
+    const catalogue = new Set(Object.keys(messages["pt-BR"]));
+    const offenders: string[] = [];
+    for (const { path, text } of files) {
+      for (const match of text.matchAll(
+        /(?:titleKey|headerKey|emptyKey):\s*"([^"]+)"/g,
+      )) {
+        const key = match[1]!;
+        if (!catalogue.has(key)) offenders.push(`${path}: ${key}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
   /** §2.4 — a message present in one locale must exist in all of them. */
   it("keeps every locale at key parity", () => {
     const reference = Object.keys(messages["pt-BR"]).sort();

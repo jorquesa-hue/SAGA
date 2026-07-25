@@ -38,6 +38,17 @@ export interface Lot {
   status: "open" | "closed";
 }
 
+/** A lot as an operator reads it: the record plus its two live projections. */
+export interface LotSummary extends Omit<Lot, "tenantId"> {
+  farmName: string;
+  startedAt: string;
+  endedAt: string | null;
+  headCount: number;
+  currentPaddockId: Uuid | null;
+  currentPaddockName: string | null;
+  inPaddockSince: string | null;
+}
+
 const idempotencyKeySchema = z.string().min(1).max(200);
 
 export const createLotInputSchema = z
@@ -340,6 +351,57 @@ export class LotsService {
         { environment: this.environment },
       );
       return { occupationId };
+    });
+  }
+
+  /**
+   * Every lot in the tenant with the two numbers a manager actually asks for:
+   * how many head are in it and which paddock it is standing in (JK-HER-004).
+   * Both are projections of movement facts, computed here rather than stored.
+   */
+  async listLots(context: TenantContext): Promise<LotSummary[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        farm_id: string;
+        farm_name: string;
+        name: string;
+        purpose: LotPurpose;
+        target: string | null;
+        status: "open" | "closed";
+        started_at: Date;
+        ended_at: Date | null;
+        head_count: string;
+        paddock_id: string | null;
+        paddock_name: string | null;
+        entry_at: Date | null;
+      }>(
+        `SELECT l.id, l.farm_id, f.name AS farm_name, l.name, l.purpose, l.target,
+                l.status, l.started_at, l.ended_at,
+                (SELECT count(*) FROM lot_membership m
+                  WHERE m.lot_id = l.id AND m.valid_to IS NULL) AS head_count,
+                o.paddock_id, p.name AS paddock_name, o.entry_at
+           FROM lot l
+           JOIN farm f ON f.id = l.farm_id
+           LEFT JOIN paddock_occupation o ON o.lot_id = l.id AND o.exit_at IS NULL
+           LEFT JOIN paddock p ON p.id = o.paddock_id
+          ORDER BY l.status, l.name`,
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        farmId: r.farm_id,
+        farmName: r.farm_name,
+        name: r.name,
+        purpose: r.purpose,
+        target: r.target,
+        status: r.status,
+        startedAt: r.started_at.toISOString(),
+        endedAt: r.ended_at?.toISOString() ?? null,
+        headCount: Number(r.head_count),
+        currentPaddockId: r.paddock_id,
+        currentPaddockName: r.paddock_name,
+        inPaddockSince: r.entry_at?.toISOString() ?? null,
+      }));
     });
   }
 

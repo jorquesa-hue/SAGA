@@ -40,6 +40,26 @@ export interface ReproductionServiceOptions {
  * pregnancy checks, and calvings; calving may create/link a calf through the
  * CalfRegistrar port. Reproduction state is projected from these facts.
  */
+/**
+ * The reproduction ledger as one ordered stream. Service, diagnosis, and
+ * calving are separate facts about the same dam, and reading them interleaved
+ * is how a technician actually follows a station.
+ */
+export interface ReproductionEvent {
+  id: Uuid;
+  kind: "service" | "pregnancy_check" | "calving";
+  damId: Uuid;
+  damVisualId: string;
+  occurredAt: string;
+  /** Method for a service or check; ease for a calving. */
+  detail: string | null;
+  /** Diagnosis result, calving outcome, or the sire reference for a service. */
+  result: string | null;
+  expectedCalvingDate: string | null;
+  calfVisualId: string | null;
+  birthWeightKg: number | null;
+}
+
 export class ReproductionGeneticsService {
   private readonly appPool: pg.Pool;
   private readonly environment: string;
@@ -462,6 +482,71 @@ export class ReproductionGeneticsService {
       [tenantId, animalId],
     );
     return result.rows[0]!.next;
+  }
+
+  /**
+   * The three reproduction fact tables merged into one time-ordered list.
+   * A UNION rather than three round trips: the client wants the station as it
+   * happened, not three lists it has to interleave itself.
+   */
+  async listReproductionEvents(
+    context: TenantContext,
+    limit = 60,
+  ): Promise<ReproductionEvent[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        kind: "service" | "pregnancy_check" | "calving";
+        dam_id: string;
+        dam_visual_id: string;
+        occurred_at: Date;
+        detail: string | null;
+        result: string | null;
+        expected_calving_date: Date | null;
+        calf_visual_id: string | null;
+        birth_weight_kg: string | null;
+      }>(
+        `SELECT s.id, 'service' AS kind, s.dam_id, d.visual_id AS dam_visual_id,
+                s.service_date AS occurred_at, s.method AS detail,
+                COALESCE(b.visual_id, s.external_sire_ref) AS result,
+                NULL::date AS expected_calving_date, NULL::text AS calf_visual_id,
+                NULL::numeric AS birth_weight_kg
+           FROM reproduction_service s
+           JOIN animal d ON d.id = s.dam_id
+           LEFT JOIN animal b ON b.id = s.bull_id
+         UNION ALL
+         SELECT c.id, 'pregnancy_check', c.dam_id, d.visual_id,
+                c.check_date, c.method, c.result, c.expected_calving_date,
+                NULL, NULL
+           FROM pregnancy_check c
+           JOIN animal d ON d.id = c.dam_id
+         UNION ALL
+         SELECT v.id, 'calving', v.dam_id, d.visual_id,
+                v.calving_date, v.ease, v.outcome, NULL,
+                f.visual_id, v.birth_weight_kg
+           FROM calving v
+           JOIN animal d ON d.id = v.dam_id
+           LEFT JOIN animal f ON f.id = v.calf_id
+          ORDER BY occurred_at DESC
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 300)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        damId: r.dam_id,
+        damVisualId: r.dam_visual_id,
+        occurredAt: r.occurred_at.toISOString(),
+        detail: r.detail,
+        result: r.result,
+        expectedCalvingDate:
+          r.expected_calving_date === null
+            ? null
+            : r.expected_calving_date.toISOString().slice(0, 10),
+        calfVisualId: r.calf_visual_id,
+        birthWeightKg: r.birth_weight_kg === null ? null : Number(r.birth_weight_kg),
+      }));
+    });
   }
 
   private async authorized<T>(

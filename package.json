@@ -23,7 +23,8 @@
     "contracts:validate": "node scripts/validate/contracts-validate.mjs",
     "db:migrate": "node scripts/bootstrap/migrate.mjs",
     "db:migrate:test": "node scripts/bootstrap/migrate.mjs --verify",
-    "db:seed": "node scripts/bootstrap/seed.mjs",
+    "db:seed": "node scripts/bootstrap/generate-demo-seed.mjs && node scripts/bootstrap/seed.mjs",
+    "db:seed:generate": "node scripts/bootstrap/generate-demo-seed.mjs",
     "bootstrap": "bash scripts/bootstrap/bootstrap.sh"
   },
   "devDependencies": {

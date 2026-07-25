@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
+import { RecordList } from "../components/RecordList.js";
+import type { ReproductionEventView } from "@jk/contracts-rest";
 
 /**
  * Reproduction events (§21): the service → pregnancy check → calving flow.
@@ -17,7 +19,62 @@ export function Reproduction(): JSX.Element {
       <ServiceForm />
       <PregnancyForm />
       <CalvingForm />
+      <StationLedger />
     </section>
+  );
+}
+
+/**
+ * The station as it happened: services, diagnoses and calvings interleaved in
+ * one stream. A technician follows a dam across all three — splitting them
+ * into three lists would force the reader to re-merge them by eye.
+ */
+function StationLedger(): JSX.Element {
+  const client = useClient();
+  const { t, td, fmt } = useI18n();
+
+  return (
+    <RecordList<ReproductionEventView>
+      titleKey="repro.ledger"
+      load={() => client.overview.reproductionEvents()}
+      rowKey={(e) => `${e.kind}:${e.id}`}
+      emptyKey="repro.empty"
+      columns={[
+        {
+          headerKey: "common.date",
+          figure: true,
+          render: (e) => fmt.date(e.occurredAt),
+        },
+        {
+          headerKey: "common.type",
+          render: (e) => <span className="badge">{t(`repro.kind.${e.kind}`)}</span>,
+        },
+        {
+          headerKey: "repro.damCol",
+          render: (e) => <span className="mono">{e.damVisualId}</span>,
+        },
+        { headerKey: "repro.method", render: (e) => td(e.detail) },
+        {
+          headerKey: "repro.outcome",
+          render: (e) => (e.result === null ? "—" : td(e.result)),
+        },
+        {
+          headerKey: "repro.expected",
+          figure: true,
+          render: (e) =>
+            e.expectedCalvingDate === null ? "—" : fmt.date(e.expectedCalvingDate),
+        },
+        {
+          headerKey: "repro.calf",
+          render: (e) =>
+            e.calfVisualId === null ? (
+              "—"
+            ) : (
+              <span className="mono">{e.calfVisualId}</span>
+            ),
+        },
+      ]}
+    />
   );
 }
 

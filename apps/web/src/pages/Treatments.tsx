@@ -2,6 +2,13 @@ import { useState } from "react";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
+import { RecordList } from "../components/RecordList.js";
+import type {
+  HealthCaseView,
+  HealthProtocolView,
+  RestrictionView,
+  TreatmentView,
+} from "@jk/contracts-rest";
 
 /**
  * Record a treatment/vaccination (§23). A positive withdrawal period creates a
@@ -9,7 +16,7 @@ import { Field, FormMessage, SelectField, useCommand } from "../components/Form.
  */
 export function Treatments(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td, fmt } = useI18n();
   const cmd = useCommand();
   const [animalId, setAnimalId] = useState("");
   const [kind, setKind] = useState("treatment");
@@ -90,6 +97,102 @@ export function Treatments(): JSX.Element {
         </button>
         <FormMessage state={cmd} />
       </div>
+
+      <RecordList<RestrictionView>
+        titleKey="treatments.restrictions"
+        load={() => client.overview.restrictions()}
+        rowKey={(r) => r.id}
+        emptyKey="treatments.noRestrictions"
+        columns={[
+          {
+            headerKey: "common.animal",
+            render: (r) => <span className="mono">{r.visualId}</span>,
+          },
+          { headerKey: "common.type", render: (r) => td(r.restrictionType) },
+          { headerKey: "treatments.reason", render: (r) => r.reason ?? "—" },
+          {
+            headerKey: "treatments.clearedAfter",
+            figure: true,
+            // While this date is in the future the animal cannot be cleared
+            // for sale — that is the whole point of the row.
+            render: (r) => (r.validTo === null ? "—" : fmt.date(r.validTo)),
+          },
+        ]}
+      >
+        <p className="muted">{t("treatments.restrictionsNote")}</p>
+      </RecordList>
+
+      <RecordList<TreatmentView>
+        titleKey="treatments.recent"
+        load={() => client.overview.treatments()}
+        rowKey={(x) => x.id}
+        emptyKey="treatments.noTreatments"
+        columns={[
+          {
+            headerKey: "common.animal",
+            render: (x) => <span className="mono">{x.visualId}</span>,
+          },
+          { headerKey: "common.type", render: (x) => td(x.kind) },
+          { headerKey: "treatments.product", render: (x) => x.productName },
+          {
+            headerKey: "treatments.batch",
+            render: (x) => <span className="mono">{x.medicineBatch ?? "—"}</span>,
+          },
+          {
+            headerKey: "treatments.dose",
+            figure: true,
+            render: (x) =>
+              x.dose === null ? "—" : `${fmt.number(x.dose)} ${x.doseUnit ?? ""}`,
+          },
+          { headerKey: "treatments.protocol", render: (x) => x.protocolName ?? "—" },
+          {
+            headerKey: "common.date",
+            figure: true,
+            render: (x) => fmt.date(x.administeredAt),
+          },
+        ]}
+      />
+
+      <RecordList<HealthCaseView>
+        titleKey="treatments.cases"
+        load={() => client.overview.healthCases()}
+        rowKey={(c) => c.id}
+        emptyKey="treatments.noCases"
+        columns={[
+          {
+            headerKey: "common.animal",
+            render: (c) => <span className="mono">{c.visualId}</span>,
+          },
+          { headerKey: "treatments.symptom", render: (c) => c.symptom ?? "—" },
+          { headerKey: "treatments.diagnosis", render: (c) => c.diagnosis ?? "—" },
+          {
+            headerKey: "common.status",
+            render: (c) => <span className="badge">{td(c.status)}</span>,
+          },
+          {
+            headerKey: "treatments.opened",
+            figure: true,
+            render: (c) => fmt.date(c.openedAt),
+          },
+        ]}
+      />
+
+      <RecordList<HealthProtocolView>
+        titleKey="treatments.protocols"
+        load={() => client.overview.healthProtocols()}
+        rowKey={(p) => p.id}
+        emptyKey="treatments.noProtocols"
+        columns={[
+          { headerKey: "common.name", render: (p) => p.name },
+          { headerKey: "treatments.appliesTo", render: (p) => p.appliesTo ?? "—" },
+          { headerKey: "common.status", render: (p) => td(p.status) },
+          {
+            headerKey: "treatments.applications",
+            figure: true,
+            render: (p) => fmt.number(p.treatmentCount),
+          },
+        ]}
+      />
     </section>
   );
 }

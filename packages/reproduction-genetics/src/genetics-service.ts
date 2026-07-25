@@ -67,6 +67,21 @@ export interface GeneticsServiceOptions {
   environment?: string;
 }
 
+/** One animal's breeding values, pivoted so a row reads as an animal. */
+export interface EvaluationRow {
+  animalId: Uuid;
+  visualId: string;
+  sex: string;
+  provider: string;
+  evaluationDate: string;
+  traits: Array<{
+    trait: string;
+    value: number;
+    percentile: number | null;
+    reliability: number | null;
+  }>;
+}
+
 export class GeneticsService {
   private readonly appPool: pg.Pool;
   private readonly environment: string;
@@ -352,6 +367,58 @@ export class GeneticsService {
       );
     }
     return result.data;
+  }
+
+  /**
+   * Evaluated animals with all of their traits in one row. Pivoting here keeps
+   * the client from having to group 7 rows per animal back together.
+   */
+  async listEvaluations(context: TenantContext, limit = 40): Promise<EvaluationRow[]> {
+    return this.authorized(context, false, async (client) => {
+      const result = await client.query<{
+        animal_id: string;
+        visual_id: string;
+        sex: string;
+        provider: string;
+        evaluation_date: Date;
+        trait: string;
+        value: string;
+        percentile: string | null;
+        reliability: string | null;
+      }>(
+        `SELECT e.animal_id, a.visual_id, a.sex, e.provider, e.evaluation_date,
+                e.trait, e.value, e.percentile, e.reliability
+           FROM genetic_evaluation e
+           JOIN animal a ON a.id = e.animal_id
+          WHERE e.animal_id IN (
+                  SELECT animal_id FROM genetic_evaluation
+                   GROUP BY animal_id ORDER BY animal_id LIMIT $1)
+          ORDER BY a.visual_id, e.trait`,
+        [Math.min(Math.max(limit, 1), 300)],
+      );
+      const byAnimal = new Map<string, EvaluationRow>();
+      for (const r of result.rows) {
+        let row = byAnimal.get(r.animal_id);
+        if (!row) {
+          row = {
+            animalId: r.animal_id,
+            visualId: r.visual_id,
+            sex: r.sex,
+            provider: r.provider,
+            evaluationDate: r.evaluation_date.toISOString().slice(0, 10),
+            traits: [],
+          };
+          byAnimal.set(r.animal_id, row);
+        }
+        row.traits.push({
+          trait: r.trait,
+          value: Number(r.value),
+          percentile: r.percentile === null ? null : Number(r.percentile),
+          reliability: r.reliability === null ? null : Number(r.reliability),
+        });
+      }
+      return [...byAnimal.values()];
+    });
   }
 
   private async authorized<T>(
