@@ -45,7 +45,11 @@ export function Integrations(): JSX.Element {
       setFreshSecret(created.secret);
       subs.reload();
     } catch (err) {
-      setMsg(err instanceof ApiError ? `${err.code}: ${err.message}` : "erro");
+      setMsg(
+        err instanceof ApiError
+          ? `${err.code}: ${err.message}`
+          : t("common.unexpectedError"),
+      );
     }
   };
 
@@ -54,7 +58,7 @@ export function Integrations(): JSX.Element {
       const r = await client.webhooks.rotateSecret(id);
       setFreshSecret(r.secret);
     } catch (err) {
-      setMsg(err instanceof ApiError ? err.code : "erro");
+      setMsg(err instanceof ApiError ? err.code : t("common.unexpectedError"));
     }
   };
 
@@ -63,7 +67,7 @@ export function Integrations(): JSX.Element {
       await client.webhooks.replay(id);
       deliveries.reload();
     } catch (err) {
-      setMsg(err instanceof ApiError ? err.code : "erro");
+      setMsg(err instanceof ApiError ? err.code : t("common.unexpectedError"));
     }
   };
 

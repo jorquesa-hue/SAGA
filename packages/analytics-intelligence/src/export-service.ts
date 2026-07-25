@@ -64,7 +64,37 @@ export interface ExportDownload {
   byteSize: number;
 }
 
+/**
+ * Identifies the system that vouches for an export (docs/brand §4.2).
+ *
+ * The packet is the artefact a buyer or auditor carries away, so it has to
+ * say what produced it and why it can be trusted. `appendOnly` is the
+ * machine-readable form of §1.5 proof 01.
+ */
+export interface ExportProducer {
+  product: "SAGA";
+  record: string;
+  specification: string;
+  appendOnly: true;
+  notice: string;
+}
+
+export const APPEND_ONLY_NOTICE =
+  "Append-only extract: nothing is deleted. Corrections are filed as new " +
+  "entries, each with its own date.";
+
+export function exportProducer(record: string): ExportProducer {
+  return {
+    product: "SAGA",
+    record,
+    specification: "JK-PLT-EES-001",
+    appendOnly: true,
+    notice: APPEND_ONLY_NOTICE,
+  };
+}
+
 export interface AnimalTraceabilityPacket {
+  producer: ExportProducer;
   animal: Record<string, unknown>;
   identifiers: Record<string, unknown>[];
   weights: Record<string, unknown>[];
@@ -289,6 +319,7 @@ export class ExportService {
       [animalId],
     );
     return {
+      producer: exportProducer("animal_traceability_packet"),
       animal: animal.rows[0]!,
       identifiers: identifiers.rows,
       weights: weights.rows,
@@ -462,6 +493,13 @@ function rowsToCsv(rows: Record<string, unknown>[]): string {
 
 function traceabilityToCsv(packet: AnimalTraceabilityPacket): string {
   const sections: string[] = [];
+  // The CSV is read outside SAGA, so it states its provenance too.
+  sections.push(
+    `# ${packet.producer.product} · ${packet.producer.record} · ${packet.producer.specification}`,
+    `# generated ${packet.generatedAt}`,
+    `# ${packet.producer.notice}`,
+    "",
+  );
   sections.push("# animal", rowsToCsv([packet.animal]));
   sections.push("# identifiers", rowsToCsv(packet.identifiers));
   sections.push("# weights", rowsToCsv(packet.weights));

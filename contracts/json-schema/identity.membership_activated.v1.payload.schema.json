@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://contracts.jk.example/json-schema/identity.membership_activated.v1.payload.schema.json",
+  "$id": "https://contracts.saga.example/json-schema/identity.membership_activated.v1.payload.schema.json",
   "title": "identity.membership_activated.v1 payload",
   "description": "Payload of identity.membership_activated.v1 (aggregate: user). Marks a previously invited membership as active.",
   "type": "object",

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { ApiError } from "@jk/contracts-rest";
+import { useI18n } from "../i18n/index.js";
 
 /** Labeled input row. */
 export function Field({
@@ -63,6 +64,7 @@ export interface CommandState {
 
 /** Command submit helper: runs an async action, surfaces success/error text. */
 export function useCommand(): CommandState {
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -84,7 +86,7 @@ export function useCommand(): CommandState {
           ? `${e.code}: ${e.message}`
           : e instanceof Error
             ? e.message
-            : "Erro",
+            : t("common.unexpectedError"),
       );
     } finally {
       setBusy(false);

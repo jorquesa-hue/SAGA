@@ -39,7 +39,11 @@ export function Exports(): JSX.Element {
       await client.exports.process(job.id);
       jobs.reload();
     } catch (err) {
-      setMsg(err instanceof ApiError ? `${err.code}: ${err.message}` : "erro");
+      setMsg(
+        err instanceof ApiError
+          ? `${err.code}: ${err.message}`
+          : t("common.unexpectedError"),
+      );
     }
   };
 

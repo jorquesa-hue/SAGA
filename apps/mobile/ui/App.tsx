@@ -7,8 +7,9 @@ import { SafeAreaView } from "react-native";
 import { JkPlatformClient } from "@jk/contracts-rest";
 import { AsyncKvLocalStore, CaptureController, HttpSyncTransport } from "../src/index.js";
 import { CaptureScreen } from "./CaptureScreen.js";
+import { theme } from "../src/theme.js";
 
-const API_BASE_URL = "https://api.jk.example"; // configured per build/environment
+const API_BASE_URL = "https://api.saga.example"; // configured per build/environment
 
 export default function App(): React.ReactElement {
   const controller = useMemo(() => {
@@ -25,7 +26,9 @@ export default function App(): React.ReactElement {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    // The brand ground reaches the safe area, so the status-bar inset is not
+    // a bare white strip above a paper screen (docs/brand §3.2).
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.color.ground }}>
       <CaptureScreen controller={controller} />
     </SafeAreaView>
   );

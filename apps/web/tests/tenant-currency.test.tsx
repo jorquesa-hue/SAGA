@@ -15,19 +15,44 @@ interface Post {
 }
 
 /** Client whose GET /tenants/current returns configured base settings; captures POSTs. */
-function client(defaultCurrency: string, defaultLocale: string, posts: Post[]): JkPlatformClient {
+function client(
+  defaultCurrency: string,
+  defaultLocale: string,
+  posts: Post[],
+): JkPlatformClient {
   const fetch: FetchLike = async (url, init) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
     if (path === "/api/v1/tenants/current") {
-      return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ id: "t-1", name: "Rancho", defaultCurrency, defaultLocale }) };
+      return {
+        status: 200,
+        headers: { get: () => "c" },
+        text: async () =>
+          JSON.stringify({ id: "t-1", name: "Rancho", defaultCurrency, defaultLocale }),
+      };
     }
     if ((init?.method ?? "GET") === "POST") {
-      posts.push({ path, body: JSON.parse(init?.body ?? "{}") as Record<string, unknown> });
-      return { status: 201, headers: { get: () => "c" }, text: async () => JSON.stringify({ id: "x1" }) };
+      posts.push({
+        path,
+        body: JSON.parse(init?.body ?? "{}") as Record<string, unknown>,
+      });
+      return {
+        status: 201,
+        headers: { get: () => "c" },
+        text: async () => JSON.stringify({ id: "x1" }),
+      };
     }
-    return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ items: [] }) };
+    return {
+      status: 200,
+      headers: { get: () => "c" },
+      text: async () => JSON.stringify({ items: [] }),
+    };
   };
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 function renderWithTenant(defaultCurrency: string, defaultLocale: string) {
@@ -58,9 +83,13 @@ describe("per-tenant currency", () => {
   it("adopts the tenant's currency and locale (USD / English) and records in USD", async () => {
     const { posts } = renderWithTenant("USD", "en");
     // Loader is async: wait until the tenant locale ("en") has been adopted.
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Finance" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Finance" })).toBeInTheDocument(),
+    );
 
-    fireEvent.change(screen.getByLabelText("Amount (e.g. 1250.00)"), { target: { value: "1250" } });
+    fireEvent.change(screen.getByLabelText("Amount (e.g. 1250.00)"), {
+      target: { value: "1250" },
+    });
     fireEvent.change(screen.getByLabelText("Category"), { target: { value: "feed" } });
     fireEvent.click(screen.getAllByText("Record")[0]!);
 
@@ -78,10 +107,16 @@ describe("per-tenant currency", () => {
 
   it("keeps BRL when the tenant has no configured currency", async () => {
     renderWithTenant("", "pt-BR"); // empty currency → loader leaves the BRL default
-    fireEvent.change(screen.getByLabelText("Valor (ex.: 1250.00)"), { target: { value: "1250" } });
-    fireEvent.change(screen.getByLabelText("Categoria"), { target: { value: "nutrição" } });
+    fireEvent.change(screen.getByLabelText("Valor (ex.: 1250.00)"), {
+      target: { value: "1250" },
+    });
+    fireEvent.change(screen.getByLabelText("Categoria"), {
+      target: { value: "nutrição" },
+    });
     fireEvent.click(screen.getAllByText("Registrar")[0]!);
-    await waitFor(() => expect(screen.getByText(/Lançamento registrado/)).toBeInTheDocument());
-    expect((screen.getByText(/Lançamento registrado/).textContent ?? "")).toContain("R$");
+    await waitFor(() =>
+      expect(screen.getByText(/Lançamento registrado/)).toBeInTheDocument(),
+    );
+    expect(screen.getByText(/Lançamento registrado/).textContent ?? "").toContain("R$");
   });
 });

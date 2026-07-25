@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://contracts.jk.example/json-schema/identity.farm_created.v1.payload.schema.json",
+  "$id": "https://contracts.saga.example/json-schema/identity.farm_created.v1.payload.schema.json",
   "title": "identity.farm_created.v1 payload",
   "description": "Payload of identity.farm_created.v1 (aggregate: farm). The envelope farmId equals the aggregateId of the created farm.",
   "type": "object",

@@ -14,21 +14,41 @@ interface Patch {
   body: Record<string, unknown>;
 }
 
-function client(patches: Patch[], current = { defaultCurrency: "BRL", defaultLocale: "pt-BR" }): JkPlatformClient {
+function client(
+  patches: Patch[],
+  current = { defaultCurrency: "BRL", defaultLocale: "pt-BR" },
+): JkPlatformClient {
   const fetch: FetchLike = async (url, init) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
     const method = init?.method ?? "GET";
     if (path === "/api/v1/tenants/current" && method === "GET") {
-      return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ id: "t-1", name: "Rancho JK", ...current }) };
+      return {
+        status: 200,
+        headers: { get: () => "c" },
+        text: async () => JSON.stringify({ id: "t-1", name: "Rancho JK", ...current }),
+      };
     }
     if (path === "/api/v1/tenants/current" && method === "PATCH") {
       const body = JSON.parse(init?.body ?? "{}") as Record<string, unknown>;
       patches.push({ path, method, body });
-      return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ id: "t-1", name: "Rancho JK", ...body }) };
+      return {
+        status: 200,
+        headers: { get: () => "c" },
+        text: async () => JSON.stringify({ id: "t-1", name: "Rancho JK", ...body }),
+      };
     }
-    return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ items: [] }) };
+    return {
+      status: 200,
+      headers: { get: () => "c" },
+      text: async () => JSON.stringify({ items: [] }),
+    };
   };
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 function renderSettings(patches: Patch[]) {
@@ -68,10 +88,15 @@ describe("Settings page", () => {
     // The write carries both fields.
     await waitFor(() => expect(patches).toHaveLength(1));
     expect(patches[0]!.method).toBe("PATCH");
-    expect(patches[0]!.body).toMatchObject({ defaultCurrency: "USD", defaultLocale: "en" });
+    expect(patches[0]!.body).toMatchObject({
+      defaultCurrency: "USD",
+      defaultLocale: "en",
+    });
 
     // The console re-applies the new locale live (title now in English).
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument(),
+    );
     // The success toast was composed at save time (pt-BR), before the switch.
     expect(screen.getByText("Configurações salvas")).toBeInTheDocument();
   });

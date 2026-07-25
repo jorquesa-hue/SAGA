@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://contracts.jk.example/json-schema/identity.user_invited.v1.payload.schema.json",
+  "$id": "https://contracts.saga.example/json-schema/identity.user_invited.v1.payload.schema.json",
   "title": "identity.user_invited.v1 payload",
   "description": "Payload of identity.user_invited.v1 (aggregate: user). Creates a pending tenant membership with a canonical role.",
   "type": "object",

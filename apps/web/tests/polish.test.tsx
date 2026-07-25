@@ -11,9 +11,18 @@ const session: Session = { userId: "u1", tenantId: "t-1", platformAdmin: false }
 function client(routes: (path: string) => unknown): JkPlatformClient {
   const fetch: FetchLike = async (url) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
-    return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify(routes(path)) };
+    return {
+      status: 200,
+      headers: { get: () => "c" },
+      text: async () => JSON.stringify(routes(path)),
+    };
   };
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 function wrap(node: JSX.Element, c: JkPlatformClient, route = "/") {
@@ -35,7 +44,10 @@ describe("Animals pagination", () => {
       breedCode: "BRANGUS",
       lifecycleStatus: "active",
     }));
-    wrap(<Animals />, client((path) => (path === "/api/v1/animals" ? { items } : {})));
+    wrap(
+      <Animals />,
+      client((path) => (path === "/api/v1/animals" ? { items } : {})),
+    );
 
     await waitFor(() => expect(screen.getByText("BR-0000")).toBeInTheDocument());
     // Page 1 shows the first 20; item 20 (BR-0020) is on page 2.
@@ -50,7 +62,10 @@ describe("Animals pagination", () => {
 
 describe("LotDetail", () => {
   it("shows current paddock and paginated members with animal links", async () => {
-    const members = Array.from({ length: 30 }, (_, i) => ({ animalId: `an-${i}`, status: "active" }));
+    const members = Array.from({ length: 30 }, (_, i) => ({
+      animalId: `an-${i}`,
+      status: "active",
+    }));
     const c = client((path) => {
       if (path.endsWith("/current-paddock")) return { paddockName: "Piquete 7" };
       if (path.endsWith("/members")) return { items: members };
@@ -62,6 +77,8 @@ describe("LotDetail", () => {
     expect(screen.getByText("Membros ativos")).toBeInTheDocument();
     // 30 members, 25/page → page 1 of 2.
     expect(screen.getByText(/Página 1 de 2 · 30 itens/)).toBeInTheDocument();
-    expect(screen.getByText("an-0…").closest("a")?.getAttribute("href")).toBe("/animals/an-0");
+    expect(screen.getByText("an-0…").closest("a")?.getAttribute("href")).toBe(
+      "/animals/an-0",
+    );
   });
 });

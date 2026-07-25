@@ -24,8 +24,30 @@ function importClient(): JkPlatformClient {
   });
   const preview = (j: unknown) => ({
     job: j,
-    sample: [{ rowNumber: 1, raw: {}, mapped: { visualId: "BR-9001", sex: "female", breedCode: "BRANGUS" }, validationStatus: "valid", errors: [], executionStatus: "pending", serverId: null, executionError: null }],
-    invalidSample: [{ rowNumber: 2, raw: {}, mapped: {}, validationStatus: "duplicate", errors: [{ field: "visualId", reason: "already exists" }], executionStatus: "pending", serverId: null, executionError: null }],
+    sample: [
+      {
+        rowNumber: 1,
+        raw: {},
+        mapped: { visualId: "BR-9001", sex: "female", breedCode: "BRANGUS" },
+        validationStatus: "valid",
+        errors: [],
+        executionStatus: "pending",
+        serverId: null,
+        executionError: null,
+      },
+    ],
+    invalidSample: [
+      {
+        rowNumber: 2,
+        raw: {},
+        mapped: {},
+        validationStatus: "duplicate",
+        errors: [{ field: "visualId", reason: "already exists" }],
+        executionStatus: "pending",
+        serverId: null,
+        executionError: null,
+      },
+    ],
   });
   const fetch: FetchLike = async (url, init) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
@@ -37,10 +59,20 @@ function importClient(): JkPlatformClient {
     else if (path.endsWith("/validate")) body = job("validated");
     else if (path.endsWith("/preview")) body = preview(job("validated"));
     else if (path.endsWith("/execute")) body = job("executed", { executedRows: 1 });
-    else if (path.endsWith("/reconcile")) body = preview(job("reconciled", { executedRows: 1, status: "reconciled" }));
-    return { status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify(body) };
+    else if (path.endsWith("/reconcile"))
+      body = preview(job("reconciled", { executedRows: 1, status: "reconciled" }));
+    return {
+      status: 200,
+      headers: { get: () => "c" },
+      text: async () => JSON.stringify(body),
+    };
   };
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 function renderImports(c: JkPlatformClient) {
@@ -58,8 +90,12 @@ describe("Imports wizard", () => {
     renderImports(importClient());
 
     // Upload step.
-    fireEvent.change(screen.getByPlaceholderText(/tag,gender/), { target: { value: "tag,sex\nBR-9001,female\nBR-0001,male" } });
-    fireEvent.change(screen.getByPlaceholderText("farm uuid"), { target: { value: "farm-1" } });
+    fireEvent.change(screen.getByPlaceholderText(/tag,gender/), {
+      target: { value: "tag,sex\nBR-9001,female\nBR-0001,male" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("farm uuid"), {
+      target: { value: "farm-1" },
+    });
     fireEvent.click(screen.getByText("Enviar e analisar"));
 
     // Map step (headers detected from the pasted CSV).

@@ -46,6 +46,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "dashboard.loading": "Carregando…",
     "dashboard.error": "Não foi possível carregar o painel — {error}",
     "dashboard.itemsCount": "{n} itens",
+    "common.unexpectedError":
+      "Não foi possível concluir. Nada foi perdido — tente de novo.",
     "record.title": "Registro de rastreabilidade",
     "record.issued": "emitido em",
     "record.back": "← Voltar ao animal",
@@ -414,6 +416,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "dashboard.loading": "Loading…",
     "dashboard.error": "Could not load the dashboard — {error}",
     "dashboard.itemsCount": "{n} items",
+    "common.unexpectedError": "That didn't go through. Nothing was lost — try again.",
     "record.title": "Traceability record",
     "record.issued": "issued",
     "record.back": "← Back to animal",
@@ -763,6 +766,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "dashboard.loading": "Cargando…",
     "dashboard.error": "No se pudo cargar el panel — {error}",
     "dashboard.itemsCount": "{n} elementos",
+    "common.unexpectedError":
+      "No se pudo completar. No se perdió nada — inténtalo de nuevo.",
     "record.title": "Registro de trazabilidad",
     "record.issued": "emitido el",
     "record.back": "← Volver al animal",

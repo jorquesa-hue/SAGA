@@ -15,8 +15,17 @@ import { SessionProvider, type Session } from "../src/session.js";
 const session: Session = { userId: "u1", tenantId: "t-1", platformAdmin: false };
 
 function client(items: unknown[] = []): JkPlatformClient {
-  const fetch: FetchLike = async () => ({ status: 200, headers: { get: () => "c" }, text: async () => JSON.stringify({ items }) });
-  return new JkPlatformClient({ baseUrl: "http://api.test", tenantId: "t", auth: { mode: "none" }, fetch });
+  const fetch: FetchLike = async () => ({
+    status: 200,
+    headers: { get: () => "c" },
+    text: async () => JSON.stringify({ items }),
+  });
+  return new JkPlatformClient({
+    baseUrl: "http://api.test",
+    tenantId: "t",
+    auth: { mode: "none" },
+    fetch,
+  });
 }
 
 function renderPage(node: JSX.Element, locale: Locale, c: JkPlatformClient = client()) {
@@ -53,7 +62,9 @@ describe("i18n page bodies", () => {
 
   it("translates the weighing screen into English", () => {
     renderPage(<Weighing />, "en");
-    expect(screen.getByRole("heading", { level: 2, name: "Weighing" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Weighing" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Start handling session")).toBeInTheDocument();
   });
 
@@ -88,7 +99,13 @@ describe("i18n page bodies", () => {
 describe("i18n data values", () => {
   // lifecycleStatus "transferred" is not one of the filter-dropdown options,
   // so the localized value appears only once (the data cell).
-  const animal = { id: "a-1", visualId: "BR-9", sex: "female", breedCode: "NELORE", lifecycleStatus: "transferred" };
+  const animal = {
+    id: "a-1",
+    visualId: "BR-9",
+    sex: "female",
+    breedCode: "NELORE",
+    lifecycleStatus: "transferred",
+  };
 
   it("localizes enum data (sex, lifecycle status) per locale", async () => {
     renderPage(<Animals />, "pt-BR", client([animal]));

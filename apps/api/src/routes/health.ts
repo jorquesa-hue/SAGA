@@ -23,7 +23,7 @@ export function registerHealthRoutes(
     } catch {
       reply.status(503).type("application/problem+json");
       return {
-        type: "https://jk.example/problems/not-ready",
+        type: "https://saga.example/problems/not-ready",
         title: "NotReady",
         status: 503,
         detail: "One or more dependencies are unavailable",
