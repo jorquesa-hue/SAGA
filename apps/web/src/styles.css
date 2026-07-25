@@ -1,14 +1,23 @@
+@import "./brand-tokens.css";
+
+/*
+ * App-semantic aliases over the SAGA brand primitives (see brand-tokens.css).
+ * --accent is Tag, which is a FILL colour: use it for borders and underlines
+ * only, never for text. Text that needs to read as positive/warning/negative
+ * uses --success / --warn / --danger, all of which clear 4.5:1 on --bg.
+ */
 :root {
-  --bg: #0f1720;
-  --panel: #17212b;
-  --panel-2: #1e2b38;
-  --text: #e6edf3;
-  --muted: #8b98a5;
-  --accent: #3fb950;
-  --danger: #f85149;
-  --warn: #d29922;
-  --border: #2b3947;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --bg: var(--saga-paper);
+  --panel: var(--saga-surface);
+  --panel-2: var(--saga-surface-sunk);
+  --text: var(--saga-ink);
+  --muted: var(--saga-slate);
+  --accent: var(--saga-tag);
+  --success: var(--saga-pasto);
+  --danger: var(--saga-hide);
+  --warn: var(--saga-tag-text);
+  --border: var(--saga-rule);
+  font-family: var(--saga-font-body);
 }
 
 * {
@@ -30,9 +39,12 @@ body {
   background: var(--panel);
   border-bottom: 1px solid var(--border);
 }
+/* The wordmark is drawn, not typed: tracked caps per docs/brand §3.3. */
 .brand {
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-family: var(--saga-font-display);
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
 }
 .nav {
   display: flex;
@@ -112,14 +124,18 @@ button:disabled {
   color: var(--muted);
   font-size: 0.75rem;
 }
+/* Figures line up in columns: mono + tabular per docs/brand §3.3. */
 .kpi-value {
+  font-family: var(--saga-font-data);
   font-size: 1.4rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .grid {
   width: 100%;
   border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
 }
 .grid th,
 .grid td {
@@ -222,7 +238,7 @@ button:disabled {
 }
 
 a {
-  color: #58a6ff;
+  color: var(--saga-link);
 }
 .back {
   font-size: 0.85rem;
@@ -311,8 +327,9 @@ h3 {
 .form button {
   align-self: flex-start;
 }
+/* Not --accent: Tag is unreadable as text on Paper (1.8:1). */
 .success {
-  color: var(--accent);
+  color: var(--success);
 }
 
 .topsearch input {

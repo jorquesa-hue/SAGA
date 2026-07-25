@@ -16,6 +16,9 @@ Engineering documentation for the SAGA implementation of
   - [adr/README.md](adr/README.md) — index. ADR-001..010 are the spec's open
     decisions; ADR-011..013 are accepted Phase 0 decisions (pg driver, RLS
     tenancy, Fastify-first API).
+- **Brand**
+  - [brand/README.md](brand/README.md) — identity, voice, palette, applications.
+    Tokens are code: [`apps/web/src/brand-tokens.css`](../apps/web/src/brand-tokens.css).
 - **Security**
   - [security/threat-model.md](security/threat-model.md) — STRIDE + §65.1 + §67 checklist.
 - **Operations**
