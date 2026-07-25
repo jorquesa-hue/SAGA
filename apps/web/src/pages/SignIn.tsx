@@ -22,19 +22,31 @@ export function SignIn(): JSX.Element {
 
   return (
     <div className="signin">
-      <h1>JK Platform</h1>
+      <h1>SAGA</h1>
       <p className="muted">{t("signin.subtitle")}</p>
       <form onSubmit={submit}>
         <label>
           {t("signin.userId")}
-          <input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="00000000-0000-0000-0000-000000000000" />
+          <input
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="00000000-0000-0000-0000-000000000000"
+          />
         </label>
         <label>
           {t("signin.tenantId")}
-          <input value={tenantId} onChange={(e) => setTenantId(e.target.value)} placeholder="tenant uuid" />
+          <input
+            value={tenantId}
+            onChange={(e) => setTenantId(e.target.value)}
+            placeholder="tenant uuid"
+          />
         </label>
         <label className="checkbox">
-          <input type="checkbox" checked={platformAdmin} onChange={(e) => setPlatformAdmin(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={platformAdmin}
+            onChange={(e) => setPlatformAdmin(e.target.checked)}
+          />
           {t("signin.platformAdmin")}
         </label>
         <button type="submit" disabled={!userId || !tenantId}>

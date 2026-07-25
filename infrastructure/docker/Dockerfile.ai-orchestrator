@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# JK Platform — AI orchestrator image (§62). Governed recommendation runtime.
+# SAGA — AI orchestrator image (§62). Governed recommendation runtime.
 # 
 #
 # Build from the REPOSITORY ROOT:

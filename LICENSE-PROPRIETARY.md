@@ -1,6 +1,6 @@
 # Proprietary License
 
-Copyright (c) 2026 JK Platform. All rights reserved.
+Copyright (c) 2026 SAGA. All rights reserved.
 
 This software and its accompanying documentation are proprietary and
 confidential (classification per JK-PLT-EES-001). No part of this

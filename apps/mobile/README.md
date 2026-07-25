@@ -1,4 +1,4 @@
-# @jk/mobile — JK Platform field app
+# @jk/mobile — SAGA field app
 
 React Native, offline-first. Cattle handling happens where there is no signal,
 so capture must be instant and durable and sync must never lose an observation

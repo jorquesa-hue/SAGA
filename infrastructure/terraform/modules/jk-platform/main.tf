@@ -1,4 +1,4 @@
-# JK Platform infrastructure module (JK-PLT-EES-001 §75, Appendix H.4).
+# SAGA infrastructure module (JK-PLT-EES-001 §75, Appendix H.4).
 #
 # PROVIDER-NEUTRAL BY DESIGN: the cloud provider and primary region are an
 # open decision (ADR-001). This module therefore contains no provider blocks

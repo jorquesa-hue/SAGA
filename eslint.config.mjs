@@ -1,4 +1,4 @@
-// Root ESLint flat config for the JK Platform monorepo.
+// Root ESLint flat config for the SAGA monorepo.
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(

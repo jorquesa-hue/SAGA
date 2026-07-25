@@ -1,4 +1,4 @@
-# JK Platform — OpenTelemetry Collector baseline (JK-PLT-EES-001 §30, §77).
+# SAGA — OpenTelemetry Collector baseline (JK-PLT-EES-001 §30, §77).
 #
 # Local development configuration mounted by
 # infrastructure/compose/docker-compose.yml into

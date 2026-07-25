@@ -37,20 +37,35 @@ export function Layout(): JSX.Element {
     <div className="app">
       <TenantSettingsLoader />
       <header className="topbar">
-        <span className="brand">JK Platform</span>
+        <span className="brand">SAGA</span>
         <nav className="nav">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => (isActive ? "active" : "")}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
               {t(item.key)}
             </NavLink>
           ))}
         </nav>
         <form className="topsearch" onSubmit={submitSearch}>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("chrome.searchPlaceholder")} aria-label="Search" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t("chrome.searchPlaceholder")}
+            aria-label="Search"
+          />
         </form>
         <div className="locale">
           {LOCALES.map((l) => (
-            <button key={l.value} type="button" className={l.value === locale ? "on" : ""} onClick={() => setLocale(l.value)}>
+            <button
+              key={l.value}
+              type="button"
+              className={l.value === locale ? "on" : ""}
+              onClick={() => setLocale(l.value)}
+            >
               {l.label}
             </button>
           ))}

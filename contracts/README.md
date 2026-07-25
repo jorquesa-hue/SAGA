@@ -1,6 +1,6 @@
-# JK Platform Contracts
+# SAGA Contracts
 
-Authored, machine-readable API and event contracts for JK Platform
+Authored, machine-readable API and event contracts for SAGA
 (JK-PLT-EES-001, Volume VI §45–§52; Appendices C, D, E). These documents are
 the **source of truth** for every external surface — REST, GraphQL, and
 domain events. Implementations conform to the contract, never the other way

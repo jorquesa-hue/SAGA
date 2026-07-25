@@ -8,7 +8,7 @@ what is **specified** for later phases.
 ```mermaid
 flowchart TB
   people["Owner / Manager / Technician / Veterinarian"]
-  jk["JK Platform (SAGA)\nEnterprise farm operating system"]
+  jk["SAGA\nEnterprise farm operating system"]
   idp["Identity provider (OIDC)\nADR-002"]
   hw["Farm hardware\nRFID readers, scales, gateways"]
   lab["Laboratories & genetics providers"]

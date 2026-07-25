@@ -1,9 +1,9 @@
-# JK Platform (SAGA) — Project Summary
+# SAGA — Project Summary
 
-**JK Platform** is a multi-tenant, offline-capable ERP for cattle
+**SAGA** is a multi-tenant, offline-capable ERP for cattle
 agrobusiness, implemented against **JK-PLT-EES-001** (Enterprise Engineering
-Specification v1.0). "SAGA" is the repository working name; "JK Platform" is
-the product name. The reference operation is a Brangus genetic-nucleus + beef
+Specification v1.0). **SAGA** is both the product name and the repository
+name. The reference operation is a Brangus genetic-nucleus + beef
 farm (~100 ha, São Paulo, Brazil).
 
 This document is the capstone map of what exists and how to run it. For

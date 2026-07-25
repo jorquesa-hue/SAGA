@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# JK Platform — application API image (spec JK-PLT-EES-001 Appendix H.1).
+# SAGA — application API image (spec JK-PLT-EES-001 Appendix H.1).
 #
 # Build from the REPOSITORY ROOT (the pnpm workspace root):
 #

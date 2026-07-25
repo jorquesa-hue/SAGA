@@ -2,7 +2,7 @@
   "name": "@jk/contracts-rest",
   "version": "0.1.0",
   "private": true,
-  "description": "Typed REST client for the JK Platform API (Volume VI). Mirrors the authored OpenAPI contract: tenant/auth headers, idempotency keys, correlation propagation, and RFC 9457 Problem Details error mapping. Consumed by the web and mobile apps.",
+  "description": "Typed REST client for the SAGA API (Volume VI). Mirrors the authored OpenAPI contract: tenant/auth headers, idempotency keys, correlation propagation, and RFC 9457 Problem Details error mapping. Consumed by the web and mobile apps.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

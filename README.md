@@ -1,12 +1,12 @@
-# JK Platform (SAGA)
+# SAGA
 
-**JK Platform** is an enterprise farm operating system for livestock
+**SAGA** is an enterprise farm operating system for livestock
 enterprises — immutable animal history, herd operations, genetics,
 reproduction, health, pasture, inventory, finance, devices, analytics, and
 explainable AI in one traceable, multi-tenant platform.
 
-> Repository working name: **SAGA**. Canonical product name per the
-> authoritative specification (**JK-PLT-EES-001**, v1.0) is **JK Platform**.
+> **SAGA** is both the product name and the repository name. The
+> authoritative specification is **JK-PLT-EES-001**, v1.0.
 
 The first operational target is a Brangus farm (~100 ha, Lagoinha/Cunha,
 São Paulo, Brazil) with two coordinated verticals: a **genetic nucleus**

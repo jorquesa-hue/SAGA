@@ -1,4 +1,4 @@
-# JK Platform — Web Console (`@jk/web`)
+# SAGA — Web Console (`@jk/web`)
 
 React + Vite single-page console (Volume V) that consumes the platform API
 through the typed `@jk/contracts-rest` client. First slice covers the app

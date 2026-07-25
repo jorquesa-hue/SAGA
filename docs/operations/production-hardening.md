@@ -1,6 +1,6 @@
 # Production hardening checklist
 
-Status of the cross-cutting production concerns for JK Platform (SAGA), and
+Status of the cross-cutting production concerns for SAGA, and
 where each is enforced. Items marked **deferred** have a named owner
 (ADR/blocker) and are not silently assumed done.
 

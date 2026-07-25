@@ -2,7 +2,7 @@
   "name": "@jk/web",
   "version": "0.1.0",
   "private": true,
-  "description": "JK Platform web console (Volume V). React SPA consuming @jk/contracts-rest: tenant-scoped session, governed-AI review, and animal traceability exports.",
+  "description": "SAGA web console (Volume V). React SPA consuming @jk/contracts-rest: tenant-scoped session, governed-AI review, and animal traceability exports.",
   "type": "module",
   "scripts": {
     "dev": "vite",

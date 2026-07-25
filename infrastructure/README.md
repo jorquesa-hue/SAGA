@@ -1,6 +1,6 @@
 # infrastructure/
 
-Deployment and local-environment baselines for JK Platform per
+Deployment and local-environment baselines for SAGA per
 **JK-PLT-EES-001** §30 (Container Architecture), §75 (Infrastructure
 Baseline), §76 (Kubernetes Baseline), §77 (Observability), and Appendix H.
 

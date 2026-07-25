@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# JK Platform — edge gateway image (§34). On-farm device ingestion with a
+# SAGA — edge gateway image (§34). On-farm device ingestion with a
 # durable local buffer; batches observations upstream to the API.
 #
 # Build from the REPOSITORY ROOT:

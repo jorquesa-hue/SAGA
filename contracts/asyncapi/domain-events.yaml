@@ -1,4 +1,4 @@
-# JK Platform domain event topics (JK-PLT-EES-001 §49, Appendix E baseline).
+# SAGA domain event topics (JK-PLT-EES-001 §49, Appendix E baseline).
 #
 # Subject convention (§49): jk.{environment}.{tenantShard}.{context}.{aggregate}.{event}.v{major}
 # Public subjects never carry raw tenant identifiers; the envelope carries the
@@ -9,7 +9,7 @@
 # animal.weight_recorded.v1 baseline.
 asyncapi: 3.0.0
 info:
-  title: JK Platform Domain Events
+  title: SAGA Domain Events
   version: 1.0.0
   description: >
     At-least-once domain event topics. Every message is a validated domain

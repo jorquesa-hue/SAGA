@@ -13,7 +13,7 @@
 Which accounting system the enterprise uses (Brazilian market: e.g. Omie,
 Conta Azul, Totvs/Protheus, Dominio, or the accountant's own tooling) is
 undecided, and so is the integration depth (file export vs API sync).
-JK Platform's finance module (Phase 4) tracks **operational** cost/revenue
+SAGA's finance module (Phase 4) tracks **operational** cost/revenue
 and allocations — it is not a general ledger, and the spec keeps fiscal
 bookkeeping out of scope for the initial release (§4.2 non-goals).
 

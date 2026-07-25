@@ -12,7 +12,7 @@
 
 Spec §93 leaves the managed identity provider undecided. JK-IAM-002 mandates
 OIDC/OAuth 2.1-compatible providers; JK-SEC-003 mandates MFA for privileged
-roles; JK-SEC-008 forbids JK Platform storing passwords when external OIDC is
+roles; JK-SEC-008 forbids SAGA storing passwords when external OIDC is
 used. Candidates include Keycloak (self-managed), and managed offerings
 (Auth0/Okta, AWS Cognito, Azure Entra External ID, Google Identity Platform,
 Zitadel, etc.). Rural offline/admin needs and per-MAU pricing differ sharply.

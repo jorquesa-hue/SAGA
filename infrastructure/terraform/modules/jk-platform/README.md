@@ -1,6 +1,6 @@
 # jk-platform Terraform module
 
-Infrastructure contract for JK Platform environments per **JK-PLT-EES-001
+Infrastructure contract for SAGA environments per **JK-PLT-EES-001
 §75 (Infrastructure Baseline)** and **Appendix H.4 (Terraform Module
 Contract)**.
 

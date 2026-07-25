@@ -1,9 +1,10 @@
-# JK Platform Engineering Directive
+# SAGA Engineering Directive
 
-You are implementing JK Platform against **JK-PLT-EES-001** (Enterprise
+You are implementing SAGA against **JK-PLT-EES-001** (Enterprise
 Engineering Specification v1.0). Treat the specification as normative.
-The repository working name is **SAGA**; the canonical product name is
-**JK Platform** (see spec §92 — "JK Software" is a historical alias only).
+The product is named **SAGA**, which is also the repository name. "JK
+Platform" and "JK Software" in spec §92 are retired earlier names, kept only
+for historical traceability.
 
 ## Non-negotiable invariants
 
