@@ -5,7 +5,20 @@ import { useAsync } from "../use-async.js";
 import { FormMessage, SelectField, useCommand } from "../components/Form.js";
 
 /** Currencies offered in the picker (ISO 4217). BRL first (reference market). */
-const CURRENCIES = ["BRL", "USD", "EUR", "GBP", "ARS", "PYG", "UYU", "CLP", "COP", "MXN", "PEN", "BOB"];
+const CURRENCIES = [
+  "BRL",
+  "USD",
+  "EUR",
+  "GBP",
+  "ARS",
+  "PYG",
+  "UYU",
+  "CLP",
+  "COP",
+  "MXN",
+  "PEN",
+  "BOB",
+];
 
 /** Full language names shown in the picker, keyed by app locale. */
 const LOCALE_NAMES: Record<Locale, string> = {
@@ -32,7 +45,10 @@ export function Settings(): JSX.Element {
   // Seed the form from the tenant's stored settings once loaded.
   useEffect(() => {
     if (tenant.data?.defaultCurrency) setCur(tenant.data.defaultCurrency);
-    if (tenant.data?.defaultLocale && LOCALES.some((l) => l.value === tenant.data!.defaultLocale)) {
+    if (
+      tenant.data?.defaultLocale &&
+      LOCALES.some((l) => l.value === tenant.data!.defaultLocale)
+    ) {
       setLang(tenant.data.defaultLocale as Locale);
     }
   }, [tenant.data]);
@@ -48,10 +64,16 @@ export function Settings(): JSX.Element {
 
   const save = (): void => {
     void cmd.run(async () => {
-      const updated = await client.tenants.updateSettings({ defaultLocale: lang, defaultCurrency: currency });
+      const updated = await client.tenants.updateSettings({
+        defaultLocale: lang,
+        defaultCurrency: currency,
+      });
       // Re-apply live so the change is visible immediately across the console.
       if (updated.defaultCurrency) setCurrency(updated.defaultCurrency);
-      if (updated.defaultLocale && LOCALES.some((l) => l.value === updated.defaultLocale)) {
+      if (
+        updated.defaultLocale &&
+        LOCALES.some((l) => l.value === updated.defaultLocale)
+      ) {
         setLocale(updated.defaultLocale as Locale);
       }
       tenant.reload();

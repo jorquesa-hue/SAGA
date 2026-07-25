@@ -27,7 +27,8 @@ export function Budgets(): JSX.Element {
 
   const saveBudget = (): void => {
     void set.run(
-      () => client.finance.setBudget({ periodMonth: period, category, planned, currency }),
+      () =>
+        client.finance.setBudget({ periodMonth: period, category, planned, currency }),
       t("budgets.saved"),
     );
   };
@@ -45,7 +46,8 @@ export function Budgets(): JSX.Element {
     }
   };
 
-  const money = (v: unknown): string => fmt.currency(v, variance?.currency as string | undefined);
+  const money = (v: unknown): string =>
+    fmt.currency(v, variance?.currency as string | undefined);
 
   return (
     <section>
@@ -55,10 +57,29 @@ export function Budgets(): JSX.Element {
 
       <div className="form">
         <h3>{t("budgets.setTitle")}</h3>
-        <Field label={t("budgets.period")} value={period} onChange={setPeriod} placeholder="2026-07" />
-        <Field label={t("budgets.category")} value={category} onChange={setCategory} placeholder={t("budgets.categoryPlaceholder")} />
-        <Field label={t("budgets.planned")} value={planned} onChange={setPlanned} placeholder="1250.00" />
-        <button type="button" disabled={set.busy || !/^\d{4}-\d{2}$/.test(period) || !category || !planned} onClick={saveBudget}>
+        <Field
+          label={t("budgets.period")}
+          value={period}
+          onChange={setPeriod}
+          placeholder="2026-07"
+        />
+        <Field
+          label={t("budgets.category")}
+          value={category}
+          onChange={setCategory}
+          placeholder={t("budgets.categoryPlaceholder")}
+        />
+        <Field
+          label={t("budgets.planned")}
+          value={planned}
+          onChange={setPlanned}
+          placeholder="1250.00"
+        />
+        <button
+          type="button"
+          disabled={set.busy || !/^\d{4}-\d{2}$/.test(period) || !category || !planned}
+          onClick={saveBudget}
+        >
           {t("budgets.save")}
         </button>
         <FormMessage state={set} />
@@ -66,9 +87,23 @@ export function Budgets(): JSX.Element {
 
       <div className="form">
         <h3>{t("budgets.varianceTitle")}</h3>
-        <Field label={t("budgets.period")} value={qPeriod} onChange={setQPeriod} placeholder="2026-07" />
-        <Field label={t("budgets.category")} value={qCategory} onChange={setQCategory} placeholder={t("budgets.categoryPlaceholder")} />
-        <button type="button" disabled={qBusy || !/^\d{4}-\d{2}$/.test(qPeriod) || !qCategory} onClick={() => void loadVariance()}>
+        <Field
+          label={t("budgets.period")}
+          value={qPeriod}
+          onChange={setQPeriod}
+          placeholder="2026-07"
+        />
+        <Field
+          label={t("budgets.category")}
+          value={qCategory}
+          onChange={setQCategory}
+          placeholder={t("budgets.categoryPlaceholder")}
+        />
+        <button
+          type="button"
+          disabled={qBusy || !/^\d{4}-\d{2}$/.test(qPeriod) || !qCategory}
+          onClick={() => void loadVariance()}
+        >
           {t("budgets.load")}
         </button>
         {qError && <p className="error">{qError}</p>}

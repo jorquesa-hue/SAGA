@@ -21,7 +21,10 @@ export function usePagination<T>(items: T[], pageSize = 20): Paged<T> {
   const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
   const clamped = Math.min(page, pageCount);
   const start = (clamped - 1) * pageSize;
-  const pageItems = useMemo(() => items.slice(start, start + pageSize), [items, start, pageSize]);
+  const pageItems = useMemo(
+    () => items.slice(start, start + pageSize),
+    [items, start, pageSize],
+  );
 
   const setPage = (p: number): void => setPageRaw(Math.min(Math.max(1, p), pageCount));
   return {
@@ -44,7 +47,11 @@ export function Pagination({ paged }: { paged: Paged<unknown> }): JSX.Element | 
         {t("pager.prev")}
       </button>
       <span className="muted">
-        {t("pager.status", { page: paged.page, pages: paged.pageCount, total: paged.total })}
+        {t("pager.status", {
+          page: paged.page,
+          pages: paged.pageCount,
+          total: paged.total,
+        })}
       </span>
       <button type="button" onClick={paged.next} disabled={paged.page >= paged.pageCount}>
         {t("pager.next")}

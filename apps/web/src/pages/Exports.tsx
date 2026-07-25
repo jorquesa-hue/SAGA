@@ -5,7 +5,11 @@ import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 
 const TYPES: { value: ExportType; labelKey: string; needsAnimal?: boolean }[] = [
-  { value: "animal_traceability_packet", labelKey: "exports.typeTrace", needsAnimal: true },
+  {
+    value: "animal_traceability_packet",
+    labelKey: "exports.typeTrace",
+    needsAnimal: true,
+  },
   { value: "animal_inventory", labelKey: "exports.typeInventory" },
   { value: "herd_weights", labelKey: "exports.typeWeights" },
   { value: "finance_ledger", labelKey: "exports.typeLedger" },
@@ -57,9 +61,17 @@ export function Exports(): JSX.Element {
           ))}
         </select>
         {selected?.needsAnimal && (
-          <input value={animalId} onChange={(e) => setAnimalId(e.target.value)} placeholder={t("exports.animalPlaceholder")} style={{ minWidth: 240 }} />
+          <input
+            value={animalId}
+            onChange={(e) => setAnimalId(e.target.value)}
+            placeholder={t("exports.animalPlaceholder")}
+            style={{ minWidth: 240 }}
+          />
         )}
-        <select value={format} onChange={(e) => setFormat(e.target.value as "json" | "csv")}>
+        <select
+          value={format}
+          onChange={(e) => setFormat(e.target.value as "json" | "csv")}
+        >
           <option value="json">JSON</option>
           <option value="csv">CSV</option>
         </select>
@@ -71,7 +83,9 @@ export function Exports(): JSX.Element {
 
       {jobs.loading && <p className="muted">{t("common.loading")}</p>}
       {jobs.error && <p className="error">{jobs.error}</p>}
-      {jobs.data && jobs.data.items.length === 0 && <p className="muted">{t("exports.empty")}</p>}
+      {jobs.data && jobs.data.items.length === 0 && (
+        <p className="muted">{t("exports.empty")}</p>
+      )}
       {jobs.data && jobs.data.items.length > 0 && (
         <table className="grid">
           <thead>
@@ -89,7 +103,9 @@ export function Exports(): JSX.Element {
                 <td>{td(j.exportType)}</td>
                 <td>{td(j.format)}</td>
                 <td>{td(j.status)}</td>
-                <td>{j.byteSize ? `${fmt.number(j.byteSize)} B` : "—"}</td>
+                <td className="mono">
+                  {j.byteSize ? `${fmt.number(j.byteSize)} B` : "—"}
+                </td>
                 <td>{j.status === "completed" ? <code>{j.resolvableUrl}</code> : "—"}</td>
               </tr>
             ))}

@@ -13,7 +13,8 @@ export function LotDetail(): JSX.Element {
   const paddock = useAsync(() => client.lots.currentPaddock(id), [id]);
   const margin = useAsync(() => client.finance.lotMargin(id), [id]);
   const rows = members.data?.items ?? [];
-  const money = (v: unknown): string => fmt.currency(v, margin.data?.currency as string | undefined);
+  const money = (v: unknown): string =>
+    fmt.currency(v, margin.data?.currency as string | undefined);
   const paged = usePagination(rows, 25);
 
   return (
@@ -31,7 +32,14 @@ export function LotDetail(): JSX.Element {
         <div className="kpi">
           <span className="kpi-label">{t("lotDetail.currentPaddock")}</span>
           <span className="kpi-value">
-            {paddock.loading ? "…" : String(paddock.data?.paddockName ?? paddock.data?.name ?? paddock.data?.paddockId ?? "—")}
+            {paddock.loading
+              ? "…"
+              : String(
+                  paddock.data?.paddockName ??
+                    paddock.data?.name ??
+                    paddock.data?.paddockId ??
+                    "—",
+                )}
           </span>
         </div>
         <div className="kpi">
@@ -63,7 +71,9 @@ export function LotDetail(): JSX.Element {
       <h3>{t("lotDetail.members")}</h3>
       {members.loading && <p className="muted">{t("common.loading")}</p>}
       {members.error && <p className="error">{members.error}</p>}
-      {rows.length === 0 && !members.loading && <p className="muted">{t("lotDetail.empty")}</p>}
+      {rows.length === 0 && !members.loading && (
+        <p className="muted">{t("lotDetail.empty")}</p>
+      )}
       {rows.length > 0 && (
         <>
           <table className="grid">
@@ -79,9 +89,17 @@ export function LotDetail(): JSX.Element {
                 const animalId = String(m.animalId ?? m.animal_id ?? "");
                 return (
                   <tr key={`${animalId}-${i}`}>
-                    <td>{animalId ? <Link to={`/animals/${animalId}`}>{animalId.slice(0, 8)}…</Link> : "—"}</td>
+                    <td>
+                      {animalId ? (
+                        <Link to={`/animals/${animalId}`}>{animalId.slice(0, 8)}…</Link>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td>{td(m.status ?? "active")}</td>
-                    <td>{fmt.date(m.effectiveAt ?? m.effective_at ?? m.joinedAt)}</td>
+                    <td className="mono">
+                      {fmt.date(m.effectiveAt ?? m.effective_at ?? m.joinedAt)}
+                    </td>
                   </tr>
                 );
               })}

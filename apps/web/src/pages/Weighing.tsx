@@ -25,7 +25,9 @@ export function Weighing(): JSX.Element {
   const [captured, setCaptured] = useState(0);
 
   const newId = (): string =>
-    typeof globalThis.crypto?.randomUUID === "function" ? crypto.randomUUID() : `obs-${Date.now()}`;
+    typeof globalThis.crypto?.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `obs-${Date.now()}`;
 
   const startSession = (): void => {
     void start.run(async () => {
@@ -88,10 +90,23 @@ export function Weighing(): JSX.Element {
       {sessionId && (
         <div className="form">
           <h3>
-            {t("weighing.captureTitle")} <span className="muted">{t("weighing.sessionMeta", { id: sessionId.slice(0, 8), n: captured })}</span>
+            {t("weighing.captureTitle")}{" "}
+            <span className="muted">
+              {t("weighing.sessionMeta", { id: sessionId.slice(0, 8), n: captured })}
+            </span>
           </h3>
-          <Field label={t("weighing.rfid")} value={rfid} onChange={setRfid} placeholder="982000..." />
-          <Field label={t("weighing.weight")} value={weight} onChange={setWeight} type="number" />
+          <Field
+            label={t("weighing.rfid")}
+            value={rfid}
+            onChange={setRfid}
+            placeholder="982000..."
+          />
+          <Field
+            label={t("weighing.weight")}
+            value={weight}
+            onChange={setWeight}
+            type="number"
+          />
           <button type="button" disabled={obs.busy || !weight} onClick={record}>
             {t("weighing.capture")}
           </button>

@@ -25,8 +25,12 @@ export function Animals(): JSX.Element {
     const items = data?.items ?? [];
     const q = query.trim().toLowerCase();
     return items.filter((a) => {
-      const matchesStatus = status === "all" || (a.lifecycleStatus ?? "active") === status;
-      const matchesQuery = !q || (a.visualId ?? "").toLowerCase().includes(q) || a.id.toLowerCase().includes(q);
+      const matchesStatus =
+        status === "all" || (a.lifecycleStatus ?? "active") === status;
+      const matchesQuery =
+        !q ||
+        (a.visualId ?? "").toLowerCase().includes(q) ||
+        a.id.toLowerCase().includes(q);
       return matchesStatus && matchesQuery;
     });
   }, [data, query, status]);
@@ -36,14 +40,26 @@ export function Animals(): JSX.Element {
   const exportPacket = async (animalId: string): Promise<void> => {
     setExportState((s) => ({ ...s, [animalId]: t("animals.generating") }));
     try {
-      const job = await client.exports.request({ exportType: "animal_traceability_packet", format: "json", params: { animalId } });
+      const job = await client.exports.request({
+        exportType: "animal_traceability_packet",
+        format: "json",
+        params: { animalId },
+      });
       const processed = await client.exports.process(job.id);
       setExportState((s) => ({
         ...s,
-        [animalId]: processed.status === "completed" ? t("animals.ready", { url: processed.resolvableUrl }) : t("animals.statusMsg", { status: td(processed.status) }),
+        [animalId]:
+          processed.status === "completed"
+            ? t("animals.ready", { url: processed.resolvableUrl })
+            : t("animals.statusMsg", { status: td(processed.status) }),
       }));
     } catch (e) {
-      setExportState((s) => ({ ...s, [animalId]: t("animals.failCode", { code: e instanceof ApiError ? e.code : "erro" }) }));
+      setExportState((s) => ({
+        ...s,
+        [animalId]: t("animals.failCode", {
+          code: e instanceof ApiError ? e.code : "erro",
+        }),
+      }));
     }
   };
 
@@ -56,10 +72,22 @@ export function Animals(): JSX.Element {
         </button>
       </div>
 
-      {showForm && <RegisterForm onDone={() => { setShowForm(false); reload(); }} />}
+      {showForm && (
+        <RegisterForm
+          onDone={() => {
+            setShowForm(false);
+            reload();
+          }}
+        />
+      )}
 
       <div className="inline-form">
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("animals.searchPlaceholder")} style={{ minWidth: 220 }} />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("animals.searchPlaceholder")}
+          style={{ minWidth: 220 }}
+        />
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="all">{t("animals.allStatus")}</option>
           <option value="active">{td("active")}</option>
@@ -67,7 +95,9 @@ export function Animals(): JSX.Element {
           <option value="deceased">{td("deceased")}</option>
           <option value="quarantined">{td("quarantined")}</option>
         </select>
-        <span className="muted">{t("animals.count", { shown: filtered.length, total: data?.items.length ?? 0 })}</span>
+        <span className="muted">
+          {t("animals.count", { shown: filtered.length, total: data?.items.length ?? 0 })}
+        </span>
       </div>
 
       {loading && <p className="muted">{t("dashboard.loading")}</p>}
@@ -88,7 +118,9 @@ export function Animals(): JSX.Element {
             {paged.pageItems.map((a) => (
               <tr key={a.id}>
                 <td>
-                  <Link to={`/animals/${a.id}`}>{a.visualId ?? a.id.slice(0, 8)}</Link>
+                  <Link className="mono" to={`/animals/${a.id}`}>
+                    {a.visualId ?? a.id.slice(0, 8)}
+                  </Link>
                 </td>
                 <td>{td(a.sex)}</td>
                 <td>{a.breedCode ?? "—"}</td>
@@ -97,7 +129,9 @@ export function Animals(): JSX.Element {
                   <button type="button" onClick={() => void exportPacket(a.id)}>
                     {t("animals.export")}
                   </button>
-                  {exportState[a.id] && <span className="hint"> {exportState[a.id]}</span>}
+                  {exportState[a.id] && (
+                    <span className="hint"> {exportState[a.id]}</span>
+                  )}
                 </td>
               </tr>
             ))}
@@ -138,8 +172,18 @@ function RegisterForm({ onDone }: { onDone: () => void }): JSX.Element {
   return (
     <div className="form">
       <h3>{t("animals.register")}</h3>
-      <Field label={t("animals.farmId")} value={farmId} onChange={setFarmId} placeholder={t("animals.farmPlaceholder")} />
-      <Field label={t("animals.visualId")} value={visualId} onChange={setVisualId} placeholder={t("animals.visualPlaceholder")} />
+      <Field
+        label={t("animals.farmId")}
+        value={farmId}
+        onChange={setFarmId}
+        placeholder={t("animals.farmPlaceholder")}
+      />
+      <Field
+        label={t("animals.visualId")}
+        value={visualId}
+        onChange={setVisualId}
+        placeholder={t("animals.visualPlaceholder")}
+      />
       <SelectField
         label={t("animals.sex")}
         value={sex}
@@ -154,7 +198,11 @@ function RegisterForm({ onDone }: { onDone: () => void }): JSX.Element {
       <Field label={t("animals.birthDate")} value={birthDate} onChange={setBirthDate} />
       <Field label={t("animals.rfid")} value={rfid} onChange={setRfid} />
       <div className="card-actions">
-        <button type="button" disabled={cmd.busy || !farmId || !visualId} onClick={submit}>
+        <button
+          type="button"
+          disabled={cmd.busy || !farmId || !visualId}
+          onClick={submit}
+        >
           {t("animals.submit")}
         </button>
         <button type="button" onClick={onDone}>

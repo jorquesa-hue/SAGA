@@ -10,14 +10,22 @@ export function SearchResults(): JSX.Element {
   const { t } = useI18n();
   const [params] = useSearchParams();
   const q = params.get("q") ?? "";
-  const { loading, data, error } = useAsync(() => (q ? client.search.query(q, 15) : Promise.resolve(null)), [q]);
+  const { loading, data, error } = useAsync(
+    () => (q ? client.search.query(q, 15) : Promise.resolve(null)),
+    [q],
+  );
 
-  const total = data ? data.animals.length + data.lots.length + data.paddocks.length + data.people.length : 0;
+  const total = data
+    ? data.animals.length + data.lots.length + data.paddocks.length + data.people.length
+    : 0;
 
   return (
     <section>
       <div className="page-head">
-        <h2>{t("search.title")}{q ? `: “${q}”` : ""}</h2>
+        <h2>
+          {t("search.title")}
+          {q ? `: “${q}”` : ""}
+        </h2>
       </div>
       {!q && <p className="muted">{t("search.prompt")}</p>}
       {loading && <p className="muted">{t("search.searching")}</p>}
@@ -25,7 +33,11 @@ export function SearchResults(): JSX.Element {
       {data && total === 0 && <p className="muted">{t("search.empty")}</p>}
       {data && (
         <>
-          <Group title={t("search.animals")} hits={data.animals} to={(h) => `/animals/${h.id}`} />
+          <Group
+            title={t("search.animals")}
+            hits={data.animals}
+            to={(h) => `/animals/${h.id}`}
+          />
           <Group title={t("search.lots")} hits={data.lots} />
           <Group title={t("search.paddocks")} hits={data.paddocks} />
           <Group title={t("search.people")} hits={data.people} />
@@ -35,7 +47,15 @@ export function SearchResults(): JSX.Element {
   );
 }
 
-function Group({ title, hits, to }: { title: string; hits: SearchHit[]; to?: (h: SearchHit) => string }): JSX.Element | null {
+function Group({
+  title,
+  hits,
+  to,
+}: {
+  title: string;
+  hits: SearchHit[];
+  to?: (h: SearchHit) => string;
+}): JSX.Element | null {
   if (hits.length === 0) return null;
   return (
     <>

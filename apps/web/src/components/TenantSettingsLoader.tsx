@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import { useClient } from "../session.js";
-import { LOCALES, hasStoredLocalePreference, useI18n, type Locale } from "../i18n/index.js";
+import {
+  LOCALES,
+  hasStoredLocalePreference,
+  useI18n,
+  type Locale,
+} from "../i18n/index.js";
 
 /**
  * Adopts the signed-in tenant's configured settings (§45): the base currency

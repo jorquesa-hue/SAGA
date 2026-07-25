@@ -52,14 +52,24 @@ export function Alerts(): JSX.Element {
                 <tr key={id}>
                   <td>{td(a.alertType ?? a.type)}</td>
                   <td>
-                    <span className={`badge risk-${String(a.severity ?? "low")}`}>{td(a.severity)}</span>
+                    <span className={`badge risk-${String(a.severity ?? "low")}`}>
+                      {td(a.severity)}
+                    </span>
                   </td>
                   <td>{td(status)}</td>
                   <td>
-                    <button type="button" disabled={busy === id || status !== "open"} onClick={() => void act(id, () => client.alerts.acknowledge(id))}>
+                    <button
+                      type="button"
+                      disabled={busy === id || status !== "open"}
+                      onClick={() => void act(id, () => client.alerts.acknowledge(id))}
+                    >
                       {t("alerts.acknowledge")}
                     </button>{" "}
-                    <button type="button" disabled={busy === id || status === "resolved"} onClick={() => void act(id, () => client.alerts.resolve(id))}>
+                    <button
+                      type="button"
+                      disabled={busy === id || status === "resolved"}
+                      onClick={() => void act(id, () => client.alerts.resolve(id))}
+                    >
                       {t("alerts.resolve")}
                     </button>
                   </td>

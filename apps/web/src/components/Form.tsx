@@ -18,7 +18,12 @@ export function Field({
   return (
     <label className="field">
       <span>{label}</span>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
     </label>
   );
 }
@@ -62,7 +67,10 @@ export function useCommand(): CommandState {
   const [message, setMessage] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
-  const run = async (fn: () => Promise<unknown>, successText = "Registrado"): Promise<void> => {
+  const run = async (
+    fn: () => Promise<unknown>,
+    successText = "Registrado",
+  ): Promise<void> => {
     setBusy(true);
     setMessage(null);
     try {
@@ -71,7 +79,13 @@ export function useCommand(): CommandState {
       setMessage(successText);
     } catch (e) {
       setOk(false);
-      setMessage(e instanceof ApiError ? `${e.code}: ${e.message}` : e instanceof Error ? e.message : "Erro");
+      setMessage(
+        e instanceof ApiError
+          ? `${e.code}: ${e.message}`
+          : e instanceof Error
+            ? e.message
+            : "Erro",
+      );
     } finally {
       setBusy(false);
     }

@@ -4,6 +4,8 @@ import { ApiError } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
+import { metricLabel } from "../i18n/labels.js";
+import { Icon } from "../components/Icon.js";
 
 /**
  * Animal 360 view — identity plus the cross-context history (weights,
@@ -24,11 +26,23 @@ export function AnimalDetail(): JSX.Element {
   const exportPacket = async (): Promise<void> => {
     setExportMsg(t("animalDetail.generating"));
     try {
-      const job = await client.exports.request({ exportType: "animal_traceability_packet", format: "json", params: { animalId: id } });
+      const job = await client.exports.request({
+        exportType: "animal_traceability_packet",
+        format: "json",
+        params: { animalId: id },
+      });
       const done = await client.exports.process(job.id);
-      setExportMsg(done.status === "completed" ? t("animalDetail.ready", { url: done.resolvableUrl }) : t("animalDetail.status", { status: done.status }));
+      setExportMsg(
+        done.status === "completed"
+          ? t("animalDetail.ready", { url: done.resolvableUrl })
+          : t("animalDetail.status", { status: done.status }),
+      );
     } catch (e) {
-      setExportMsg(e instanceof ApiError ? t("animalDetail.failCode", { code: e.code }) : t("animalDetail.fail"));
+      setExportMsg(
+        e instanceof ApiError
+          ? t("animalDetail.failCode", { code: e.code })
+          : t("animalDetail.fail"),
+      );
     }
   };
 
@@ -39,11 +53,18 @@ export function AnimalDetail(): JSX.Element {
           <Link to="/animals" className="back">
             {t("animalDetail.back")}
           </Link>{" "}
-          {animal.data?.visualId ?? id.slice(0, 8)}
+          {/* An identifier is a figure, not display type (docs/brand §3.3). */}
+          <span className="mono">{animal.data?.visualId ?? id.slice(0, 8)}</span>
         </h2>
-        <button type="button" onClick={() => void exportPacket()}>
-          {t("animalDetail.exportTrace")}
-        </button>
+        <div className="card-actions">
+          <Link className="button-link" to={`/animals/${id}/record`}>
+            {t("animalDetail.viewRecord")}
+          </Link>
+          <button type="button" onClick={() => void exportPacket()}>
+            <Icon name="export" size={16} />
+            {t("animalDetail.exportTrace")}
+          </button>
+        </div>
       </div>
       {exportMsg && <p className="hint">{exportMsg}</p>}
 
@@ -52,7 +73,10 @@ export function AnimalDetail(): JSX.Element {
         <div className="kpi-grid">
           <Tile label={t("animalDetail.sex")} value={td(animal.data.sex)} />
           <Tile label={t("animalDetail.breed")} value={animal.data.breedCode} />
-          <Tile label={t("animalDetail.statusLabel")} value={td(animal.data.lifecycleStatus)} />
+          <Tile
+            label={t("animalDetail.statusLabel")}
+            value={td(animal.data.lifecycleStatus)}
+          />
         </div>
       )}
 
@@ -68,8 +92,8 @@ export function AnimalDetail(): JSX.Element {
             <tbody>
               {rows.map((w, i) => (
                 <tr key={i}>
-                  <td>{fmt.date(w.occurredAt ?? w.occurred_at)}</td>
-                  <td>{fmt.number(w.weightKg ?? w.weight_kg)}</td>
+                  <td className="mono">{fmt.date(w.occurredAt ?? w.occurred_at)}</td>
+                  <td className="mono">{fmt.number(w.weightKg ?? w.weight_kg)}</td>
                 </tr>
               ))}
             </tbody>
@@ -95,8 +119,17 @@ export function AnimalDetail(): JSX.Element {
           <ul className="cards">
             {rows.map((tr, i) => (
               <li className="card" key={i}>
-                <strong>{String(tr.productName ?? tr.product_name ?? tr.treatmentType ?? t("animalDetail.treatmentFallback"))}</strong>
-                <p className="muted">{fmt.date(tr.administeredAt ?? tr.administered_at)}</p>
+                <strong>
+                  {String(
+                    tr.productName ??
+                      tr.product_name ??
+                      tr.treatmentType ??
+                      t("animalDetail.treatmentFallback"),
+                  )}
+                </strong>
+                <p className="muted mono">
+                  {fmt.date(tr.administeredAt ?? tr.administered_at)}
+                </p>
               </li>
             ))}
           </ul>
@@ -114,7 +147,14 @@ export function AnimalDetail(): JSX.Element {
             // Prefer an enum label; otherwise format dates/numbers.
             const enumLabel = td(v);
             const value = enumLabel !== String(v ?? "—") ? enumLabel : fmt.auto(v);
-            return <Tile key={k} label={k} value={value} />;
+            // Same rule as the dashboard: a reader, not a key path.
+            return (
+              <Tile
+                key={k}
+                label={metricLabel("animalDetail.repro", k, t, td)}
+                value={value}
+              />
+            );
           })}
         </div>
       )}
@@ -126,7 +166,9 @@ function Tile({ label, value }: { label: string; value: unknown }): JSX.Element 
   return (
     <div className="kpi">
       <span className="kpi-label">{label}</span>
-      <span className="kpi-value">{value === null || value === undefined ? "—" : String(value)}</span>
+      <span className="kpi-value">
+        {value === null || value === undefined ? "—" : String(value)}
+      </span>
     </div>
   );
 }
@@ -154,7 +196,9 @@ function Section<T>({
       </div>
       {state.loading && <p className="muted">{t("common.loading")}</p>}
       {state.error && <p className="muted">{t("animalDetail.noRecords")}</p>}
-      {state.data && state.data.items.length === 0 && <p className="muted">{t("animalDetail.noRecords")}</p>}
+      {state.data && state.data.items.length === 0 && (
+        <p className="muted">{t("animalDetail.noRecords")}</p>
+      )}
       {state.data && state.data.items.length > 0 && children(state.data.items)}
     </>
   );

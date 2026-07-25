@@ -49,7 +49,16 @@ function ServiceForm(): JSX.Element {
       <button
         type="button"
         disabled={cmd.busy || !damId}
-        onClick={() => void cmd.run(() => client.reproductionCommands.recordService({ damId, method, serviceDate, ...(bullId ? { bullId } : {}) }))}
+        onClick={() =>
+          void cmd.run(() =>
+            client.reproductionCommands.recordService({
+              damId,
+              method,
+              serviceDate,
+              ...(bullId ? { bullId } : {}),
+            }),
+          )
+        }
       >
         {t("repro.recordService")}
       </button>
@@ -85,7 +94,15 @@ function PregnancyForm(): JSX.Element {
       <button
         type="button"
         disabled={cmd.busy || !damId}
-        onClick={() => void cmd.run(() => client.reproductionCommands.recordPregnancyCheck({ damId, result, checkDate }))}
+        onClick={() =>
+          void cmd.run(() =>
+            client.reproductionCommands.recordPregnancyCheck({
+              damId,
+              result,
+              checkDate,
+            }),
+          )
+        }
       >
         {t("repro.recordPreg")}
       </button>
@@ -110,7 +127,16 @@ function CalvingForm(): JSX.Element {
       outcome === "live" && calfVisualId && calfFarmId
         ? { calf: { farmId: calfFarmId, visualId: calfVisualId, sex: calfSex } }
         : {};
-    void cmd.run(() => client.reproductionCommands.recordCalving({ damId, outcome, calvingDate, ...calf }), t("repro.calvingMsg"));
+    void cmd.run(
+      () =>
+        client.reproductionCommands.recordCalving({
+          damId,
+          outcome,
+          calvingDate,
+          ...calf,
+        }),
+      t("repro.calvingMsg"),
+    );
   };
 
   return (
@@ -130,8 +156,16 @@ function CalvingForm(): JSX.Element {
       <Field label={t("repro.date")} value={calvingDate} onChange={setCalvingDate} />
       {outcome === "live" && (
         <>
-          <Field label={t("repro.calfVisual")} value={calfVisualId} onChange={setCalfVisualId} />
-          <Field label={t("repro.calfFarm")} value={calfFarmId} onChange={setCalfFarmId} />
+          <Field
+            label={t("repro.calfVisual")}
+            value={calfVisualId}
+            onChange={setCalfVisualId}
+          />
+          <Field
+            label={t("repro.calfFarm")}
+            value={calfFarmId}
+            onChange={setCalfFarmId}
+          />
           <SelectField
             label={t("repro.calfSex")}
             value={calfSex}
