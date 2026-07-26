@@ -83,6 +83,7 @@ export const messages: Record<Locale, Record<string, string>> = {
       "Extrato append-only: nada é apagado. Correções entram como novos lançamentos, com data própria.",
     "animalDetail.viewRecord": "Ver registro",
     "dashboard.allFarms": "Todas as fazendas",
+    "dashboard.open": "Abrir",
     // KPI labels. The dashboard renders whatever shape the API returns, so an
     // unlabelled key degrades to a humanised form rather than disappearing.
     "dashboard.kpi.farmId": "Fazenda",
@@ -609,6 +610,7 @@ export const messages: Record<Locale, Record<string, string>> = {
       "Append-only extract: nothing is deleted. Corrections are filed as new entries, each with its own date.",
     "animalDetail.viewRecord": "View record",
     "dashboard.allFarms": "All farms",
+    "dashboard.open": "Open",
     "dashboard.kpi.farmId": "Farm",
     "dashboard.kpi.herd.active": "Active herd",
     "dashboard.kpi.herd.byStatus": "Herd by status",
@@ -1116,6 +1118,7 @@ export const messages: Record<Locale, Record<string, string>> = {
       "Extracto append-only: nada se borra. Las correcciones entran como asientos nuevos, con su propia fecha.",
     "animalDetail.viewRecord": "Ver registro",
     "dashboard.allFarms": "Todos los establecimientos",
+    "dashboard.open": "Abrir",
     "dashboard.kpi.farmId": "Establecimiento",
     "dashboard.kpi.herd.active": "Rodeo activo",
     "dashboard.kpi.herd.byStatus": "Rodeo por situación",

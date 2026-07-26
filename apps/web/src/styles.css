@@ -228,25 +228,97 @@ button:disabled {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 0.75rem;
 }
+/* A KPI carries a tone (docs/brand §3.2): a coloured left band and an icon
+ * chip, so the panel reads at a glance and each figure is a way into its
+ * module. Tones map to meaning — Tag for the herd/index, Pasto for the positive
+ * reproduction figures, Hide for the counts that mean attention. */
 .kpi {
+  --kpi-bar: var(--border);
+  --kpi-wash: var(--panel-2);
+  --kpi-ink: var(--muted);
   background: var(--panel);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--kpi-bar);
   border-radius: 8px;
   padding: 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
+}
+.kpi--tag {
+  --kpi-bar: var(--saga-tag);
+  --kpi-wash: var(--saga-tag-wash);
+  --kpi-ink: var(--saga-tag-text);
+}
+.kpi--pasto {
+  --kpi-bar: var(--saga-pasto);
+  --kpi-wash: color-mix(in srgb, var(--saga-pasto) 14%, var(--saga-paper));
+  --kpi-ink: var(--saga-pasto);
+}
+.kpi--hide {
+  --kpi-bar: var(--saga-hide);
+  --kpi-wash: color-mix(in srgb, var(--saga-hide) 14%, var(--saga-paper));
+  --kpi-ink: var(--saga-hide);
+}
+.kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: none;
+  border-radius: 6px;
+  background: var(--kpi-wash);
+  color: var(--kpi-ink);
+}
+/* The affordance: quiet until hover, so it does not compete with the figure. */
+.kpi-go {
+  margin-top: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--kpi-ink);
+  opacity: 0.7;
+}
+a.kpi.is-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    transform 160ms ease-out,
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+a.kpi.is-link:hover {
+  transform: translateY(-2px);
+  border-color: var(--kpi-bar);
+  box-shadow: 0 6px 16px rgba(34, 43, 38, 0.1);
+}
+a.kpi.is-link:hover .kpi-go {
+  opacity: 1;
 }
 .kpi-label {
   color: var(--muted);
   font-size: 0.75rem;
 }
-/* Figures line up in columns: mono + tabular per docs/brand §3.3. */
+/* Figures line up in columns: mono + tabular per docs/brand §3.3. The positive
+ * and attention tones colour the figure itself — Pasto and Hide are state
+ * colours (§3.2), and both clear 4.5:1 on Paper. Tag and neutral stay Ink. */
 .kpi-value {
   font-family: var(--saga-font-data);
   font-size: 1.4rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+.kpi--pasto .kpi-value {
+  color: var(--saga-pasto);
+}
+.kpi--hide .kpi-value {
+  color: var(--saga-hide);
 }
 /* ...but a prose value is not a figure, so it keeps the body face. */
 .kpi-value-text {
