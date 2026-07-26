@@ -79,7 +79,10 @@ body {
   padding: 0.5rem 1.25rem;
   min-height: 56px;
   background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  /* docs/brand §3.2 — Tag is the signature field; a band under the header is
+   * the "band" the brand book names, and it is the same ground line as the
+   * Bar S mark. It carries no text, so the 1.8:1 rule does not apply. */
+  border-bottom: 3px solid var(--accent);
 }
 .topbar-bar,
 .topbar-menu {
@@ -171,6 +174,42 @@ button {
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* docs/brand §3.2 — the signature is Tag as a FIELD. The primary action on a
+ * screen (the title-row action and every form's submit) is a Tag chip with Ink
+ * type on it. Ink on Tag is 7.5:1 (AAA), so this respects rule 1 — Tag never
+ * carries text on Paper, but it may carry Ink type on a Tag field. Secondary
+ * controls — table rows, list refreshers, the locale switch — stay neutral, so
+ * the yellow marks intent rather than becoming a wall. */
+.page-head > button,
+.page-head > .button-link,
+.form button {
+  background: var(--accent);
+  color: var(--saga-ink);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.page-head > button:hover,
+.page-head > .button-link:hover,
+.form button:hover {
+  filter: brightness(0.95);
+}
+.page-head > button:disabled,
+.form button:disabled {
+  filter: none;
+}
+
+/* §3.2 "underlines" — a short Tag rule under the page title, the same band the
+ * mark is written on, repeated at the head of every screen. */
+.page-head h2::after {
+  content: "";
+  display: block;
+  width: 2.75rem;
+  height: 4px;
+  margin-top: 0.5rem;
+  background: var(--accent);
+  border-radius: 2px;
 }
 
 .muted {
