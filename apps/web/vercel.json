@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "comment": "The GitHub import created a project rooted at apps/web, so Vercel reads THIS file, not the repo-root vercel.json. It builds the console (and only its workspace deps) with an empty API base so the client calls same-origin, then injects the read-only demo shim. See database/seeds/README.md and scripts/demo/.",
   "framework": null,
   "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "VITE_API_BASE_URL= pnpm --filter @jk/web... build && node ../../scripts/demo/place-static-demo.mjs",
