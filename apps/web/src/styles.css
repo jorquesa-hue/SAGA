@@ -738,8 +738,26 @@ textarea {
     width: 100%;
     box-sizing: border-box;
   }
+  /* The language switch is the one control people hunt for first, so it leads
+     the opened menu instead of sitting below nineteen destinations. */
   .locale {
+    order: -1;
     justify-content: flex-start;
+    gap: 0.4rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .locale button {
+    /* Real tap targets on a phone, and a filled selected state so the choice
+       is unmistakable the instant it is made. */
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.9rem;
+  }
+  .locale button.on {
+    background: var(--accent);
+    color: var(--saga-ink);
+    border-color: var(--accent);
   }
   .session {
     justify-content: space-between;

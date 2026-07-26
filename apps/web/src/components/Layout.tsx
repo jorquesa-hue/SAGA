@@ -108,7 +108,13 @@ export function Layout(): JSX.Element {
                 key={l.value}
                 type="button"
                 className={l.value === locale ? "on" : ""}
-                onClick={() => setLocale(l.value)}
+                onClick={() => {
+                  setLocale(l.value);
+                  // Close the mobile menu so the choice is visible immediately —
+                  // otherwise the open menu covers the page and the switch looks
+                  // like it did nothing (it did: the whole console re-renders).
+                  setMenuOpen(false);
+                }}
               >
                 {l.label}
               </button>
