@@ -60,6 +60,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "rec.assume.withdrawalRestriction":
       "Restrição de carência ativa vinculada a um tratamento.",
     "chrome.searchLabel": "Buscar no rebanho",
+    "chrome.menuOpen": "Abrir o menu de navegação",
+    "chrome.menuClose": "Fechar o menu de navegação",
     "chrome.tenantTitle": "Organização ativa",
     "signin.tenantPlaceholder": "identificador da organização",
     "common.unexpectedError":
@@ -585,6 +587,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "rec.assume.withdrawalRestriction":
       "An active withdrawal restriction linked to a treatment.",
     "chrome.searchLabel": "Search the herd",
+    "chrome.menuOpen": "Open the navigation menu",
+    "chrome.menuClose": "Close the navigation menu",
     "chrome.tenantTitle": "Active organisation",
     "signin.tenantPlaceholder": "organisation identifier",
     "common.unexpectedError": "That didn't go through. Nothing was lost — try again.",
@@ -1089,6 +1093,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "rec.assume.withdrawalRestriction":
       "Restricción de retiro activa vinculada a un tratamiento.",
     "chrome.searchLabel": "Buscar en el rodeo",
+    "chrome.menuOpen": "Abrir el menú de navegación",
+    "chrome.menuClose": "Cerrar el menú de navegación",
     "chrome.tenantTitle": "Organización activa",
     "signin.tenantPlaceholder": "identificador de la organización",
     "common.unexpectedError":

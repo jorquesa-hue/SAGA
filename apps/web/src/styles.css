@@ -63,8 +63,14 @@ body {
   color: var(--text);
 }
 
-/* The nav carries 14 destinations and wraps on narrow viewports, so the bar
- * grows with its contents. A fixed height clipped the wrapped row entirely. */
+/* The nav carries nineteen destinations and wraps on narrow viewports, so the
+ * bar grows with its contents. A fixed height clipped the wrapped row entirely.
+ *
+ * On a wide screen the two wrappers below (.topbar-bar, .topbar-menu) are
+ * display:contents, so brand / nav / search / locale / session are direct flex
+ * items of the bar exactly as they were before the mobile treatment existed.
+ * The narrow-viewport rules further down re-materialise the wrappers to collapse
+ * the menu behind a toggle. */
 .topbar {
   display: flex;
   align-items: center;
@@ -74,6 +80,22 @@ body {
   min-height: 56px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
+}
+.topbar-bar,
+.topbar-menu {
+  display: contents;
+}
+/* The menu toggle only exists on narrow viewports (shown in the media query). */
+.menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
 }
 /* The wordmark is drawn, not typed: tracked caps per docs/brand §3.3.
  * font-stretch drives the variable width axis to Archivo Expanded.
@@ -550,6 +572,67 @@ textarea {
   background: var(--panel-2);
   color: var(--text);
   text-decoration: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Narrow viewports (phones). The nineteen-item nav is unusable inline on a
+ * phone — it wraps into a full-screen wall before any content shows. Below this
+ * width the header becomes a compact bar (brand + menu toggle) and the rest of
+ * the chrome collapses into a panel the toggle opens.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.5rem 1rem;
+  }
+  /* Re-materialise the wrappers (they are display:contents on desktop). */
+  .topbar-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+  }
+  .menu-toggle {
+    display: inline-flex;
+  }
+  .topbar-menu {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.75rem 0 0.25rem;
+  }
+  .topbar-menu.open {
+    display: flex;
+  }
+  /* Destinations stack as full-width rows — real tap targets, not wrapped text. */
+  .nav {
+    flex-direction: column;
+    gap: 0;
+  }
+  .nav a {
+    padding: 0.6rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav a.active {
+    /* A left rule reads as "you are here" better than an underline in a list. */
+    border-bottom-color: var(--border);
+    border-left: 3px solid var(--accent);
+    padding-left: 0.5rem;
+    margin-left: -0.5rem;
+  }
+  .topsearch input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .locale {
+    justify-content: flex-start;
+  }
+  .session {
+    justify-content: space-between;
+  }
 }
 
 /* The record is a document: print it without the console around it. */
