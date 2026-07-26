@@ -7,6 +7,10 @@ overrides:
   # the app build all resolve to the patched Vite 6 (avoids a stale Vite 5 with
   # its vulnerable esbuild 0.21).
   vite: "^6.4.3"
+  # Pull the eslint/typescript-eslint toolchain's transitive brace-expansion up
+  # to the patched line (GHSA-mh99-v99m-4gvg: unbounded-expansion DoS, <=5.0.7).
+  # A deep dev-only dependency; the patch bump is behaviour-compatible.
+  brace-expansion: ">=5.0.8"
 allowBuilds:
   esbuild: true
   "@swc/core": true
