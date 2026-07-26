@@ -73,15 +73,27 @@ generator). Idempotent: re-running the SQL yields identical counts.
 
 ## Seeing it without a database
 
-`pnpm demo:static` builds the genuine console together with a captured snapshot
-of every GET it makes against the seeded JQ Farm tenant, and writes the result
-to `apps/web/dist/` with routing rules for Vercel and for Netlify/Cloudflare.
-Drop that directory on any static host and the console runs with real seeded
-data and no database behind it.
+The console can run on any static host — including the git-linked Vercel project
+built straight from this repo — with no server behind it:
 
-It is **read-only by construction**: nothing in the snapshot answers a POST, so
-every command form fails against it. Reads are real; writes need the API and the
-database. Sign in with the seeded owner and tenant ids:
+1. `pnpm demo:snapshot` captures every GET the console makes against the seeded
+   JQ Farm tenant into one file, `scripts/demo/snapshot.json` (~0.9 MB). This
+   needs the API running against a seeded database, and is the only step that
+   does. The file is committed, so hosts never need a database.
+2. `pnpm demo:static` builds the console and injects a small read-only shim
+   (`scripts/demo/demo-api.js`) that answers `/api/v1/*` from that snapshot.
+
+The root `vercel.json` runs both halves of step 2 as its build command, so a
+push is all it takes for the Vercel project to serve the demo. The shim patches
+`window.fetch` before the app loads:
+
+- **GET** → the captured response, or a `404` problem for a path outside the
+  snapshot;
+- **any write** → a `501` read-only notice. Nothing fakes a successful command,
+  so a form can never look like it saved when it did not.
+
+Reads are real seeded data; writes need the API and the database. Sign in with
+the seeded owner and tenant ids:
 
 ```
 user  12000000-0000-4000-8000-000000000001   (Joaquim Queiroz Andrade)
