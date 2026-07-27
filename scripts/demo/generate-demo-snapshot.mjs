@@ -130,6 +130,16 @@ for (const sub of (await grab("webhooks/subscriptions"))?.items ?? [])
 // answers the bare "search" key.
 await grab("search?q=JQ&limit=40", "search");
 
+// Reporting (§26): the catalogue, a no-filter preview of every report, and the
+// (empty) run history. Saving a snapshot is a write, which the read-only demo
+// answers with 501, so the history stays empty; the previews are what the
+// screen shows.
+const catalogue = await grab("reporting/reports");
+for (const report of catalogue?.items ?? []) {
+  await grab(`reporting/reports/${report.key}/preview`);
+}
+await grab("reporting/runs");
+
 if (failures.length > 0) {
   console.error(`snapshot incomplete — ${failures.length} endpoint(s) failed:`);
   console.error(failures.slice(0, 30).join("\n"));

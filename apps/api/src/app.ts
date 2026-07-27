@@ -15,6 +15,7 @@ import { AssetsMaintenanceService } from "@jk/assets-maintenance";
 import { ConnectorRegistryService, WebhookService } from "@jk/automation-integration";
 import { FinanceService } from "@jk/finance-commerce";
 import { LandGrazingService } from "@jk/land-grazing";
+import { ReportingService } from "@jk/reporting";
 import { InventoryService } from "@jk/nutrition-inventory";
 import { HealthService } from "@jk/health-laboratory";
 import { LotsService, WeighingService } from "@jk/herd-operations";
@@ -53,6 +54,7 @@ import { registerSearchRoutes } from "./routes/search.routes.js";
 import { registerImportRoutes } from "./routes/imports.routes.js";
 import { registerReproductionRoutes } from "./routes/reproduction.routes.js";
 import { registerOverviewRoutes } from "./routes/overview.routes.js";
+import { registerReportingRoutes } from "./routes/reporting.routes.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -114,6 +116,10 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   });
   const alertService = new AlertService({ appPool: deps.pools.appPool });
   const reportService = new ReportService({ appPool: deps.pools.appPool });
+  const reportingService = new ReportingService({
+    appPool: deps.pools.appPool,
+    environment: deps.config.APP_ENV,
+  });
   const landService = new LandGrazingService({
     appPool: deps.pools.appPool,
     environment: deps.config.APP_ENV,
@@ -267,6 +273,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerAiRoutes(app, recommendationService);
   registerWebhookRoutes(app, webhookService, connectorService);
   registerExportRoutes(app, exportService);
+  registerReportingRoutes(app, reportingService);
   registerSearchRoutes(app, searchService);
   registerImportRoutes(app, importService, animalRegistry);
   registerOverviewRoutes(app, {

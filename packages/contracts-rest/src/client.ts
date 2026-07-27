@@ -29,6 +29,11 @@ import type {
   Page,
   Recommendation,
   RequestExportRequest,
+  ReportCatalogItem,
+  ReportPreviewResult,
+  ReportRunResult,
+  ReportRunSummary,
+  RunReportRequest,
   SearchResults,
   Tenant,
   WebhookDelivery,
@@ -370,6 +375,42 @@ export class JkPlatformClient {
         ...o,
         query: { ...o?.query, q, limit },
       }),
+  };
+
+  // -- Reporting (§26) --
+  readonly reporting = {
+    /** The report catalogue: what can be run, with which parameters/columns. */
+    reports: (o?: RequestOptions) =>
+      this.get<Page<ReportCatalogItem>>("/api/v1/reporting/reports", o),
+    /** Read-only preview: run a report and return the result without recording it. */
+    preview: (
+      reportKey: string,
+      params?: Record<string, string | undefined>,
+      o?: RequestOptions,
+    ) =>
+      this.get<ReportPreviewResult>(`/api/v1/reporting/reports/${reportKey}/preview`, {
+        ...o,
+        query: { ...o?.query, ...params },
+      }),
+    /** Run a report and record its snapshot; returns the fresh result. */
+    run: (reportKey: string, body?: RunReportRequest, o?: RequestOptions) =>
+      this.post<ReportRunResult>(
+        `/api/v1/reporting/reports/${reportKey}/run`,
+        body ?? {},
+        o,
+      ),
+    /** Report run history (newest first). */
+    runs: (reportKey?: string, o?: RequestOptions) =>
+      this.get<Page<ReportRunSummary>>("/api/v1/reporting/runs", {
+        ...o,
+        query: { ...o?.query, reportKey },
+      }),
+    /** Reopen a past run's immutable snapshot. */
+    run_get: (id: string, o?: RequestOptions) =>
+      this.get<ReportRunResult>(`/api/v1/reporting/runs/${id}`, o),
+    /** Download a past run's snapshot as CSV text. */
+    downloadCsv: (id: string, o?: RequestOptions) =>
+      this.get<unknown>(`/api/v1/reporting/runs/${id}.csv`, o),
   };
   readonly alerts = {
     list: (status?: string, o?: RequestOptions) =>

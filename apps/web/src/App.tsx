@@ -18,6 +18,7 @@ import { Integrations } from "./pages/Integrations.js";
 import { Lots } from "./pages/Lots.js";
 import { LotDetail } from "./pages/LotDetail.js";
 import { Recommendations } from "./pages/Recommendations.js";
+import { Reports } from "./pages/Reports.js";
 import { Reproduction } from "./pages/Reproduction.js";
 import { SearchResults } from "./pages/SearchResults.js";
 import { Settings } from "./pages/Settings.js";
@@ -61,6 +62,7 @@ export function App(): JSX.Element {
         <Route path="alerts" element={<Alerts />} />
         <Route path="recommendations" element={<Recommendations />} />
         <Route path="integrations" element={<Integrations />} />
+        <Route path="reports" element={<Reports />} />
         <Route path="exports" element={<Exports />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />

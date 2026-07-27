@@ -157,6 +157,76 @@ export interface Page<T> {
   items: T[];
 }
 
+// ---------------------------------------------------------------------------
+// Reporting (§26 mandatory reports, §47 tenant-scoped reads, §59 dashboards).
+// The catalogue is served by the API; the console renders whatever columns and
+// parameters a report declares, so new reports appear without a client change.
+// ---------------------------------------------------------------------------
+
+export type ReportColumnType =
+  "text" | "integer" | "number" | "money" | "percent" | "date" | "datetime" | "enum";
+
+export type ReportParamKind = "farmId" | "lotId" | "dateFrom" | "dateTo";
+
+export interface ReportColumn {
+  key: string;
+  labelKey: string;
+  type: ReportColumnType;
+}
+
+export interface ReportParamSpec {
+  key: string;
+  kind: ReportParamKind;
+  labelKey: string;
+}
+
+export interface ReportCatalogItem {
+  key: string;
+  category: string;
+  titleKey: string;
+  descriptionKey: string;
+  params: ReportParamSpec[];
+  columns: ReportColumn[];
+}
+
+export interface RunReportRequest {
+  params?: Record<string, unknown>;
+}
+
+export interface ReportRunResult {
+  id: string;
+  reportKey: string;
+  category: string;
+  titleKey: string;
+  columns: ReportColumn[];
+  params: Record<string, unknown>;
+  rows: Array<Record<string, unknown>>;
+  summary: Record<string, unknown>;
+  rowCount: number;
+  checksum: string;
+  generatedAt: string;
+}
+
+export interface ReportRunSummary {
+  id: string;
+  reportKey: string;
+  rowCount: number;
+  summary: Record<string, unknown>;
+  checksum: string;
+  generatedAt: string;
+}
+
+export interface ReportPreviewResult {
+  reportKey: string;
+  category: string;
+  titleKey: string;
+  columns: ReportColumn[];
+  params: Record<string, unknown>;
+  rows: Array<Record<string, unknown>>;
+  summary: Record<string, unknown>;
+  rowCount: number;
+}
+
 export interface ImportJob {
   id: string;
   importType: string;

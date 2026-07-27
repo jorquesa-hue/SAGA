@@ -21,6 +21,7 @@ const NAV = [
   { to: "/tasks", key: "nav.tasks" },
   { to: "/alerts", key: "nav.alerts" },
   { to: "/recommendations", key: "nav.ai" },
+  { to: "/reports", key: "nav.reports" },
   { to: "/integrations", key: "nav.integrations" },
   { to: "/exports", key: "nav.exports" },
   { to: "/imports", key: "nav.imports" },

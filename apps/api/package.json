@@ -28,6 +28,7 @@
     "@jk/herd-operations": "workspace:*",
     "@jk/identity-tenancy": "workspace:*",
     "@jk/observability": "workspace:*",
+    "@jk/reporting": "workspace:*",
     "@jk/reproduction-genetics": "workspace:*",
     "dotenv": "^17.4.2",
     "fastify": "^5.8.3",

@@ -973,3 +973,105 @@ button,
 .badge.risk-low {
   color: var(--muted);
 }
+
+/* ---------------------------------------------------------------------------
+ * Reports (§26) — a catalogue on the left, the running report on the right.
+ * The catalogue is the map; the panel is the record. On a phone they stack.
+ * ------------------------------------------------------------------------- */
+.reports-layout {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+.reports-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-right: 1px solid var(--border);
+  padding-right: 1rem;
+}
+.reports-cat h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.report-pick {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.15rem;
+  cursor: pointer;
+}
+.report-pick:hover {
+  border-color: var(--border);
+}
+.report-pick.on {
+  /* A left rule in Tag reads as "you are here", matching the mobile nav. */
+  border-left: 3px solid var(--accent);
+  background: var(--panel-2);
+  font-weight: 600;
+}
+.report-param {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.report-param-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.report-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.report-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--panel);
+  min-width: 120px;
+}
+.report-stat-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.report-stat-value {
+  font-family: var(--saga-font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.reports-runs {
+  margin-top: 1.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+.reports-runs h4 {
+  margin: 0 0 0.5rem;
+}
+@media (max-width: 900px) {
+  .reports-layout {
+    grid-template-columns: 1fr;
+  }
+  .reports-catalog {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding-right: 0;
+    padding-bottom: 1rem;
+  }
+}

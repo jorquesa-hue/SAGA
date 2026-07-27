@@ -120,6 +120,20 @@ Generated for the Phase 0 baseline (foundation and decision closure).
 | §60 Farm Intelligence Index (versioned, transparent) | analytics   | `@jk/analytics-intelligence` FarmIntelligenceService        | FII integration test       | implemented |
 | §26 executive dashboard                              | analytics   | `executiveDashboard`                                        | FII integration test       | implemented |
 
+## Reporting (§26 mandatory reports, §47 tenant-scoped reads, §59 dashboards)
+
+| Requirement                                            | Design area | Source                                                                         | Verification                                              | Status      |
+| ------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------ | --------------------------------------------------------- | ----------- |
+| §26 report catalogue (parameterised, per module)       | reporting   | `@jk/reporting` `catalog.ts` (8 reports across 7 categories)                   | `catalog.test.ts` (catalogue shape, every category)       | implemented |
+| §26 reports projected from authoritative records       | reporting   | `@jk/reporting` report `run()` queries; `apps/api/.../reporting.routes.ts`     | `reporting.integration.test.ts` (every report previews)   | implemented |
+| §47 tenant-scoped report reads                         | reporting   | `ReportingService` `withTenantTransaction` + RLS; migration 0021               | `reporting.integration.test.ts` (no cross-tenant leak)    | implemented |
+| append-only report run ledger (immutable snapshots)    | reporting   | migration 0021 `report_run` + `forbid_event_mutation` trigger                  | `reporting.integration.test.ts` (UPDATE/DELETE rejected)  | implemented |
+| report generation emits a domain event (outbox)        | reporting   | `reporting.report_generated.v1`; `contracts/asyncapi`, `contracts/json-schema` | `reporting.integration.test.ts` (event recorded)          | implemented |
+| read-only preview vs recorded run                      | reporting   | `previewReport` (no ledger) vs `runReport`; `GET .../preview`                  | `reporting.integration.test.ts` (preview records nothing) | implemented |
+| authorization: active membership required              | reporting   | `@jk/reporting` `authorization.ts`                                             | `reporting.integration.test.ts` (no-membership 403)       | implemented |
+| CSV delivery of a report snapshot                      | reporting   | `csv.ts` `reportRowsToCsv`; `Reports.tsx` client-side download                 | `catalog.test.ts` (csv escaping), `reports.test.tsx`      | implemented |
+| reporting web surface (catalogue, params, table, runs) | reporting   | `apps/web/src/pages/Reports.tsx`; `nav.reports`; i18n PT/EN/ES                 | `apps/web/tests/reports.test.tsx`                         | implemented |
+
 ## Architecture fitness functions (§36)
 
 | Requirement                                   | Source                                                                                | Verification                      | Status                 |
