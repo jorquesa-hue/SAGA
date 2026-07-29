@@ -35,7 +35,7 @@ jobs:
     # rules apply to production (§74) once configured in repo settings.
     environment: ${{ inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Deployment plan
         run: |
           echo "## Deployment plan — ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
@@ -52,7 +52,7 @@ jobs:
   helm-validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: azure/setup-helm@v5
       - name: Helm lint
         run: helm lint infrastructure/helm/jk-api
@@ -62,7 +62,7 @@ jobs:
   terraform-validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform formatting
         run: terraform fmt -check -recursive infrastructure/terraform
