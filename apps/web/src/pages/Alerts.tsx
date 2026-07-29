@@ -3,6 +3,7 @@ import { ApiError } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
+import { Badge } from "../components/Badge.js";
 
 /** Operational alert queue (§26): acknowledge and resolve, evidence-linked. */
 export function Alerts(): JSX.Element {
@@ -52,11 +53,11 @@ export function Alerts(): JSX.Element {
                 <tr key={id}>
                   <td>{td(a.alertType ?? a.type)}</td>
                   <td>
-                    <span className={`badge risk-${String(a.severity ?? "low")}`}>
-                      {td(a.severity)}
-                    </span>
+                    <Badge value={a.severity ?? "low"} />
                   </td>
-                  <td>{td(status)}</td>
+                  <td>
+                    <Badge value={status} />
+                  </td>
                   <td>
                     <button
                       type="button"

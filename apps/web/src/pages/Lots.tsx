@@ -4,6 +4,7 @@ import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 import { RecordList } from "../components/RecordList.js";
+import { Badge } from "../components/Badge.js";
 import type { LotSummaryView } from "@jk/contracts-rest";
 
 /** Lots & paddock movements (§20): create lots, add animals, move to a paddock. */
@@ -147,6 +148,7 @@ export function Lots(): JSX.Element {
         load={() => client.overview.lots()}
         rowKey={(l) => l.id}
         emptyKey="lots.empty"
+        rowHref={(l) => `/lots/${l.id}`}
         columns={[
           {
             headerKey: "common.name",
@@ -171,7 +173,15 @@ export function Lots(): JSX.Element {
           },
           {
             headerKey: "common.status",
-            render: (l) => <span className="badge">{td(l.status)}</span>,
+            render: (l) => <Badge value={l.status} />,
+          },
+          {
+            headerKey: "common.open",
+            render: () => (
+              <span className="row-go" aria-hidden="true">
+                ›
+              </span>
+            ),
           },
         ]}
       />

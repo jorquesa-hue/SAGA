@@ -84,6 +84,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "animalDetail.viewRecord": "Ver registro",
     "dashboard.allFarms": "Todas as fazendas",
     "dashboard.open": "Abrir",
+    "common.open": "Abrir",
     // KPI labels. The dashboard renders whatever shape the API returns, so an
     // unlabelled key degrades to a humanised form rather than disappearing.
     "dashboard.kpi.farmId": "Fazenda",
@@ -719,6 +720,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "animalDetail.viewRecord": "View record",
     "dashboard.allFarms": "All farms",
     "dashboard.open": "Open",
+    "common.open": "Open",
     "dashboard.kpi.farmId": "Farm",
     "dashboard.kpi.herd.active": "Active herd",
     "dashboard.kpi.herd.byStatus": "Herd by status",
@@ -1334,6 +1336,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "animalDetail.viewRecord": "Ver registro",
     "dashboard.allFarms": "Todos los establecimientos",
     "dashboard.open": "Abrir",
+    "common.open": "Abrir",
     "dashboard.kpi.farmId": "Establecimiento",
     "dashboard.kpi.herd.active": "Rodeo activo",
     "dashboard.kpi.herd.byStatus": "Rodeo por situación",

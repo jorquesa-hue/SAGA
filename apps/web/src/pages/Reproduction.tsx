@@ -3,6 +3,7 @@ import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 import { RecordList } from "../components/RecordList.js";
+import { Badge } from "../components/Badge.js";
 import type { ReproductionEventView } from "@jk/contracts-rest";
 
 /**
@@ -47,7 +48,9 @@ function StationLedger(): JSX.Element {
         },
         {
           headerKey: "common.type",
-          render: (e) => <span className="badge">{t(`repro.kind.${e.kind}`)}</span>,
+          render: (e) => (
+            <Badge value={e.kind} tone="neutral" label={t(`repro.kind.${e.kind}`)} />
+          ),
         },
         {
           headerKey: "repro.damCol",
@@ -56,7 +59,7 @@ function StationLedger(): JSX.Element {
         { headerKey: "repro.method", render: (e) => td(e.detail) },
         {
           headerKey: "repro.outcome",
-          render: (e) => (e.result === null ? "—" : td(e.result)),
+          render: (e) => (e.result === null ? "—" : <Badge value={e.result} />),
         },
         {
           headerKey: "repro.expected",

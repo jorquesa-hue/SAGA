@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { RecordList } from "../components/RecordList.js";
+import { Badge } from "../components/Badge.js";
 import type { LedgerEntryView, SaleView } from "@jk/contracts-rest";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 
@@ -127,11 +128,7 @@ export function Finance(): JSX.Element {
           },
           {
             headerKey: "common.type",
-            render: (e) => (
-              <span className={`badge ${e.entryType === "revenue" ? "ok" : ""}`}>
-                {td(e.entryType)}
-              </span>
-            ),
+            render: (e) => <Badge value={e.entryType} />,
           },
           { headerKey: "finance.category", render: (e) => td(e.category) },
           { headerKey: "finance.counterpartyCol", render: (e) => e.counterparty ?? "—" },

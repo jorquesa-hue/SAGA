@@ -133,6 +133,8 @@ Generated for the Phase 0 baseline (foundation and decision closure).
 | authorization: active membership required              | reporting   | `@jk/reporting` `authorization.ts`                                             | `reporting.integration.test.ts` (no-membership 403)       | implemented |
 | CSV delivery of a report snapshot                      | reporting   | `csv.ts` `reportRowsToCsv`; `Reports.tsx` client-side download                 | `catalog.test.ts` (csv escaping), `reports.test.tsx`      | implemented |
 | reporting web surface (catalogue, params, table, runs) | reporting   | `apps/web/src/pages/Reports.tsx`; `nav.reports`; i18n PT/EN/ES                 | `apps/web/tests/reports.test.tsx`                         | implemented |
+| §3.2 status pills coloured by meaning (Pasto/Hide/Tag) | web console | `apps/web/src/components/Badge.tsx` (tone map); list screens                   | `apps/web/tests/badge.test.tsx`                           | implemented |
+| list rows are a way into the record (clickable)        | web console | `apps/web/src/components/RecordList.tsx` `rowHref`; `Lots.tsx`                 | verified in browser (row click → lot detail)             | implemented |
 
 ## Architecture fitness functions (§36)
 

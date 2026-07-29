@@ -1,4 +1,5 @@
 import { RecordList } from "../components/RecordList.js";
+import { Badge } from "../components/Badge.js";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import type { PaddockView } from "@jk/contracts-rest";
@@ -59,7 +60,8 @@ export function Pasture(): JSX.Element {
           },
           {
             headerKey: "pasture.condition",
-            render: (p) => (p.lastCondition === null ? "—" : td(p.lastCondition)),
+            render: (p) =>
+              p.lastCondition === null ? "—" : <Badge value={p.lastCondition} />,
           },
           {
             headerKey: "pasture.availability",
@@ -74,8 +76,7 @@ export function Pasture(): JSX.Element {
           {
             headerKey: "pasture.assessed",
             figure: true,
-            render: (p) =>
-              p.lastAssessedAt === null ? "—" : fmt.date(p.lastAssessedAt),
+            render: (p) => (p.lastAssessedAt === null ? "—" : fmt.date(p.lastAssessedAt)),
           },
         ]}
       />

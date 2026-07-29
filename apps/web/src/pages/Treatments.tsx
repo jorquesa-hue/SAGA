@@ -3,6 +3,7 @@ import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 import { RecordList } from "../components/RecordList.js";
+import { Badge } from "../components/Badge.js";
 import type {
   HealthCaseView,
   HealthProtocolView,
@@ -108,7 +109,10 @@ export function Treatments(): JSX.Element {
             headerKey: "common.animal",
             render: (r) => <span className="mono">{r.visualId}</span>,
           },
-          { headerKey: "common.type", render: (r) => td(r.restrictionType) },
+          {
+            headerKey: "common.type",
+            render: (r) => <Badge value={r.restrictionType} />,
+          },
           { headerKey: "treatments.reason", render: (r) => r.reason ?? "—" },
           {
             headerKey: "treatments.clearedAfter",
@@ -167,7 +171,7 @@ export function Treatments(): JSX.Element {
           { headerKey: "treatments.diagnosis", render: (c) => c.diagnosis ?? "—" },
           {
             headerKey: "common.status",
-            render: (c) => <span className="badge">{td(c.status)}</span>,
+            render: (c) => <Badge value={c.status} />,
           },
           {
             headerKey: "treatments.opened",
@@ -185,7 +189,7 @@ export function Treatments(): JSX.Element {
         columns={[
           { headerKey: "common.name", render: (p) => p.name },
           { headerKey: "treatments.appliesTo", render: (p) => p.appliesTo ?? "—" },
-          { headerKey: "common.status", render: (p) => td(p.status) },
+          { headerKey: "common.status", render: (p) => <Badge value={p.status} /> },
           {
             headerKey: "treatments.applications",
             figure: true,

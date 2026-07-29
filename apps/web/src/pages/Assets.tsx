@@ -1,4 +1,5 @@
 import { RecordList } from "../components/RecordList.js";
+import { Badge } from "../components/Badge.js";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import type { AssetView, WorkOrderView } from "@jk/contracts-rest";
@@ -29,7 +30,7 @@ export function Assets(): JSX.Element {
           { headerKey: "assets.location", render: (a) => a.location ?? "—" },
           {
             headerKey: "common.status",
-            render: (a) => <span className={`badge`}>{td(a.status)}</span>,
+            render: (a) => <Badge value={a.status} />,
           },
           {
             headerKey: "assets.calibration",
@@ -48,15 +49,12 @@ export function Assets(): JSX.Element {
             headerKey: "assets.nextMaintenance",
             figure: true,
             render: (a) =>
-              a.nextMaintenanceDueAt === null
-                ? "—"
-                : fmt.date(a.nextMaintenanceDueAt),
+              a.nextMaintenanceDueAt === null ? "—" : fmt.date(a.nextMaintenanceDueAt),
           },
           {
             headerKey: "assets.openWork",
             figure: true,
-            render: (a) =>
-              a.openWorkOrders === 0 ? "—" : fmt.number(a.openWorkOrders),
+            render: (a) => (a.openWorkOrders === 0 ? "—" : fmt.number(a.openWorkOrders)),
           },
         ]}
       />
@@ -70,17 +68,14 @@ export function Assets(): JSX.Element {
           { headerKey: "assets.asset", render: (w) => w.assetName },
           {
             headerKey: "assets.priority",
-            render: (w) => (
-              <span className={`badge risk-${w.priority}`}>{td(w.priority)}</span>
-            ),
+            render: (w) => <Badge value={w.priority} />,
           },
           { headerKey: "common.description", render: (w) => w.description },
-          { headerKey: "common.status", render: (w) => td(w.status) },
+          { headerKey: "common.status", render: (w) => <Badge value={w.status} /> },
           {
             headerKey: "assets.downtime",
             figure: true,
-            render: (w) =>
-              w.downtimeHours === null ? "—" : fmt.number(w.downtimeHours),
+            render: (w) => (w.downtimeHours === null ? "—" : fmt.number(w.downtimeHours)),
           },
           {
             headerKey: "assets.cost",
