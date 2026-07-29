@@ -40,11 +40,82 @@ export interface AlertServiceOptions {
   appPool: pg.Pool;
 }
 
+/**
+ * A task with the rule that produced it. The rule is part of the task, not
+ * metadata: an operator who disagrees with the work needs to see what asked
+ * for it (§57).
+ */
+export interface TaskRow {
+  id: string;
+  farmId: string | null;
+  animalId: string | null;
+  animalVisualId: string | null;
+  lotId: string | null;
+  lotName: string | null;
+  sourceRule: string;
+  taskType: string;
+  dueAt: string | null;
+  status: string;
+  detail: Record<string, unknown>;
+  createdAt: string;
+  completedAt: string | null;
+}
+
 export class AlertService {
   private readonly appPool: pg.Pool;
 
   constructor(options: AlertServiceOptions) {
     this.appPool = options.appPool;
+  }
+
+  /**
+   * Open work, most overdue first. Cancelled and completed tasks come last so
+   * the list opens on what still needs doing.
+   */
+  async listTasks(context: TenantContext, limit = 60): Promise<TaskRow[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        farm_id: string | null;
+        animal_id: string | null;
+        visual_id: string | null;
+        lot_id: string | null;
+        lot_name: string | null;
+        source_rule: string;
+        task_type: string;
+        due_at: Date | null;
+        status: string;
+        detail: Record<string, unknown>;
+        created_at: Date;
+        completed_at: Date | null;
+      }>(
+        `SELECT t.id, t.farm_id, t.animal_id, a.visual_id, t.lot_id, l.name AS lot_name,
+                t.source_rule, t.task_type, t.due_at, t.status, t.detail,
+                t.created_at, t.completed_at
+           FROM task t
+           LEFT JOIN animal a ON a.id = t.animal_id
+           LEFT JOIN lot l ON l.id = t.lot_id
+          ORDER BY (t.status IN ('overdue', 'pending')) DESC,
+                   t.due_at NULLS LAST
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 300)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        farmId: r.farm_id,
+        animalId: r.animal_id,
+        animalVisualId: r.visual_id,
+        lotId: r.lot_id,
+        lotName: r.lot_name,
+        sourceRule: r.source_rule,
+        taskType: r.task_type,
+        dueAt: r.due_at?.toISOString() ?? null,
+        status: r.status,
+        detail: r.detail,
+        createdAt: r.created_at.toISOString(),
+        completedAt: r.completed_at?.toISOString() ?? null,
+      }));
+    });
   }
 
   /** Scan current state and raise any missing alerts (idempotent, deduped). */

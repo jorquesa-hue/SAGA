@@ -120,6 +120,20 @@ Generated for the Phase 0 baseline (foundation and decision closure).
 | §60 Farm Intelligence Index (versioned, transparent) | analytics   | `@jk/analytics-intelligence` FarmIntelligenceService        | FII integration test       | implemented |
 | §26 executive dashboard                              | analytics   | `executiveDashboard`                                        | FII integration test       | implemented |
 
+## Reporting (§26 mandatory reports, §47 tenant-scoped reads, §59 dashboards)
+
+| Requirement                                            | Design area | Source                                                                         | Verification                                              | Status      |
+| ------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------ | --------------------------------------------------------- | ----------- |
+| §26 report catalogue (parameterised, per module)       | reporting   | `@jk/reporting` `catalog.ts` (8 reports across 7 categories)                   | `catalog.test.ts` (catalogue shape, every category)       | implemented |
+| §26 reports projected from authoritative records       | reporting   | `@jk/reporting` report `run()` queries; `apps/api/.../reporting.routes.ts`     | `reporting.integration.test.ts` (every report previews)   | implemented |
+| §47 tenant-scoped report reads                         | reporting   | `ReportingService` `withTenantTransaction` + RLS; migration 0021               | `reporting.integration.test.ts` (no cross-tenant leak)    | implemented |
+| append-only report run ledger (immutable snapshots)    | reporting   | migration 0021 `report_run` + `forbid_event_mutation` trigger                  | `reporting.integration.test.ts` (UPDATE/DELETE rejected)  | implemented |
+| report generation emits a domain event (outbox)        | reporting   | `reporting.report_generated.v1`; `contracts/asyncapi`, `contracts/json-schema` | `reporting.integration.test.ts` (event recorded)          | implemented |
+| read-only preview vs recorded run                      | reporting   | `previewReport` (no ledger) vs `runReport`; `GET .../preview`                  | `reporting.integration.test.ts` (preview records nothing) | implemented |
+| authorization: active membership required              | reporting   | `@jk/reporting` `authorization.ts`                                             | `reporting.integration.test.ts` (no-membership 403)       | implemented |
+| CSV delivery of a report snapshot                      | reporting   | `csv.ts` `reportRowsToCsv`; `Reports.tsx` client-side download                 | `catalog.test.ts` (csv escaping), `reports.test.tsx`      | implemented |
+| reporting web surface (catalogue, params, table, runs) | reporting   | `apps/web/src/pages/Reports.tsx`; `nav.reports`; i18n PT/EN/ES                 | `apps/web/tests/reports.test.tsx`                         | implemented |
+
 ## Architecture fitness functions (§36)
 
 | Requirement                                   | Source                                                                                | Verification                      | Status                 |
@@ -150,6 +164,30 @@ Generated for the Phase 0 baseline (foundation and decision closure).
 | 19               | Data dictionary + traceability                      | `docs/data-dictionary/`, this file                                | implemented                                 |
 | 20               | Security & supply-chain evidence                    | `docs/security/threat-model.md`, `.github/workflows/security.yml` | partial                                     |
 | 2,11,12,14,15,18 | diagrams(partial), web, mobile, edge, AI, user docs | —                                                                 | planned (later phases)                      |
+
+## Console read surface and the JQ Farm demonstration seed
+
+Added with the collection-read slice: the command surfaces existed before the
+matching reads, so the console could write a treatment or a lot but not see the
+ones already recorded. Every list below delegates to its own module's service —
+the API composes, it never queries another context's tables.
+
+| Requirement                                     | Design area              | Source                                                                                    | Verification                                                                         | Status      |
+| ----------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------- |
+| §47 collection reads for every module           | REST read surface        | `apps/api/src/routes/overview.routes.ts` (17 endpoints)                                   | `pnpm architecture:check`; endpoints exercised against the seeded tenant             | implemented |
+| §20 lot state is a projection of movement facts | herd operations          | `LotsService.listLots` (head count + current paddock computed, not stored)                | `packages/herd-operations/tests`                                                     | implemented |
+| §19 weighing session progress is observable     | herd operations          | `WeighingService.listSessions` / `listRecentWeights`                                      | counts derived from `device_observation`, not the stored summary                     | implemented |
+| §23 active restrictions are visible before sale | health & laboratory      | `HealthService.listAllActiveRestrictions`; `apps/web/src/pages/Treatments.tsx`            | `apps/web/tests/brand-compliance.test.tsx` (key resolution)                          | implemented |
+| §21 breeding station reads as one stream        | reproduction             | `ReproductionGeneticsService.listReproductionEvents` (UNION of the three fact tables)     | seeded station renders service → diagnosis → calving in order                        | implemented |
+| §55 money stays in minor units to the client    | finance & commerce       | `FinanceService.listEntries` / `listSales` / `listBudgetLines`                            | `apps/web/tests/budgets.test.tsx`, `tenant-currency.test.tsx`                        | implemented |
+| §21 grazing state per paddock                   | land & grazing           | `LandGrazingService.listPaddocks`; `apps/web/src/pages/Pasture.tsx`                       | occupancy and latest assessment joined per paddock                                   | implemented |
+| §22 stock balance derives from the ledger       | nutrition & inventory    | `InventoryService.listItems` (balance summed from `stock_movement`)                       | balance cannot disagree with the movements that produced it                          | implemented |
+| §24 calibration lapse is visible                | assets & maintenance     | `AssetsMaintenanceService.listAssets` / `listWorkOrders`; `apps/web/src/pages/Assets.tsx` | a lapsed scale keeps accepting weights and is surfaced, never silently dropped       | implemented |
+| §25 breeding values comparable across animals   | genetics                 | `GeneticsService.listEvaluations` (pivoted per animal); `apps/web/src/pages/Genetics.tsx` | value shown with its percentile                                                      | implemented |
+| §26 generated work names its rule               | analytics & intelligence | `AlertService.listTasks`; `apps/web/src/pages/Tasks.tsx`                                  | every task row carries `source_rule`                                                 | implemented |
+| §2.4 no untranslated label reaches a screen     | brand / i18n             | `apps/web/src/components/RecordList.tsx`, `apps/web/src/i18n/`                            | `brand-compliance.test.tsx` "resolves every list title, column and empty-state key"  | implemented |
+| §6 synthetic reference data, never production   | seeds                    | `scripts/bootstrap/generate-demo-seed.mjs` → `database/seeds/0002_jq_farm_demo.sql`       | deterministic generator (no clock, seeded PRNG); idempotent `ON CONFLICT DO NOTHING` | implemented |
+| §27/§87 real data enters only via staged import | seeds / import           | seed header states the rule; `import_job` rows demonstrate the staged workflow            | constitution invariant 7 — no secret, credential, or personal datum in the generator | implemented |
 
 ## No orphan P0 requirement
 

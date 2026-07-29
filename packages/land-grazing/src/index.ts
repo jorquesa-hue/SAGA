@@ -66,6 +66,28 @@ export interface LandGrazingServiceOptions {
   environment?: string;
 }
 
+/**
+ * A paddock with the two things that decide whether a lot stays or moves:
+ * who is standing in it and how much dry matter was last measured on it.
+ */
+export interface PaddockRow {
+  id: Uuid;
+  farmId: Uuid;
+  farmName: string;
+  name: string;
+  areaHa: number | null;
+  pastureType: string | null;
+  waterAvailable: boolean;
+  status: string;
+  currentLotId: Uuid | null;
+  currentLotName: string | null;
+  headCount: number | null;
+  occupiedSince: string | null;
+  lastAssessedAt: string | null;
+  lastCondition: string | null;
+  lastAvailabilityKgDmHa: number | null;
+}
+
 export class LandGrazingService {
   private readonly appPool: pg.Pool;
   private readonly environment: string;
@@ -271,6 +293,63 @@ export class LandGrazingService {
       [tenantId, paddockId],
     );
     return result.rows[0]!.next;
+  }
+
+  /** Every paddock with its current occupant and latest assessment. */
+  async listPaddocks(context: TenantContext): Promise<PaddockRow[]> {
+    return this.authorized(context, false, async (client) => {
+      const result = await client.query<{
+        id: string;
+        farm_id: string;
+        farm_name: string;
+        name: string;
+        area_ha: string | null;
+        pasture_type: string | null;
+        water_available: boolean;
+        status: string;
+        lot_id: string | null;
+        lot_name: string | null;
+        head_count: number | null;
+        entry_at: Date | null;
+        assessed_at: Date | null;
+        condition: string | null;
+        availability: string | null;
+      }>(
+        `SELECT p.id, p.farm_id, f.name AS farm_name, p.name, p.area_ha,
+                p.pasture_type, p.water_available, p.status,
+                o.lot_id, l.name AS lot_name, o.head_count, o.entry_at,
+                a.assessed_at, a.condition, a.availability_kg_dm_ha AS availability
+           FROM paddock p
+           JOIN farm f ON f.id = p.farm_id
+           LEFT JOIN paddock_occupation o ON o.paddock_id = p.id AND o.exit_at IS NULL
+           LEFT JOIN lot l ON l.id = o.lot_id
+           LEFT JOIN LATERAL (
+             SELECT assessed_at, condition, availability_kg_dm_ha
+               FROM pasture_assessment
+              WHERE paddock_id = p.id
+              ORDER BY assessed_at DESC
+              LIMIT 1
+           ) a ON true
+          ORDER BY f.name, p.name`,
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        farmId: r.farm_id,
+        farmName: r.farm_name,
+        name: r.name,
+        areaHa: r.area_ha === null ? null : Number(r.area_ha),
+        pastureType: r.pasture_type,
+        waterAvailable: r.water_available,
+        status: r.status,
+        currentLotId: r.lot_id,
+        currentLotName: r.lot_name,
+        headCount: r.head_count,
+        occupiedSince: r.entry_at?.toISOString() ?? null,
+        lastAssessedAt: r.assessed_at?.toISOString() ?? null,
+        lastCondition: r.condition,
+        lastAvailabilityKgDmHa: r.availability === null ? null : Number(r.availability),
+      }));
+    });
   }
 
   private async authorized<T>(

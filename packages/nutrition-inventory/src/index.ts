@@ -89,6 +89,24 @@ export interface InventoryServiceOptions {
   allowNegativeOverride?: boolean;
 }
 
+/**
+ * An item with its balance derived from the movement ledger rather than stored,
+ * so the number can never disagree with the history that produced it.
+ */
+export interface ItemRow {
+  id: Uuid;
+  name: string;
+  category: string;
+  unit: string;
+  supplier: string | null;
+  reorderLevel: number | null;
+  balance: number;
+  /** True when the balance has fallen to or below the reorder level. */
+  belowReorder: boolean;
+  lastMovementAt: string | null;
+  expiringBatches: number;
+}
+
 export class InventoryService {
   private readonly appPool: pg.Pool;
   private readonly environment: string;
@@ -334,6 +352,52 @@ export class InventoryService {
       );
     }
     return result.data;
+  }
+
+  /** The item master with balances summed from the movement ledger. */
+  async listItems(context: TenantContext): Promise<ItemRow[]> {
+    return this.authorized(context, false, async (client) => {
+      const result = await client.query<{
+        id: string;
+        name: string;
+        category: string;
+        unit: string;
+        supplier: string | null;
+        reorder_level: string | null;
+        balance: string;
+        last_movement_at: Date | null;
+        expiring: string;
+      }>(
+        `SELECT i.id, i.name, i.category, i.unit, i.supplier, i.reorder_level,
+                COALESCE((SELECT sum(m.quantity_delta) FROM stock_movement m
+                           WHERE m.item_id = i.id), 0) AS balance,
+                (SELECT max(m.occurred_at) FROM stock_movement m
+                  WHERE m.item_id = i.id) AS last_movement_at,
+                (SELECT count(*) FROM item_batch b
+                  WHERE b.item_id = i.id
+                    AND b.expiration_date IS NOT NULL
+                    AND b.expiration_date <= (now() + interval '90 days')::date
+                ) AS expiring
+           FROM item i
+          ORDER BY i.category, i.name`,
+      );
+      return result.rows.map((r) => {
+        const balance = Number(r.balance);
+        const reorder = r.reorder_level === null ? null : Number(r.reorder_level);
+        return {
+          id: r.id,
+          name: r.name,
+          category: r.category,
+          unit: r.unit,
+          supplier: r.supplier,
+          reorderLevel: reorder,
+          balance,
+          belowReorder: reorder !== null && balance <= reorder,
+          lastMovementAt: r.last_movement_at?.toISOString() ?? null,
+          expiringBatches: Number(r.expiring),
+        };
+      });
+    });
   }
 
   private async authorized<T>(

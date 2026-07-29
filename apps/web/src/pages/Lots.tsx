@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
+import { RecordList } from "../components/RecordList.js";
+import type { LotSummaryView } from "@jk/contracts-rest";
 
 /** Lots & paddock movements (§20): create lots, add animals, move to a paddock. */
 export function Lots(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td, fmt } = useI18n();
   const navigate = useNavigate();
   const [lookupId, setLookupId] = useState("");
   const create = useCommand();
@@ -139,6 +141,40 @@ export function Lots(): JSX.Element {
         </button>
         <FormMessage state={move} />
       </div>
+
+      <RecordList<LotSummaryView>
+        titleKey="lots.list"
+        load={() => client.overview.lots()}
+        rowKey={(l) => l.id}
+        emptyKey="lots.empty"
+        columns={[
+          {
+            headerKey: "common.name",
+            render: (l) => <Link to={`/lots/${l.id}`}>{l.name}</Link>,
+          },
+          { headerKey: "common.farm", render: (l) => l.farmName },
+          { headerKey: "lots.purpose", render: (l) => td(l.purpose) },
+          { headerKey: "lots.target", render: (l) => l.target ?? "—" },
+          {
+            headerKey: "lots.head",
+            figure: true,
+            render: (l) => fmt.number(l.headCount),
+          },
+          {
+            headerKey: "lots.paddock",
+            render: (l) =>
+              l.currentPaddockName === null ? (
+                <span className="muted">—</span>
+              ) : (
+                l.currentPaddockName
+              ),
+          },
+          {
+            headerKey: "common.status",
+            render: (l) => <span className="badge">{td(l.status)}</span>,
+          },
+        ]}
+      />
     </section>
   );
 }

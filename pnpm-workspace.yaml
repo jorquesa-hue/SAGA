@@ -7,6 +7,21 @@ overrides:
   # the app build all resolve to the patched Vite 6 (avoids a stale Vite 5 with
   # its vulnerable esbuild 0.21).
   vite: "^6.4.3"
+  # Pull the eslint/typescript-eslint toolchain's transitive brace-expansion up
+  # to the patched line (GHSA-mh99-v99m-4gvg: unbounded-expansion DoS, <=5.0.7).
+  # A deep dev-only dependency; the patch bump is behaviour-compatible.
+  brace-expansion: ">=5.0.8"
+auditConfig:
+  ignoreGhsas:
+    # GHSA-qwww-vcr4-c8h2 — React Router "RSC Mode CSRF Bypass" (react-router
+    # >=7.12.0 <8.3.0). The flaw exists only in React Router's React Server
+    # Components (RSC) request handler. apps/web is a client-only Vite SPA that
+    # renders through BrowserRouter and never runs RSC mode, so the vulnerable
+    # code path is not reachable here. No patched react-router-dom 7.x line and
+    # no react-router-dom 8.x exists yet (latest is 7.18.1), so this cannot be
+    # resolved by an in-range bump; revisit when react-router-dom ships a
+    # patched release. Accepted and documented rather than blanket-ignored.
+    - "GHSA-qwww-vcr4-c8h2"
 allowBuilds:
   esbuild: true
   "@swc/core": true

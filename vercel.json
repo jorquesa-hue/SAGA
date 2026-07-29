@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "VITE_API_BASE_URL= pnpm --filter @jk/web... build && node scripts/demo/place-static-demo.mjs",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [
+    { "source": "/((?!_demo/|assets/|favicon).*)", "destination": "/index.html" }
+  ]
+}

@@ -2,7 +2,24 @@ import { HttpClient, type ClientConfig, type RequestOptions } from "./http.js";
 import type {
   AnimalImportMapping,
   Animal,
+  AssetView,
+  BudgetLineView,
   ConnectorRegistration,
+  EvaluationView,
+  HandlingSessionView,
+  HealthCaseView,
+  HealthProtocolView,
+  ItemView,
+  LedgerEntryView,
+  LotSummaryView,
+  PaddockView,
+  ReproductionEventView,
+  RestrictionView,
+  SaleView,
+  TaskView,
+  TreatmentView,
+  WeightView,
+  WorkOrderView,
   ImportJob,
   ImportPreview,
   CreateRecommendationRequest,
@@ -12,6 +29,11 @@ import type {
   Page,
   Recommendation,
   RequestExportRequest,
+  ReportCatalogItem,
+  ReportPreviewResult,
+  ReportRunResult,
+  ReportRunSummary,
+  RunReportRequest,
   SearchResults,
   Tenant,
   WebhookDelivery,
@@ -354,6 +376,42 @@ export class JkPlatformClient {
         query: { ...o?.query, q, limit },
       }),
   };
+
+  // -- Reporting (§26) --
+  readonly reporting = {
+    /** The report catalogue: what can be run, with which parameters/columns. */
+    reports: (o?: RequestOptions) =>
+      this.get<Page<ReportCatalogItem>>("/api/v1/reporting/reports", o),
+    /** Read-only preview: run a report and return the result without recording it. */
+    preview: (
+      reportKey: string,
+      params?: Record<string, string | undefined>,
+      o?: RequestOptions,
+    ) =>
+      this.get<ReportPreviewResult>(`/api/v1/reporting/reports/${reportKey}/preview`, {
+        ...o,
+        query: { ...o?.query, ...params },
+      }),
+    /** Run a report and record its snapshot; returns the fresh result. */
+    run: (reportKey: string, body?: RunReportRequest, o?: RequestOptions) =>
+      this.post<ReportRunResult>(
+        `/api/v1/reporting/reports/${reportKey}/run`,
+        body ?? {},
+        o,
+      ),
+    /** Report run history (newest first). */
+    runs: (reportKey?: string, o?: RequestOptions) =>
+      this.get<Page<ReportRunSummary>>("/api/v1/reporting/runs", {
+        ...o,
+        query: { ...o?.query, reportKey },
+      }),
+    /** Reopen a past run's immutable snapshot. */
+    run_get: (id: string, o?: RequestOptions) =>
+      this.get<ReportRunResult>(`/api/v1/reporting/runs/${id}`, o),
+    /** Download a past run's snapshot as CSV text. */
+    downloadCsv: (id: string, o?: RequestOptions) =>
+      this.get<unknown>(`/api/v1/reporting/runs/${id}.csv`, o),
+  };
   readonly alerts = {
     list: (status?: string, o?: RequestOptions) =>
       this.get<Page<Record<string, unknown>>>("/api/v1/alerts", {
@@ -364,5 +422,76 @@ export class JkPlatformClient {
       this.post<void>(`/api/v1/alerts/${id}/acknowledge`, undefined, o),
     resolve: (id: string, note?: string, o?: RequestOptions) =>
       this.post<void>(`/api/v1/alerts/${id}/resolve`, { note }, o),
+  };
+
+  /**
+   * Collection reads. Every screen that used to be a bare command form reads
+   * its module's current state through these — the console shows what is
+   * recorded, not only a way to record more.
+   */
+  readonly overview = {
+    lots: (o?: RequestOptions) => this.get<Page<LotSummaryView>>("/api/v1/lots", o),
+    handlingSessions: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<HandlingSessionView>>("/api/v1/handling-sessions", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    weights: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<WeightView>>("/api/v1/weights", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    treatments: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<TreatmentView>>("/api/v1/treatments", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    restrictions: (o?: RequestOptions) =>
+      this.get<Page<RestrictionView>>("/api/v1/restrictions", o),
+    healthProtocols: (o?: RequestOptions) =>
+      this.get<Page<HealthProtocolView>>("/api/v1/health-protocols", o),
+    healthCases: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<HealthCaseView>>("/api/v1/health-cases", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    reproductionEvents: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<ReproductionEventView>>("/api/v1/reproduction/events", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    evaluations: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<EvaluationView>>("/api/v1/genetics/evaluations", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    ledger: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<LedgerEntryView>>("/api/v1/finance/entries", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    sales: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<SaleView>>("/api/v1/finance/sales", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    budgetLines: (months?: number, o?: RequestOptions) =>
+      this.get<Page<BudgetLineView>>("/api/v1/finance/budget-lines", {
+        ...o,
+        query: { ...o?.query, limit: months },
+      }),
+    paddocks: (o?: RequestOptions) => this.get<Page<PaddockView>>("/api/v1/paddocks", o),
+    items: (o?: RequestOptions) => this.get<Page<ItemView>>("/api/v1/inventory/items", o),
+    assets: (o?: RequestOptions) => this.get<Page<AssetView>>("/api/v1/assets", o),
+    workOrders: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<WorkOrderView>>("/api/v1/work-orders", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
+    tasks: (limit?: number, o?: RequestOptions) =>
+      this.get<Page<TaskView>>("/api/v1/tasks", {
+        ...o,
+        query: { ...o?.query, limit },
+      }),
   };
 }

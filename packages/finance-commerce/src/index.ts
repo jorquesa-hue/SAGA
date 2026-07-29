@@ -103,6 +103,51 @@ export interface FinanceServiceOptions {
   environment?: string;
 }
 
+/**
+ * A ledger line. Amounts stay in minor units all the way to the client —
+ * money is never a float in this system (§55).
+ */
+export interface LedgerRow {
+  id: Uuid;
+  farmId: Uuid | null;
+  farmName: string | null;
+  entryType: "expense" | "revenue";
+  category: string;
+  counterparty: string | null;
+  amountMinor: number;
+  currency: string;
+  capexOpex: string | null;
+  /** Set when this entry compensates an earlier one (invariant 2). */
+  reversesEntryId: Uuid | null;
+  occurredAt: string;
+  allocations: Array<{ dimension: string; targetId: Uuid | null; minor: number }>;
+}
+
+export interface SaleRow {
+  id: Uuid;
+  animalId: Uuid | null;
+  visualId: string | null;
+  lotId: Uuid | null;
+  lotName: string | null;
+  weightKg: number | null;
+  priceBasis: string | null;
+  grossMinor: number;
+  deductionsMinor: number;
+  freightMinor: number;
+  netReceiptMinor: number;
+  currency: string;
+  soldAt: string;
+}
+
+/** A budget line beside what was actually booked against it. */
+export interface BudgetLine {
+  periodMonth: string;
+  category: string;
+  plannedMinor: number;
+  actualMinor: number;
+  currency: string;
+}
+
 export class FinanceService {
   private readonly appPool: pg.Pool;
   private readonly environment: string;
@@ -450,6 +495,147 @@ export class FinanceService {
       );
     }
     return result.data;
+  }
+
+  /** The ledger, newest first, with each entry's allocations attached. */
+  async listEntries(context: TenantContext, limit = 60): Promise<LedgerRow[]> {
+    return this.authorized(context, async (client) => {
+      const result = await client.query<{
+        id: string;
+        farm_id: string | null;
+        farm_name: string | null;
+        entry_type: "expense" | "revenue";
+        category: string;
+        counterparty: string | null;
+        amount_minor: string;
+        currency: string;
+        capex_opex: string | null;
+        reverses_entry_id: string | null;
+        occurred_at: Date;
+        allocations: Array<{ dimension: string; targetId: string | null; minor: number }>;
+      }>(
+        `SELECT e.id, e.farm_id, f.name AS farm_name, e.entry_type, e.category,
+                e.counterparty, e.amount_minor, e.currency, e.capex_opex,
+                e.reverses_entry_id, e.occurred_at,
+                COALESCE((
+                  SELECT json_agg(json_build_object(
+                           'dimension', a.dimension,
+                           'targetId', a.target_id,
+                           'minor', a.allocated_minor))
+                    FROM financial_allocation a WHERE a.entry_id = e.id
+                ), '[]'::json) AS allocations
+           FROM financial_entry e
+           LEFT JOIN farm f ON f.id = e.farm_id
+          ORDER BY e.occurred_at DESC, e.id
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 300)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        farmId: r.farm_id,
+        farmName: r.farm_name,
+        entryType: r.entry_type,
+        category: r.category,
+        counterparty: r.counterparty,
+        amountMinor: Number(r.amount_minor),
+        currency: r.currency.trim(),
+        capexOpex: r.capex_opex,
+        reversesEntryId: r.reverses_entry_id,
+        occurredAt: r.occurred_at.toISOString(),
+        allocations: r.allocations.map((a) => ({
+          dimension: a.dimension,
+          targetId: a.targetId,
+          minor: Number(a.minor),
+        })),
+      }));
+    });
+  }
+
+  /** Sales, newest first, with the animal and lot resolved. */
+  async listSales(context: TenantContext, limit = 60): Promise<SaleRow[]> {
+    return this.authorized(context, async (client) => {
+      const result = await client.query<{
+        id: string;
+        animal_id: string | null;
+        visual_id: string | null;
+        lot_id: string | null;
+        lot_name: string | null;
+        weight_kg: string | null;
+        price_basis: string | null;
+        gross_minor: string;
+        deductions_minor: string;
+        freight_minor: string;
+        net_receipt_minor: string;
+        currency: string;
+        sold_at: Date;
+      }>(
+        `SELECT s.id, s.animal_id, a.visual_id, s.lot_id, l.name AS lot_name,
+                s.weight_kg, s.price_basis, s.gross_minor, s.deductions_minor,
+                s.freight_minor, s.net_receipt_minor, s.currency, s.sold_at
+           FROM sale s
+           LEFT JOIN animal a ON a.id = s.animal_id
+           LEFT JOIN lot l ON l.id = s.lot_id
+          ORDER BY s.sold_at DESC, a.visual_id
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 300)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        animalId: r.animal_id,
+        visualId: r.visual_id,
+        lotId: r.lot_id,
+        lotName: r.lot_name,
+        weightKg: r.weight_kg === null ? null : Number(r.weight_kg),
+        priceBasis: r.price_basis,
+        grossMinor: Number(r.gross_minor),
+        deductionsMinor: Number(r.deductions_minor),
+        freightMinor: Number(r.freight_minor),
+        netReceiptMinor: Number(r.net_receipt_minor),
+        currency: r.currency.trim(),
+        soldAt: r.sold_at.toISOString(),
+      }));
+    });
+  }
+
+  /**
+   * Plan beside actual, per month and category. A category with a plan and no
+   * spend still returns a row — an untouched budget line is information.
+   */
+  async listBudgetLines(context: TenantContext, months = 6): Promise<BudgetLine[]> {
+    return this.authorized(context, async (client) => {
+      const result = await client.query<{
+        period_month: Date;
+        category: string;
+        planned_minor: string;
+        actual_minor: string;
+        currency: string;
+      }>(
+        `WITH periods AS (
+           SELECT DISTINCT period_month FROM budget
+            ORDER BY period_month DESC LIMIT $1
+         )
+         SELECT b.period_month, b.category, sum(b.planned_minor) AS planned_minor,
+                COALESCE((
+                  SELECT sum(e.amount_minor) FROM financial_entry e
+                   WHERE e.category = b.category
+                     AND date_trunc('month', e.occurred_at)::date = b.period_month
+                     AND e.reverses_entry_id IS NULL
+                ), 0) AS actual_minor,
+                min(b.currency) AS currency
+           FROM budget b
+          WHERE b.period_month IN (SELECT period_month FROM periods)
+          GROUP BY b.period_month, b.category
+          ORDER BY b.period_month DESC, b.category`,
+        [Math.min(Math.max(months, 1), 36)],
+      );
+      return result.rows.map((r) => ({
+        periodMonth: r.period_month.toISOString().slice(0, 10),
+        category: r.category,
+        plannedMinor: Number(r.planned_minor),
+        actualMinor: Number(r.actual_minor),
+        currency: r.currency.trim(),
+      }));
+    });
   }
 
   private async authorized<T>(

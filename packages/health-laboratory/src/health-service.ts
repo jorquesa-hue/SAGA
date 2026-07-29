@@ -104,6 +104,54 @@ function mapRestriction(row: RestrictionRow): AnimalRestriction {
   };
 }
 
+/** A treatment as the console lists it, with the animal already resolved. */
+export interface TreatmentListItem {
+  id: Uuid;
+  animalId: Uuid;
+  visualId: string;
+  kind: string;
+  productName: string;
+  medicineBatch: string | null;
+  dose: number | null;
+  doseUnit: string | null;
+  route: string | null;
+  administeredAt: string;
+  withdrawalUntil: string | null;
+  protocolName: string | null;
+}
+
+/** An active restriction — the thing that blocks sale clearance. */
+export interface RestrictionListItem {
+  id: Uuid;
+  animalId: Uuid;
+  visualId: string;
+  restrictionType: string;
+  reason: string | null;
+  validFrom: string;
+  validTo: string | null;
+}
+
+export interface ProtocolListItem {
+  id: Uuid;
+  name: string;
+  appliesTo: string | null;
+  version: number;
+  status: string;
+  treatmentCount: number;
+}
+
+export interface HealthCaseListItem {
+  id: Uuid;
+  animalId: Uuid;
+  visualId: string;
+  symptom: string | null;
+  diagnosis: string | null;
+  status: string;
+  outcome: string | null;
+  openedAt: string;
+  closedAt: string | null;
+}
+
 /**
  * Health and Laboratory application service (§13, §23). Records treatments with
  * medicine traceability; a withdrawal period generates a restriction that
@@ -610,6 +658,149 @@ export class HealthService {
         JSON.stringify(detail),
       ],
     );
+  }
+
+  /** Recent treatments and vaccinations across the herd, newest first. */
+  async listTreatments(context: TenantContext, limit = 50): Promise<TreatmentListItem[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        animal_id: string;
+        visual_id: string;
+        kind: string;
+        product_name: string;
+        medicine_batch: string | null;
+        dose: string | null;
+        dose_unit: string | null;
+        route: string | null;
+        administered_at: Date;
+        withdrawal_until: Date | null;
+        protocol_name: string | null;
+      }>(
+        `SELECT t.id, t.animal_id, a.visual_id, t.kind, t.product_name,
+                t.medicine_batch, t.dose, t.dose_unit, t.route,
+                t.administered_at, t.withdrawal_until, p.name AS protocol_name
+           FROM treatment t
+           JOIN animal a ON a.id = t.animal_id
+           LEFT JOIN health_protocol p ON p.id = t.protocol_id
+          ORDER BY t.administered_at DESC, a.visual_id
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 500)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        animalId: r.animal_id,
+        visualId: r.visual_id,
+        kind: r.kind,
+        productName: r.product_name,
+        medicineBatch: r.medicine_batch,
+        dose: r.dose === null ? null : Number(r.dose),
+        doseUnit: r.dose_unit,
+        route: r.route,
+        administeredAt: r.administered_at.toISOString(),
+        withdrawalUntil: r.withdrawal_until?.toISOString() ?? null,
+        protocolName: r.protocol_name,
+      }));
+    });
+  }
+
+  /**
+   * Restrictions that are still active. This is the list that blocks sale
+   * clearance, so it is the one an operator needs before loading a truck.
+   */
+  async listAllActiveRestrictions(
+    context: TenantContext,
+  ): Promise<RestrictionListItem[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        animal_id: string;
+        visual_id: string;
+        restriction_type: string;
+        reason: string | null;
+        valid_from: Date;
+        valid_to: Date | null;
+      }>(
+        `SELECT r.id, r.animal_id, a.visual_id, r.restriction_type, r.reason,
+                r.valid_from, r.valid_to
+           FROM animal_restriction r
+           JOIN animal a ON a.id = r.animal_id
+          WHERE r.status = 'active'
+          ORDER BY r.valid_to NULLS FIRST, a.visual_id`,
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        animalId: r.animal_id,
+        visualId: r.visual_id,
+        restrictionType: r.restriction_type,
+        reason: r.reason,
+        validFrom: r.valid_from.toISOString(),
+        validTo: r.valid_to?.toISOString() ?? null,
+      }));
+    });
+  }
+
+  /** Health protocols in force, with the treatment count each has produced. */
+  async listProtocols(context: TenantContext): Promise<ProtocolListItem[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        name: string;
+        applies_to: string | null;
+        version: number;
+        status: string;
+        used: string;
+      }>(
+        `SELECT p.id, p.name, p.applies_to, p.version, p.status,
+                (SELECT count(*) FROM treatment t WHERE t.protocol_id = p.id) AS used
+           FROM health_protocol p
+          ORDER BY p.status, p.name`,
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        appliesTo: r.applies_to,
+        version: r.version,
+        status: r.status,
+        treatmentCount: Number(r.used),
+      }));
+    });
+  }
+
+  /** Clinical cases, open ones first. */
+  async listCases(context: TenantContext, limit = 50): Promise<HealthCaseListItem[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        animal_id: string;
+        visual_id: string;
+        symptom: string | null;
+        diagnosis: string | null;
+        status: string;
+        outcome: string | null;
+        opened_at: Date;
+        closed_at: Date | null;
+      }>(
+        `SELECT c.id, c.animal_id, a.visual_id, c.symptom, c.diagnosis, c.status,
+                c.outcome, c.opened_at, c.closed_at
+           FROM health_case c
+           JOIN animal a ON a.id = c.animal_id
+          ORDER BY (c.status = 'open') DESC, c.opened_at DESC
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 200)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        animalId: r.animal_id,
+        visualId: r.visual_id,
+        symptom: r.symptom,
+        diagnosis: r.diagnosis,
+        status: r.status,
+        outcome: r.outcome,
+        openedAt: r.opened_at.toISOString(),
+        closedAt: r.closed_at?.toISOString() ?? null,
+      }));
+    });
   }
 
   private async authorized<T>(

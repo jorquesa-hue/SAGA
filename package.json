@@ -2,7 +2,7 @@
   "name": "jk-platform",
   "private": true,
   "version": "0.1.0",
-  "description": "SAGA — enterprise farm operating system for livestock enterprises. Implements JK-PLT-EES-001.",
+  "description": "SAGA \u2014 enterprise farm operating system for livestock enterprises. Implements JK-PLT-EES-001.",
   "type": "module",
   "engines": {
     "node": ">=22",
@@ -23,7 +23,10 @@
     "contracts:validate": "node scripts/validate/contracts-validate.mjs",
     "db:migrate": "node scripts/bootstrap/migrate.mjs",
     "db:migrate:test": "node scripts/bootstrap/migrate.mjs --verify",
-    "db:seed": "node scripts/bootstrap/seed.mjs",
+    "db:seed": "node scripts/bootstrap/generate-demo-seed.mjs && node scripts/bootstrap/seed.mjs",
+    "db:seed:generate": "node scripts/bootstrap/generate-demo-seed.mjs",
+    "demo:snapshot": "node scripts/demo/generate-demo-snapshot.mjs",
+    "demo:static": "node scripts/demo/place-static-demo.mjs",
     "bootstrap": "bash scripts/bootstrap/bootstrap.sh"
   },
   "devDependencies": {

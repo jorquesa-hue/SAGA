@@ -30,6 +30,32 @@ import { HerdForbiddenError } from "./errors.js";
 import { SESSION_CLOSED, SESSION_STARTED } from "./events.js";
 import { processObservation } from "./observation-pipeline.js";
 
+/** A handling session with its live progress, not just its stored summary. */
+export interface HandlingSessionSummary {
+  id: Uuid;
+  farmId: Uuid;
+  farmName: string;
+  purpose: string;
+  status: string;
+  deviceId: string | null;
+  expectedCount: number | null;
+  recordedCount: number;
+  unresolvedCount: number;
+  startedAt: string;
+  closedAt: string | null;
+}
+
+/** One weighing, carrying the analytics-eligibility flag that governs its use. */
+export interface RecentWeight {
+  id: Uuid;
+  animalId: Uuid;
+  visualId: string;
+  occurredAt: string;
+  weightKg: number;
+  eligibleForAnalytics: boolean;
+  qualityFlags: string[];
+}
+
 export interface WeighingServiceOptions {
   appPool: pg.Pool;
   environment?: string;
@@ -393,6 +419,90 @@ export class WeighingService {
     if (result.rows[0]!.status !== "open") {
       throw new ValidationError(`Handling session ${sessionId} is closed`);
     }
+  }
+
+  /**
+   * Recent handling sessions with what each one actually recorded. The counts
+   * come from the observations, not from the session's own summary, so a
+   * session that is still open reports its progress rather than nothing.
+   */
+  async listSessions(
+    context: TenantContext,
+    limit = 25,
+  ): Promise<HandlingSessionSummary[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        farm_id: string;
+        farm_name: string;
+        purpose: string;
+        status: string;
+        device_id: string | null;
+        expected_count: number | null;
+        started_at: Date;
+        closed_at: Date | null;
+        recorded: string;
+        unresolved: string;
+      }>(
+        `SELECT s.id, s.farm_id, f.name AS farm_name, s.purpose, s.status,
+                s.device_id, s.expected_count, s.started_at, s.closed_at,
+                count(o.id) FILTER (WHERE o.resolution_status = 'accepted') AS recorded,
+                count(o.id) FILTER (WHERE o.resolution_status = 'pending_resolution')
+                  AS unresolved
+           FROM handling_session s
+           JOIN farm f ON f.id = s.farm_id
+           LEFT JOIN device_observation o ON o.handling_session_id = s.id
+          GROUP BY s.id, f.name
+          ORDER BY s.started_at DESC
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 200)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        farmId: r.farm_id,
+        farmName: r.farm_name,
+        purpose: r.purpose,
+        status: r.status,
+        deviceId: r.device_id,
+        expectedCount: r.expected_count,
+        recordedCount: Number(r.recorded),
+        unresolvedCount: Number(r.unresolved),
+        startedAt: r.started_at.toISOString(),
+        closedAt: r.closed_at?.toISOString() ?? null,
+      }));
+    });
+  }
+
+  /** Most recent weighings across the herd, newest first. */
+  async listRecentWeights(context: TenantContext, limit = 50): Promise<RecentWeight[]> {
+    return this.authorized(context, "read", async (client) => {
+      const result = await client.query<{
+        id: string;
+        animal_id: string;
+        visual_id: string;
+        occurred_at: Date;
+        weight_kg: string;
+        eligible_for_analytics: boolean;
+        quality_flags: string[];
+      }>(
+        `SELECT w.id, w.animal_id, a.visual_id, w.occurred_at, w.weight_kg,
+                w.eligible_for_analytics, w.quality_flags
+           FROM animal_weight w
+           JOIN animal a ON a.id = w.animal_id
+          ORDER BY w.occurred_at DESC, a.visual_id
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 500)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        animalId: r.animal_id,
+        visualId: r.visual_id,
+        occurredAt: r.occurred_at.toISOString(),
+        weightKg: Number(r.weight_kg),
+        eligibleForAnalytics: r.eligible_for_analytics,
+        qualityFlags: r.quality_flags,
+      }));
+    });
   }
 
   private async nextSessionVersion(

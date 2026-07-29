@@ -85,6 +85,40 @@ export interface AssetsServiceOptions {
   environment?: string;
 }
 
+/**
+ * An asset with the two facts that decide whether it can be trusted today:
+ * whether its calibration still holds and whether work is open against it.
+ */
+export interface AssetRow {
+  id: Uuid;
+  farmId: Uuid | null;
+  farmName: string | null;
+  name: string;
+  assetType: string;
+  model: string | null;
+  serial: string | null;
+  location: string | null;
+  status: string;
+  calibrationValidUntil: string | null;
+  calibrationOverdue: boolean;
+  nextMaintenanceDueAt: string | null;
+  openWorkOrders: number;
+}
+
+export interface WorkOrderRow {
+  id: Uuid;
+  assetId: Uuid;
+  assetName: string;
+  priority: string;
+  description: string;
+  status: string;
+  laborCost: number | null;
+  partsCost: number | null;
+  downtimeHours: number | null;
+  openedAt: string;
+  closedAt: string | null;
+}
+
 export class AssetsMaintenanceService {
   private readonly appPool: pg.Pool;
   private readonly environment: string;
@@ -370,6 +404,95 @@ export class AssetsMaintenanceService {
       );
     }
     return result.data;
+  }
+
+  /** Every asset with its calibration state and open work. */
+  async listAssets(context: TenantContext): Promise<AssetRow[]> {
+    return this.authorized(context, false, async (client) => {
+      const result = await client.query<{
+        id: string;
+        farm_id: string | null;
+        farm_name: string | null;
+        name: string;
+        asset_type: string;
+        model: string | null;
+        serial: string | null;
+        location: string | null;
+        status: string;
+        calibration_valid_until: Date | null;
+        next_due_at: Date | null;
+        open_work: string;
+      }>(
+        `SELECT a.id, a.farm_id, f.name AS farm_name, a.name, a.asset_type, a.model,
+                a.serial, a.location, a.status, a.calibration_valid_until,
+                (SELECT min(s.next_due_at) FROM maintenance_schedule s
+                  WHERE s.asset_id = a.id) AS next_due_at,
+                (SELECT count(*) FROM work_order w
+                  WHERE w.asset_id = a.id AND w.status IN ('open', 'in_progress')
+                ) AS open_work
+           FROM asset a
+           LEFT JOIN farm f ON f.id = a.farm_id
+          ORDER BY a.asset_type, a.name`,
+      );
+      const now = Date.now();
+      return result.rows.map((r) => ({
+        id: r.id,
+        farmId: r.farm_id,
+        farmName: r.farm_name,
+        name: r.name,
+        assetType: r.asset_type,
+        model: r.model,
+        serial: r.serial,
+        location: r.location,
+        status: r.status,
+        calibrationValidUntil: r.calibration_valid_until?.toISOString() ?? null,
+        calibrationOverdue:
+          r.calibration_valid_until !== null && r.calibration_valid_until.getTime() < now,
+        nextMaintenanceDueAt: r.next_due_at?.toISOString() ?? null,
+        openWorkOrders: Number(r.open_work),
+      }));
+    });
+  }
+
+  /** Work orders, open ones first. */
+  async listWorkOrders(context: TenantContext, limit = 50): Promise<WorkOrderRow[]> {
+    return this.authorized(context, false, async (client) => {
+      const result = await client.query<{
+        id: string;
+        asset_id: string;
+        asset_name: string;
+        priority: string;
+        description: string;
+        status: string;
+        labor_cost: string | null;
+        parts_cost: string | null;
+        downtime_hours: string | null;
+        opened_at: Date;
+        closed_at: Date | null;
+      }>(
+        `SELECT w.id, w.asset_id, a.name AS asset_name, w.priority, w.description,
+                w.status, w.labor_cost, w.parts_cost, w.downtime_hours,
+                w.opened_at, w.closed_at
+           FROM work_order w
+           JOIN asset a ON a.id = w.asset_id
+          ORDER BY (w.status IN ('open', 'in_progress')) DESC, w.opened_at DESC
+          LIMIT $1`,
+        [Math.min(Math.max(limit, 1), 200)],
+      );
+      return result.rows.map((r) => ({
+        id: r.id,
+        assetId: r.asset_id,
+        assetName: r.asset_name,
+        priority: r.priority,
+        description: r.description,
+        status: r.status,
+        laborCost: r.labor_cost === null ? null : Number(r.labor_cost),
+        partsCost: r.parts_cost === null ? null : Number(r.parts_cost),
+        downtimeHours: r.downtime_hours === null ? null : Number(r.downtime_hours),
+        openedAt: r.opened_at.toISOString(),
+        closedAt: r.closed_at?.toISOString() ?? null,
+      }));
+    });
   }
 
   private async authorized<T>(

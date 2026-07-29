@@ -63,8 +63,14 @@ body {
   color: var(--text);
 }
 
-/* The nav carries 14 destinations and wraps on narrow viewports, so the bar
- * grows with its contents. A fixed height clipped the wrapped row entirely. */
+/* The nav carries nineteen destinations and wraps on narrow viewports, so the
+ * bar grows with its contents. A fixed height clipped the wrapped row entirely.
+ *
+ * On a wide screen the two wrappers below (.topbar-bar, .topbar-menu) are
+ * display:contents, so brand / nav / search / locale / session are direct flex
+ * items of the bar exactly as they were before the mobile treatment existed.
+ * The narrow-viewport rules further down re-materialise the wrappers to collapse
+ * the menu behind a toggle. */
 .topbar {
   display: flex;
   align-items: center;
@@ -73,7 +79,26 @@ body {
   padding: 0.5rem 1.25rem;
   min-height: 56px;
   background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  /* docs/brand §3.2 — Tag is the signature field; a band under the header is
+   * the "band" the brand book names, and it is the same ground line as the
+   * Bar S mark. It carries no text, so the 1.8:1 rule does not apply. */
+  border-bottom: 3px solid var(--accent);
+}
+.topbar-bar,
+.topbar-menu {
+  display: contents;
+}
+/* The menu toggle only exists on narrow viewports (shown in the media query). */
+.menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
 }
 /* The wordmark is drawn, not typed: tracked caps per docs/brand §3.3.
  * font-stretch drives the variable width axis to Archivo Expanded.
@@ -151,6 +176,42 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* docs/brand §3.2 — the signature is Tag as a FIELD. The primary action on a
+ * screen (the title-row action and every form's submit) is a Tag chip with Ink
+ * type on it. Ink on Tag is 7.5:1 (AAA), so this respects rule 1 — Tag never
+ * carries text on Paper, but it may carry Ink type on a Tag field. Secondary
+ * controls — table rows, list refreshers, the locale switch — stay neutral, so
+ * the yellow marks intent rather than becoming a wall. */
+.page-head > button,
+.page-head > .button-link,
+.form button {
+  background: var(--accent);
+  color: var(--saga-ink);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.page-head > button:hover,
+.page-head > .button-link:hover,
+.form button:hover {
+  filter: brightness(0.95);
+}
+.page-head > button:disabled,
+.form button:disabled {
+  filter: none;
+}
+
+/* §3.2 "underlines" — a short Tag rule under the page title, the same band the
+ * mark is written on, repeated at the head of every screen. */
+.page-head h2::after {
+  content: "";
+  display: block;
+  width: 2.75rem;
+  height: 4px;
+  margin-top: 0.5rem;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
 .muted {
   color: var(--muted);
 }
@@ -167,25 +228,97 @@ button:disabled {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 0.75rem;
 }
+/* A KPI carries a tone (docs/brand §3.2): a coloured left band and an icon
+ * chip, so the panel reads at a glance and each figure is a way into its
+ * module. Tones map to meaning — Tag for the herd/index, Pasto for the positive
+ * reproduction figures, Hide for the counts that mean attention. */
 .kpi {
+  --kpi-bar: var(--border);
+  --kpi-wash: var(--panel-2);
+  --kpi-ink: var(--muted);
   background: var(--panel);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--kpi-bar);
   border-radius: 8px;
   padding: 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
+}
+.kpi--tag {
+  --kpi-bar: var(--saga-tag);
+  --kpi-wash: var(--saga-tag-wash);
+  --kpi-ink: var(--saga-tag-text);
+}
+.kpi--pasto {
+  --kpi-bar: var(--saga-pasto);
+  --kpi-wash: color-mix(in srgb, var(--saga-pasto) 14%, var(--saga-paper));
+  --kpi-ink: var(--saga-pasto);
+}
+.kpi--hide {
+  --kpi-bar: var(--saga-hide);
+  --kpi-wash: color-mix(in srgb, var(--saga-hide) 14%, var(--saga-paper));
+  --kpi-ink: var(--saga-hide);
+}
+.kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: none;
+  border-radius: 6px;
+  background: var(--kpi-wash);
+  color: var(--kpi-ink);
+}
+/* The affordance: quiet until hover, so it does not compete with the figure. */
+.kpi-go {
+  margin-top: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--kpi-ink);
+  opacity: 0.7;
+}
+a.kpi.is-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    transform 160ms ease-out,
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+a.kpi.is-link:hover {
+  transform: translateY(-2px);
+  border-color: var(--kpi-bar);
+  box-shadow: 0 6px 16px rgba(34, 43, 38, 0.1);
+}
+a.kpi.is-link:hover .kpi-go {
+  opacity: 1;
 }
 .kpi-label {
   color: var(--muted);
   font-size: 0.75rem;
 }
-/* Figures line up in columns: mono + tabular per docs/brand §3.3. */
+/* Figures line up in columns: mono + tabular per docs/brand §3.3. The positive
+ * and attention tones colour the figure itself — Pasto and Hide are state
+ * colours (§3.2), and both clear 4.5:1 on Paper. Tag and neutral stay Ink. */
 .kpi-value {
   font-family: var(--saga-font-data);
   font-size: 1.4rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+.kpi--pasto .kpi-value {
+  color: var(--saga-pasto);
+}
+.kpi--hide .kpi-value {
+  color: var(--saga-hide);
 }
 /* ...but a prose value is not a figure, so it keeps the body face. */
 .kpi-value-text {
@@ -552,6 +685,85 @@ textarea {
   text-decoration: none;
 }
 
+/* ---------------------------------------------------------------------------
+ * Narrow viewports (phones). The nineteen-item nav is unusable inline on a
+ * phone — it wraps into a full-screen wall before any content shows. Below this
+ * width the header becomes a compact bar (brand + menu toggle) and the rest of
+ * the chrome collapses into a panel the toggle opens.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.5rem 1rem;
+  }
+  /* Re-materialise the wrappers (they are display:contents on desktop). */
+  .topbar-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+  }
+  .menu-toggle {
+    display: inline-flex;
+  }
+  .topbar-menu {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.75rem 0 0.25rem;
+  }
+  .topbar-menu.open {
+    display: flex;
+  }
+  /* Destinations stack as full-width rows — real tap targets, not wrapped text. */
+  .nav {
+    flex-direction: column;
+    gap: 0;
+  }
+  .nav a {
+    padding: 0.6rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav a.active {
+    /* A left rule reads as "you are here" better than an underline in a list. */
+    border-bottom-color: var(--border);
+    border-left: 3px solid var(--accent);
+    padding-left: 0.5rem;
+    margin-left: -0.5rem;
+  }
+  .topsearch input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  /* The language switch is the one control people hunt for first, so it leads
+     the opened menu instead of sitting below nineteen destinations. */
+  .locale {
+    order: -1;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .locale button {
+    /* Real tap targets on a phone, and a filled selected state so the choice
+       is unmistakable the instant it is made. */
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.9rem;
+  }
+  .locale button.on {
+    background: var(--accent);
+    color: var(--saga-ink);
+    border-color: var(--accent);
+  }
+  .session {
+    justify-content: space-between;
+  }
+}
+
 /* The record is a document: print it without the console around it. */
 @media print {
   .topbar,
@@ -699,4 +911,167 @@ button,
   font-weight: 600;
   min-width: 2.5rem;
   text-align: right;
+}
+
+/* ---------------------------------------------------------------------------
+ * Record panels (docs/brand §3.4)
+ *
+ * A screen now shows what a module holds, not only a form for adding to it.
+ * Each list is a panel: a titled surface with its own reload, so a long screen
+ * reads as a stack of separable records rather than one undifferentiated wall.
+ * ------------------------------------------------------------------------- */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem 1rem;
+  margin-top: 1.25rem;
+}
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+.panel-head h3 {
+  margin: 0;
+}
+
+/* A wide table scrolls inside its panel; the page itself never scrolls
+ * sideways, which is what makes these screens usable on a phone in a corral. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Figures right-align so decimal points line up down the column. */
+.grid th.num,
+.grid td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Two states worth colouring, and only two: something needs attention, or
+ * something is already wrong. Anything else stays in the body colour. */
+.warn {
+  color: var(--warn);
+}
+.error-text {
+  color: var(--danger);
+}
+.badge.ok {
+  color: var(--success);
+  border-color: var(--success);
+}
+.badge.risk-urgent {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.badge.risk-normal,
+.badge.risk-low {
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Reports (§26) — a catalogue on the left, the running report on the right.
+ * The catalogue is the map; the panel is the record. On a phone they stack.
+ * ------------------------------------------------------------------------- */
+.reports-layout {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+.reports-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-right: 1px solid var(--border);
+  padding-right: 1rem;
+}
+.reports-cat h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.report-pick {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.15rem;
+  cursor: pointer;
+}
+.report-pick:hover {
+  border-color: var(--border);
+}
+.report-pick.on {
+  /* A left rule in Tag reads as "you are here", matching the mobile nav. */
+  border-left: 3px solid var(--accent);
+  background: var(--panel-2);
+  font-weight: 600;
+}
+.report-param {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.report-param-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.report-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.report-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--panel);
+  min-width: 120px;
+}
+.report-stat-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.report-stat-value {
+  font-family: var(--saga-font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.reports-runs {
+  margin-top: 1.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+.reports-runs h4 {
+  margin: 0 0 0.5rem;
+}
+@media (max-width: 900px) {
+  .reports-layout {
+    grid-template-columns: 1fr;
+  }
+  .reports-catalog {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding-right: 0;
+    padding-bottom: 1rem;
+  }
 }

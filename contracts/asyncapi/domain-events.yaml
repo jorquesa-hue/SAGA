@@ -73,6 +73,14 @@ channels:
     messages:
       tenantSettingsUpdated:
         $ref: "#/components/messages/TenantSettingsUpdated"
+  reportingReportGenerated:
+    address: jk.{environment}.{tenantShard}.reporting.report_run.report-generated.v1
+    parameters:
+      environment: { description: Deployment environment }
+      tenantShard: { description: Non-sensitive routing shard }
+    messages:
+      reportGenerated:
+        $ref: "#/components/messages/ReportGenerated"
 operations:
   publishWeightRecorded:
     action: send
@@ -111,6 +119,11 @@ operations:
       - {
           $ref: "#/channels/identityTenantSettingsUpdated/messages/tenantSettingsUpdated",
         }
+  publishReportGenerated:
+    action: send
+    channel: { $ref: "#/channels/reportingReportGenerated" }
+    messages:
+      - { $ref: "#/channels/reportingReportGenerated/messages/reportGenerated" }
 components:
   messages:
     WeightRecorded:
@@ -155,6 +168,12 @@ components:
         location: $message.payload#/correlationId
       payload:
         $ref: "#/components/schemas/TenantSettingsUpdatedEnvelope"
+    ReportGenerated:
+      name: reporting.report_generated.v1
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        $ref: "#/components/schemas/ReportGeneratedEnvelope"
   schemas:
     EnvelopeBase:
       type: object
@@ -321,3 +340,17 @@ components:
                     - auditor
                     - integration_service
                 reason: { type: [string, "null"], maxLength: 500 }
+    ReportGeneratedEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/EnvelopeBase"
+        - type: object
+          properties:
+            eventType: { const: reporting.report_generated.v1 }
+            aggregateType: { const: report_run }
+            payload:
+              type: object
+              required: [reportKey, rowCount, checksum]
+              properties:
+                reportKey: { type: string, minLength: 1, maxLength: 100 }
+                rowCount: { type: integer, minimum: 0 }
+                checksum: { type: string, pattern: "^[0-9a-f]{64}$" }

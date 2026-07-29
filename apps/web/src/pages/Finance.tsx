@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
+import { RecordList } from "../components/RecordList.js";
+import type { LedgerEntryView, SaleView } from "@jk/contracts-rest";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 
 /** Finance entries (§29): record expenses, revenue, and animal/lot sales. */
 export function Finance(): JSX.Element {
   const client = useClient();
-  const { t, fmt, currency } = useI18n();
+  const { t, td, fmt, currency } = useI18n();
   const entry = useCommand();
   const sale = useCommand();
 
@@ -111,6 +113,81 @@ export function Finance(): JSX.Element {
         </button>
         <FormMessage state={sale} />
       </div>
+
+      <RecordList<LedgerEntryView>
+        titleKey="finance.ledger"
+        load={() => client.overview.ledger()}
+        rowKey={(e) => e.id}
+        emptyKey="finance.noEntries"
+        columns={[
+          {
+            headerKey: "common.date",
+            figure: true,
+            render: (e) => fmt.date(e.occurredAt),
+          },
+          {
+            headerKey: "common.type",
+            render: (e) => (
+              <span className={`badge ${e.entryType === "revenue" ? "ok" : ""}`}>
+                {td(e.entryType)}
+              </span>
+            ),
+          },
+          { headerKey: "finance.category", render: (e) => td(e.category) },
+          { headerKey: "finance.counterpartyCol", render: (e) => e.counterparty ?? "—" },
+          { headerKey: "common.farm", render: (e) => e.farmName ?? "—" },
+          {
+            headerKey: "finance.amountCol",
+            figure: true,
+            // Amounts are stored in minor units; only the display divides.
+            render: (e) => {
+              const value = fmt.currency(e.amountMinor / 100, e.currency);
+              return e.reversesEntryId ? (
+                <span className="warn" title={t("finance.reversalTitle")}>
+                  −{value}
+                </span>
+              ) : (
+                value
+              );
+            },
+          },
+        ]}
+      />
+
+      <RecordList<SaleView>
+        titleKey="finance.sales"
+        load={() => client.overview.sales()}
+        rowKey={(s) => s.id}
+        emptyKey="finance.noSales"
+        columns={[
+          {
+            headerKey: "common.date",
+            figure: true,
+            render: (s) => fmt.date(s.soldAt),
+          },
+          {
+            headerKey: "common.animal",
+            render: (s) => <span className="mono">{s.visualId ?? "—"}</span>,
+          },
+          { headerKey: "finance.lot", render: (s) => s.lotName ?? "—" },
+          {
+            headerKey: "finance.weight",
+            figure: true,
+            render: (s) => (s.weightKg === null ? "—" : `${fmt.number(s.weightKg)} kg`),
+          },
+          { headerKey: "finance.basis", render: (s) => td(s.priceBasis) },
+          {
+            headerKey: "finance.grossCol",
+            figure: true,
+            render: (s) => fmt.currency(s.grossMinor / 100, s.currency),
+          },
+          {
+            headerKey: "finance.net",
+            figure: true,
+            render: (s) => fmt.currency(s.netReceiptMinor / 100, s.currency),
+          },
+        ]}
+      />
     </section>
   );
 }

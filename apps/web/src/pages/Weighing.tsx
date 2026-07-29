@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
+import { RecordList } from "../components/RecordList.js";
+import type { HandlingSessionView, WeightView } from "@jk/contracts-rest";
 
 /**
  * Weighing via a handling session (§18): start a session, capture weight
@@ -11,7 +13,7 @@ import { Field, FormMessage, SelectField, useCommand } from "../components/Form.
  */
 export function Weighing(): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td, fmt } = useI18n();
   const start = useCommand();
   const obs = useCommand();
   const close = useCommand();
@@ -117,6 +119,81 @@ export function Weighing(): JSX.Element {
           <FormMessage state={close} />
         </div>
       )}
+
+      <RecordList<HandlingSessionView>
+        titleKey="weighing.sessions"
+        load={() => client.overview.handlingSessions()}
+        rowKey={(s) => s.id}
+        emptyKey="weighing.noSessions"
+        columns={[
+          { headerKey: "common.farm", render: (s) => s.farmName },
+          { headerKey: "weighing.purpose", render: (s) => td(s.purpose) },
+          {
+            headerKey: "common.status",
+            render: (s) => <span className="badge">{td(s.status)}</span>,
+          },
+          {
+            headerKey: "weighing.recorded",
+            figure: true,
+            // Expected is what was driven up the race; recorded is what the
+            // scale actually resolved. The gap is the number that matters.
+            render: (s) =>
+              `${fmt.number(s.recordedCount)} / ${
+                s.expectedCount === null ? "—" : fmt.number(s.expectedCount)
+              }`,
+          },
+          {
+            headerKey: "weighing.unresolved",
+            figure: true,
+            render: (s) =>
+              s.unresolvedCount === 0 ? (
+                "—"
+              ) : (
+                <span className="warn">{fmt.number(s.unresolvedCount)}</span>
+              ),
+          },
+          {
+            headerKey: "weighing.started",
+            figure: true,
+            render: (s) => fmt.dateTime(s.startedAt),
+          },
+        ]}
+      />
+
+      <RecordList<WeightView>
+        titleKey="weighing.recent"
+        load={() => client.overview.weights()}
+        rowKey={(w) => w.id}
+        emptyKey="weighing.noWeights"
+        columns={[
+          {
+            headerKey: "common.animal",
+            render: (w) => <span className="mono">{w.visualId}</span>,
+          },
+          {
+            headerKey: "weighing.weight",
+            figure: true,
+            render: (w) => `${fmt.number(w.weightKg)} kg`,
+          },
+          {
+            headerKey: "weighing.eligible",
+            // A flagged reading is kept and excluded, never deleted.
+            render: (w) =>
+              w.eligibleForAnalytics ? (
+                t("common.yes")
+              ) : (
+                <span className="warn">
+                  {w.qualityFlags.map((f) => td(f)).join(", ") || t("common.no")}
+                </span>
+              ),
+          },
+          {
+            headerKey: "common.date",
+            figure: true,
+            render: (w) => fmt.dateTime(w.occurredAt),
+          },
+        ]}
+      />
     </section>
   );
 }

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.saga.example/json-schema/reporting.report_generated.v1.payload.schema.json",
+  "title": "reporting.report_generated.v1 payload",
+  "description": "Payload of reporting.report_generated.v1 (aggregate: report_run). Emitted when a report is run and its immutable snapshot is recorded. The envelope aggregateId equals the report run id.",
+  "type": "object",
+  "required": ["reportKey", "rowCount", "checksum"],
+  "additionalProperties": false,
+  "properties": {
+    "reportKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Catalogue key of the report that was run, e.g. finance.pl."
+    },
+    "rowCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of rows in the recorded snapshot."
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over the report key, parameters, rows, and summary."
+    }
+  }
+}
