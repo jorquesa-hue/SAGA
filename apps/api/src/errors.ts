@@ -18,6 +18,18 @@ export class RouteNotFoundError extends PlatformError {
   readonly httpStatus = 404;
 }
 
+/** A multipart upload had no file part, or a mimetype outside the accepted set. 415. */
+export class UnsupportedMediaTypeError extends PlatformError {
+  readonly code = "JK-UNSUPPORTED-MEDIA-TYPE";
+  readonly httpStatus = 415;
+}
+
+/** An uploaded file exceeded the configured size limit. 413. */
+export class PayloadTooLargeError extends PlatformError {
+  readonly code = "JK-PAYLOAD-TOO-LARGE";
+  readonly httpStatus = 413;
+}
+
 /**
  * A money write specified a currency other than the tenant's base currency.
  * The console records in the tenant currency; cross-currency entries need FX

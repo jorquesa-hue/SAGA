@@ -7,6 +7,7 @@ import { Field, FormMessage, SelectField, useCommand } from "../components/Form.
 import { Pagination, usePagination } from "../components/Pagination.js";
 import { useI18n } from "../i18n/index.js";
 import { Badge } from "../components/Badge.js";
+import { SPECIES_OPTIONS, suggestedBreedsFor } from "../species-catalog.js";
 
 /**
  * Animal registry: register new animals, filter the list (visual ID / RFID /
@@ -114,6 +115,7 @@ export function Animals(): JSX.Element {
           <thead>
             <tr>
               <th>{t("animals.colVisual")}</th>
+              <th>{t("animals.colSpecies")}</th>
               <th>{t("animals.colSex")}</th>
               <th>{t("animals.colBreed")}</th>
               <th>{t("animals.colStatus")}</th>
@@ -128,6 +130,7 @@ export function Animals(): JSX.Element {
                     {a.visualId ?? a.id.slice(0, 8)}
                   </Link>
                 </td>
+                <td>{td(a.speciesCode ?? "BOVINE")}</td>
                 <td>{td(a.sex)}</td>
                 <td>{a.breedCode ?? "—"}</td>
                 <td>
@@ -153,11 +156,12 @@ export function Animals(): JSX.Element {
 
 function RegisterForm({ onDone }: { onDone: () => void }): JSX.Element {
   const client = useClient();
-  const { t } = useI18n();
+  const { t, td } = useI18n();
   const cmd = useCommand();
   const [farmId, setFarmId] = useState("");
   const [visualId, setVisualId] = useState("");
   const [sex, setSex] = useState("female");
+  const [speciesCode, setSpeciesCode] = useState("BOVINE");
   const [breedCode, setBreedCode] = useState("BRANGUS");
   const [birthDate, setBirthDate] = useState("");
   const [rfid, setRfid] = useState("");
@@ -169,6 +173,7 @@ function RegisterForm({ onDone }: { onDone: () => void }): JSX.Element {
           farmId,
           visualId,
           sex,
+          speciesCode,
           breedCode,
           ...(birthDate ? { birthDate } : {}),
           ...(rfid ? { rfid } : {}),
@@ -193,6 +198,16 @@ function RegisterForm({ onDone }: { onDone: () => void }): JSX.Element {
         placeholder={t("animals.visualPlaceholder")}
       />
       <SelectField
+        label={t("animals.species")}
+        value={speciesCode}
+        onChange={(v) => {
+          setSpeciesCode(v);
+          const suggested = suggestedBreedsFor(v)[0];
+          if (suggested) setBreedCode(suggested);
+        }}
+        options={SPECIES_OPTIONS.map((s) => ({ value: s.code, label: td(s.code) }))}
+      />
+      <SelectField
         label={t("animals.sex")}
         value={sex}
         onChange={setSex}
@@ -202,7 +217,17 @@ function RegisterForm({ onDone }: { onDone: () => void }): JSX.Element {
           { value: "unknown", label: t("repro.sexUnknown") },
         ]}
       />
-      <Field label={t("animals.breed")} value={breedCode} onChange={setBreedCode} />
+      <Field
+        label={t("animals.breed")}
+        value={breedCode}
+        onChange={setBreedCode}
+        list="breed-suggestions"
+      />
+      <datalist id="breed-suggestions">
+        {suggestedBreedsFor(speciesCode).map((b) => (
+          <option key={b} value={b} />
+        ))}
+      </datalist>
       <Field label={t("animals.birthDate")} value={birthDate} onChange={setBirthDate} />
       <Field label={t("animals.rfid")} value={rfid} onChange={setRfid} />
       <div className="card-actions">

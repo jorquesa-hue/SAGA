@@ -31,6 +31,20 @@ const configSchema = z.object({
    * local dev, empty reflects the request origin so the Vite dev server works.
    */
   CORS_ORIGINS: z.string().default(""),
+  /**
+   * S3-compatible object storage for animal photos (JK-ANI photo gallery).
+   * Defaults match the local MinIO service in
+   * infrastructure/compose/docker-compose.yml — never a production value.
+   */
+  STORAGE_ENDPOINT: z.string().url().default("http://localhost:9000"),
+  STORAGE_REGION: z.string().min(1).default("us-east-1"),
+  STORAGE_ACCESS_KEY_ID: z.string().min(1).default("jk_minio_local"),
+  STORAGE_SECRET_ACCESS_KEY: z.string().min(1).default("jk_minio_local_secret"),
+  STORAGE_BUCKET: z.string().min(1).default("jk-animal-photos"),
+  STORAGE_FORCE_PATH_STYLE: z
+    .string()
+    .transform((v) => v !== "false")
+    .default("true"),
 });
 
 export type ApiConfig = z.infer<typeof configSchema>;

@@ -7,12 +7,14 @@ export type FetchLike = (
   init?: {
     method?: string;
     headers?: Record<string, string>;
-    body?: string;
+    body?: string | FormData;
   },
 ) => Promise<{
   status: number;
   headers: { get(name: string): string | null };
   text(): Promise<string>;
+  /** Present on real fetch Response objects; used only by binary downloads. */
+  blob?(): Promise<Blob>;
 }>;
 
 /** Authentication strategy, matching the API's two modes (apps/api/src/auth.ts). */
@@ -127,6 +129,70 @@ export class HttpClient {
       };
     }
 
+    throw new ApiError(toProblem(text, response.status, responseCorrelation));
+  }
+
+  /**
+   * Multipart upload (animal photos): the body is caller-built FormData, not
+   * JSON. Content-type is deliberately left unset — the runtime's fetch sets
+   * `multipart/form-data; boundary=...` itself when given a FormData body.
+   */
+  async uploadMultipart<T>(
+    path: string,
+    form: FormData,
+    options: RequestOptions = {},
+  ): Promise<Response<T>> {
+    const correlationId = options.correlationId ?? this.newId();
+    const headers: Record<string, string> = {
+      accept: "application/json",
+      [CORRELATION_HEADER]: correlationId,
+      [IDEMPOTENCY_HEADER]: options.idempotencyKey ?? this.newId(),
+    };
+    await this.applyAuth(headers);
+    const tenant = options.tenantId ?? this.tenantId;
+    if (tenant) headers[TENANT_HEADER] = tenant;
+
+    const url = this.baseUrl + path + buildQuery(options.query);
+    const response = await this.fetchImpl(url, { method: "POST", headers, body: form });
+    const responseCorrelation = response.headers.get(CORRELATION_HEADER) ?? correlationId;
+    const text = await response.text();
+
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        data: (text ? safeJson(text) : undefined) as T,
+        status: response.status,
+        correlationId: responseCorrelation,
+      };
+    }
+    throw new ApiError(toProblem(text, response.status, responseCorrelation));
+  }
+
+  /** Fetch a binary resource (a photo's bytes) as a Blob. */
+  async downloadBlob(
+    path: string,
+    options: RequestOptions = {},
+  ): Promise<{ blob: Blob; contentType: string | null; correlationId: string }> {
+    const correlationId = options.correlationId ?? this.newId();
+    const headers: Record<string, string> = { [CORRELATION_HEADER]: correlationId };
+    await this.applyAuth(headers);
+    const tenant = options.tenantId ?? this.tenantId;
+    if (tenant) headers[TENANT_HEADER] = tenant;
+
+    const url = this.baseUrl + path + buildQuery(options.query);
+    const response = await this.fetchImpl(url, { method: "GET", headers });
+    const responseCorrelation = response.headers.get(CORRELATION_HEADER) ?? correlationId;
+
+    if (response.status >= 200 && response.status < 300) {
+      if (!response.blob) {
+        throw new Error("The configured fetch implementation does not support blob() downloads");
+      }
+      return {
+        blob: await response.blob(),
+        contentType: response.headers.get("content-type"),
+        correlationId: responseCorrelation,
+      };
+    }
+    const text = await response.text();
     throw new ApiError(toProblem(text, response.status, responseCorrelation));
   }
 

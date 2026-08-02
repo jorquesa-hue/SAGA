@@ -10,23 +10,36 @@ import { appendEvent, withTenantTransaction } from "@jk/database";
 import type pg from "pg";
 import { decide, loadCallerMemberships, type AnimalAction } from "./authorization.js";
 import {
+  addPhotoInputSchema,
   assignIdentifierInputSchema,
   mapAnimalRow,
   mapIdentifierRow,
+  mapPhotoRow,
   parseInput,
   registerAnimalInputSchema,
+  removePhotoInputSchema,
   replaceIdentifierInputSchema,
+  type AddPhotoInput,
   type Animal,
   type AnimalIdentifier,
+  type AnimalPhoto,
   type AnimalRow,
   type AssignIdentifierInput,
   type IdentifierRow,
+  type PhotoRow,
   type RegisterAnimalInput,
+  type RemovePhotoInput,
   type ReplaceIdentifierInput,
   type TimelineEntry,
 } from "./domain.js";
 import { AnimalForbiddenError } from "./errors.js";
-import { ANIMAL_REGISTERED, IDENTIFIER_ASSIGNED, IDENTIFIER_REPLACED } from "./events.js";
+import {
+  ANIMAL_REGISTERED,
+  IDENTIFIER_ASSIGNED,
+  IDENTIFIER_REPLACED,
+  PHOTO_ADDED,
+  PHOTO_REMOVED,
+} from "./events.js";
 
 export interface AnimalRegistryOptions {
   /** RLS-enforced application role credentials (jk_app). */
@@ -297,6 +310,205 @@ export class AnimalRegistryService {
           },
         );
         return identifier;
+      },
+    );
+  }
+
+  /**
+   * Record a previously uploaded photo's metadata against an animal (JK-ANI:
+   * dated photo gallery). The API layer owns the raw bytes: it receives the
+   * upload, computes storageKey/checksum/byteSize, puts the object in
+   * S3-compatible storage, then calls this to record the fact. This service
+   * never touches image bytes.
+   */
+  async addPhotoMetadata(
+    context: TenantContext,
+    rawInput: AddPhotoInput,
+  ): Promise<AnimalPhoto> {
+    const input = parseInput(addPhotoInputSchema, rawInput, "addPhoto input");
+    const photoId = newUuid();
+    return this.authorized(
+      context,
+      "manage_photos",
+      { type: "animal", id: input.animalId },
+      async (client) => {
+        await this.assertAnimalExists(client, input.animalId);
+        let photoRow: PhotoRow;
+        try {
+          const inserted = await client.query<PhotoRow>(
+            `INSERT INTO animal_photo
+             (id, tenant_id, animal_id, taken_at, caption, storage_key, content_type,
+              byte_size, checksum_sha256, status, uploaded_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'active',$10)
+           RETURNING id, tenant_id, animal_id, taken_at::text, caption, storage_key, content_type,
+                     byte_size, checksum_sha256, status, removed_reason, uploaded_by, created_at`,
+            [
+              photoId,
+              context.tenantId,
+              input.animalId,
+              input.takenAt,
+              input.caption ?? null,
+              input.storageKey,
+              input.contentType,
+              input.byteSize,
+              input.checksumSha256,
+              input.uploadedBy ?? (context.actor.type === "user" ? context.actor.id : null),
+            ],
+          );
+          photoRow = inserted.rows[0]!;
+        } catch (error) {
+          if ((error as { code?: string }).code === "23505") {
+            throw new ConflictError(
+              `A photo with storage key '${input.storageKey}' already exists in this tenant`,
+            );
+          }
+          throw error;
+        }
+
+        const version = await this.nextAggregateVersion(
+          client,
+          context.tenantId,
+          input.animalId,
+        );
+        await appendEvent(
+          client,
+          createEventEnvelope({
+            eventType: PHOTO_ADDED,
+            context,
+            aggregateType: "animal",
+            aggregateId: input.animalId,
+            aggregateVersion: version,
+            source: { channel: "api" },
+            idempotencyKey: input.idempotencyKey ?? `photo-add-${photoId}`,
+            payload: {
+              animalId: input.animalId,
+              photoId,
+              takenAt: input.takenAt,
+              caption: input.caption ?? null,
+              storageKey: input.storageKey,
+              contentType: input.contentType,
+              byteSize: input.byteSize,
+              checksumSha256: input.checksumSha256,
+            },
+          }),
+          { environment: this.environment },
+        );
+        await this.bumpAnimalVersion(client, input.animalId);
+        await this.audit(
+          client,
+          context,
+          "animal.photo_added",
+          "animal",
+          input.animalId,
+          "success",
+          { photoId, takenAt: input.takenAt },
+        );
+        return mapPhotoRow(photoRow);
+      },
+    );
+  }
+
+  /**
+   * Soft-remove a photo: an explicit compensating event, not a hard delete
+   * (invariant #2 — corrections are explicit, not silent mutation). The
+   * object in storage is left in place; the API layer decides retention.
+   */
+  async removePhoto(context: TenantContext, rawInput: RemovePhotoInput): Promise<void> {
+    const input = parseInput(removePhotoInputSchema, rawInput, "removePhoto input");
+    return this.authorized(
+      context,
+      "manage_photos",
+      { type: "animal", id: input.animalId },
+      async (client) => {
+        await this.assertAnimalExists(client, input.animalId);
+        const updated = await client.query(
+          `UPDATE animal_photo
+           SET status = 'removed', removed_reason = $3, removed_at = now()
+           WHERE id = $1 AND animal_id = $2 AND status = 'active'`,
+          [input.photoId, input.animalId, input.reason ?? null],
+        );
+        if (updated.rowCount === 0) {
+          throw new NotFoundError(
+            `Active photo ${input.photoId} not found for animal ${input.animalId}`,
+          );
+        }
+
+        const version = await this.nextAggregateVersion(
+          client,
+          context.tenantId,
+          input.animalId,
+        );
+        await appendEvent(
+          client,
+          createEventEnvelope({
+            eventType: PHOTO_REMOVED,
+            context,
+            aggregateType: "animal",
+            aggregateId: input.animalId,
+            aggregateVersion: version,
+            source: { channel: "api" },
+            idempotencyKey: input.idempotencyKey ?? `photo-remove-${input.photoId}`,
+            payload: {
+              animalId: input.animalId,
+              photoId: input.photoId,
+              reason: input.reason ?? null,
+            },
+          }),
+          { environment: this.environment },
+        );
+        await this.bumpAnimalVersion(client, input.animalId);
+        await this.audit(
+          client,
+          context,
+          "animal.photo_removed",
+          "animal",
+          input.animalId,
+          "success",
+          { photoId: input.photoId },
+        );
+      },
+    );
+  }
+
+  /** A single active photo's metadata, e.g. to resolve its storage key for download. */
+  async getPhoto(context: TenantContext, animalId: Uuid, photoId: Uuid): Promise<AnimalPhoto> {
+    return this.authorized(
+      context,
+      "read",
+      { type: "animal", id: animalId },
+      async (client) => {
+        await this.assertAnimalExists(client, animalId);
+        const result = await client.query<PhotoRow>(
+          `SELECT id, tenant_id, animal_id, taken_at::text, caption, storage_key, content_type,
+                  byte_size, checksum_sha256, status, removed_reason, uploaded_by, created_at
+           FROM animal_photo
+           WHERE id = $1 AND animal_id = $2 AND status = 'active'`,
+          [photoId, animalId],
+        );
+        if (result.rows.length === 0)
+          throw new NotFoundError(`Active photo ${photoId} not found for animal ${animalId}`);
+        return mapPhotoRow(result.rows[0]!);
+      },
+    );
+  }
+
+  /** Chronological photo gallery for an animal, newest first (active only). */
+  async listPhotos(context: TenantContext, animalId: Uuid): Promise<AnimalPhoto[]> {
+    return this.authorized(
+      context,
+      "read",
+      { type: "animal", id: animalId },
+      async (client) => {
+        await this.assertAnimalExists(client, animalId);
+        const result = await client.query<PhotoRow>(
+          `SELECT id, tenant_id, animal_id, taken_at::text, caption, storage_key, content_type,
+                  byte_size, checksum_sha256, status, removed_reason, uploaded_by, created_at
+           FROM animal_photo
+           WHERE animal_id = $1 AND status = 'active'
+           ORDER BY taken_at DESC, created_at DESC`,
+          [animalId],
+        );
+        return result.rows.map(mapPhotoRow);
       },
     );
   }

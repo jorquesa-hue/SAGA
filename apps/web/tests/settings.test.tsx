@@ -29,7 +29,7 @@ function client(
       };
     }
     if (path === "/api/v1/tenants/current" && method === "PATCH") {
-      const body = JSON.parse(init?.body ?? "{}") as Record<string, unknown>;
+      const body = JSON.parse((init?.body as string) ?? "{}") as Record<string, unknown>;
       patches.push({ path, method, body });
       return {
         status: 200,

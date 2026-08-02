@@ -37,6 +37,8 @@ JK-ANI-001,animal registry,packages/animal-registry,packages/animal-registry/tes
 JK-ANI-002,identifiers,packages/animal-registry/animal-registry-service.ts,packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
 JK-ANI-004,timeline,packages/animal-registry (getTimeline),packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
 JK-ANI-008,identifier history,packages/animal-registry (replaceIdentifier),packages/animal-registry/tests/integration/animal-registry.integration.test.ts,implemented
+JK-ANI-009,multi-species registration,database/migrations/0022;packages/animal-registry/domain.ts (speciesCodeSchema);apps/web/src/species-catalog.ts,packages/animal-registry/tests/unit/validation.test.ts;packages/animal-registry/tests/integration/animal-registry.integration.test.ts;apps/web/tests/animals.test.tsx,implemented
+JK-ANI-010,dated photo gallery,database/migrations/0022 (animal_photo);packages/animal-registry/animal-registry-service.ts (addPhotoMetadata/removePhoto/listPhotos);apps/api/src/routes/animal-photos.ts;apps/api/src/storage.ts,packages/animal-registry/tests/integration/animal-registry.integration.test.ts;apps/api/tests/integration/animal-photos.integration.test.ts;apps/web/tests/animal-photos-page.test.tsx,implemented (MinIO live path unverified)
 JK-DOM-002,animal aggregate,packages/animal-registry;database/migrations/0001,packages/animal-registry/tests/integration,implemented
 JK-DOM-003,identifier index,database/migrations/0001,packages/animal-registry/tests/integration,implemented
 JK-DOM-009,observation ledger,database/migrations/0005 (device_observation),packages/herd-operations/tests/integration/weighing.integration.test.ts,implemented

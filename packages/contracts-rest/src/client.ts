@@ -2,6 +2,7 @@ import { HttpClient, type ClientConfig, type RequestOptions } from "./http.js";
 import type {
   AnimalImportMapping,
   Animal,
+  AnimalPhoto,
   AssetView,
   BudgetLineView,
   ConnectorRegistration,
@@ -214,6 +215,7 @@ export class JkPlatformClient {
         farmId: string;
         visualId: string;
         sex: string;
+        speciesCode?: string;
         breedCode?: string;
         birthDate?: string;
         rfid?: string;
@@ -227,6 +229,43 @@ export class JkPlatformClient {
       this.get<Page<Record<string, unknown>>>(`/api/v1/animals/${id}/weights`, o),
     adg: (id: string, o?: RequestOptions) =>
       this.get<Record<string, unknown>>(`/api/v1/animals/${id}/adg`, o),
+    /** Dated photo gallery (JK-ANI photo gallery). */
+    photos: {
+      list: (animalId: string, o?: RequestOptions) =>
+        this.get<Page<AnimalPhoto>>(`/api/v1/animals/${animalId}/photos`, o),
+      /** Multipart upload: raw file bytes plus takenAt/caption form fields. */
+      upload: async (
+        animalId: string,
+        input: { file: Blob; filename: string; takenAt: string; caption?: string },
+        o?: RequestOptions,
+      ) => {
+        const form = new FormData();
+        form.append("takenAt", input.takenAt);
+        if (input.caption) form.append("caption", input.caption);
+        form.append("file", input.file, input.filename);
+        const response = await this.http.uploadMultipart<AnimalPhoto>(
+          `/api/v1/animals/${animalId}/photos`,
+          form,
+          o,
+        );
+        return response.data;
+      },
+      download: (animalId: string, photoId: string, o?: RequestOptions) =>
+        this.http.downloadBlob(`/api/v1/animals/${animalId}/photos/${photoId}/download`, o),
+      remove: async (
+        animalId: string,
+        photoId: string,
+        reason?: string,
+        o?: RequestOptions,
+      ): Promise<void> => {
+        await this.http.request<void>(
+          "DELETE",
+          `/api/v1/animals/${animalId}/photos/${photoId}`,
+          reason ? { reason } : undefined,
+          o,
+        );
+      },
+    },
   };
 
   // -- Health & laboratory --

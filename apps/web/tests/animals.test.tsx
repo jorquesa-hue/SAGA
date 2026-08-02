@@ -9,12 +9,14 @@ const session: Session = { userId: "u1", tenantId: "t-1", platformAdmin: false }
 
 function client(handlers: {
   get: (p: string) => unknown;
-  post: (p: string) => unknown;
+  post: (p: string, body?: unknown) => unknown;
 }): JkPlatformClient {
   const fetch: FetchLike = async (url, init) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
+    const parsedBody =
+      typeof init?.body === "string" ? (JSON.parse(init.body) as unknown) : undefined;
     const body =
-      (init?.method ?? "GET") === "GET" ? handlers.get(path) : handlers.post(path);
+      (init?.method ?? "GET") === "GET" ? handlers.get(path) : handlers.post(path, parsedBody);
     return {
       status: 200,
       headers: { get: () => "corr" },
@@ -129,5 +131,47 @@ describe("Animals page", () => {
     });
     await waitFor(() => expect(screen.queryByText("BR-0001")).not.toBeInTheDocument());
     expect(screen.getByText("BR-0099")).toBeInTheDocument();
+  });
+
+  it("shows the species column and registers a non-bovine animal (multi-species support)", async () => {
+    const posts: Array<{ path: string; body: unknown }> = [];
+    const c = client({
+      get: (path) =>
+        path === "/api/v1/animals"
+          ? {
+              items: [
+                {
+                  id: "a-1",
+                  visualId: "OV-001",
+                  speciesCode: "OVINE",
+                  sex: "female",
+                  breedCode: "SANTA_INES",
+                  lifecycleStatus: "active",
+                },
+              ],
+            }
+          : {},
+      post: (path, body) => {
+        posts.push({ path, body });
+        return { id: "a-2", visualId: "OV-002", speciesCode: "OVINE", lifecycleStatus: "active" };
+      },
+    });
+    renderAnimals(c);
+
+    await waitFor(() => expect(screen.getByText("OV-001")).toBeInTheDocument());
+    expect(screen.getByText("Ovino")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Registrar animal"));
+    fireEvent.change(screen.getByLabelText("Espécie"), { target: { value: "OVINE" } });
+    fireEvent.change(screen.getByLabelText("Fazenda ID"), { target: { value: "farm-1" } });
+    fireEvent.change(screen.getByLabelText("ID visual"), { target: { value: "OV-002" } });
+    fireEvent.click(screen.getByText("Registrar"));
+
+    await waitFor(() => expect(posts).toHaveLength(1));
+    expect(posts[0]!.path).toBe("/api/v1/animals");
+    expect((posts[0]!.body as { speciesCode: string }).speciesCode).toBe("OVINE");
+    // Picking a species suggests one of its breeds instead of leaving the
+    // BOVINE default (BRANGUS) on a sheep.
+    expect((posts[0]!.body as { breedCode: string }).breedCode).not.toBe("BRANGUS");
   });
 });

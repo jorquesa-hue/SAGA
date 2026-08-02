@@ -2,19 +2,21 @@ import { useState, type ReactNode } from "react";
 import { ApiError } from "@jk/contracts-rest";
 import { useI18n } from "../i18n/index.js";
 
-/** Labeled input row. */
+/** Labeled input row. `list` wires an HTML datalist id for typed suggestions. */
 export function Field({
   label,
   value,
   onChange,
   placeholder,
   type = "text",
+  list,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
+  list?: string;
 }): JSX.Element {
   return (
     <label className="field">
@@ -24,6 +26,7 @@ export function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        list={list}
       />
     </label>
   );

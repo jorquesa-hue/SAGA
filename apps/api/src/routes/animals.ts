@@ -36,7 +36,7 @@ export function registerAnimalRoutes(
       visualId: body.visualId as string,
       sex: body.sex as never,
       breedCode: body.breedCode as string | undefined,
-      speciesCode: body.speciesCode as string | undefined,
+      speciesCode: body.speciesCode as never,
       birthDate: body.birthDate as string | undefined,
       birthDatePrecision: body.birthDatePrecision as never,
       rfid: body.rfid as string | undefined,

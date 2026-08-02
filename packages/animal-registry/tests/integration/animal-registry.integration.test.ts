@@ -203,6 +203,135 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
     const animals = await registry.listAnimals(other.ownerContext);
     expect(animals).toHaveLength(0);
   });
+
+  it("registers non-bovine species (pigs, sheep, goats, horses)", async () => {
+    for (const [speciesCode, visualId] of [
+      ["PORCINE", "SU-0001"],
+      ["OVINE", "OV-0001"],
+      ["CAPRINE", "CA-0001"],
+      ["EQUINE", "EQ-0001"],
+    ] as const) {
+      const animal = await registry.registerAnimal(ownerContext, {
+        farmId,
+        visualId,
+        sex: "female",
+        speciesCode,
+      });
+      expect(animal.speciesCode).toBe(speciesCode);
+    }
+  });
+
+  it("builds a dated photo gallery, newest first, and records a photo_added event", async () => {
+    const animal = await registry.registerAnimal(ownerContext, {
+      farmId,
+      visualId: "BR-PHOTO-1",
+      sex: "female",
+    });
+
+    const older = await registry.addPhotoMetadata(ownerContext, {
+      animalId: animal.id,
+      takenAt: "2025-01-10",
+      caption: "As a calf",
+      storageKey: `${tenantId}/${animal.id}/2025-01-10-a.jpg`,
+      contentType: "image/jpeg",
+      byteSize: 2048,
+      checksumSha256: "a".repeat(64),
+    });
+    const newer = await registry.addPhotoMetadata(ownerContext, {
+      animalId: animal.id,
+      takenAt: "2026-01-10",
+      caption: "One year later",
+      storageKey: `${tenantId}/${animal.id}/2026-01-10-a.jpg`,
+      contentType: "image/png",
+      byteSize: 4096,
+      checksumSha256: "b".repeat(64),
+    });
+    expect(older.status).toBe("active");
+
+    const gallery = await registry.listPhotos(ownerContext, animal.id);
+    expect(gallery.map((p) => p.id)).toEqual([newer.id, older.id]);
+
+    const fetched = await registry.getPhoto(ownerContext, animal.id, older.id);
+    expect(fetched.storageKey).toBe(older.storageKey);
+
+    const timeline = await registry.getTimeline(ownerContext, animal.id);
+    expect(timeline.some((e) => e.eventType === "animal.photo_added.v1")).toBe(true);
+  });
+
+  it("soft-removes a photo with a compensating event, keeping it out of the gallery", async () => {
+    const animal = await registry.registerAnimal(ownerContext, {
+      farmId,
+      visualId: "BR-PHOTO-2",
+      sex: "male",
+    });
+    const photo = await registry.addPhotoMetadata(ownerContext, {
+      animalId: animal.id,
+      takenAt: "2026-02-01",
+      storageKey: `${tenantId}/${animal.id}/2026-02-01-a.jpg`,
+      contentType: "image/webp",
+      byteSize: 1000,
+      checksumSha256: "c".repeat(64),
+    });
+
+    await registry.removePhoto(ownerContext, {
+      animalId: animal.id,
+      photoId: photo.id,
+      reason: "blurry",
+    });
+
+    expect(await registry.listPhotos(ownerContext, animal.id)).toHaveLength(0);
+    const row = await db.adminPool.query(
+      `SELECT status, removed_reason FROM animal_photo WHERE id = $1`,
+      [photo.id],
+    );
+    expect(row.rows[0].status).toBe("removed");
+    expect(row.rows[0].removed_reason).toBe("blurry");
+
+    const timeline = await registry.getTimeline(ownerContext, animal.id);
+    expect(timeline.some((e) => e.eventType === "animal.photo_removed.v1")).toBe(true);
+
+    // Removing an already-removed photo is rejected, not silently accepted.
+    await expect(
+      registry.removePhoto(ownerContext, { animalId: animal.id, photoId: photo.id }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("does not leak another tenant's photos into the gallery", async () => {
+    const mine = await registry.registerAnimal(ownerContext, {
+      farmId,
+      visualId: "BR-PHOTO-3",
+      sex: "female",
+    });
+    await registry.addPhotoMetadata(ownerContext, {
+      animalId: mine.id,
+      takenAt: "2026-03-01",
+      storageKey: `${tenantId}/${mine.id}/2026-03-01-a.jpg`,
+      contentType: "image/jpeg",
+      byteSize: 500,
+      checksumSha256: "d".repeat(64),
+    });
+
+    const other = await seedTenantWithOwner(
+      identity,
+      "Fazenda Fotos",
+      "fotos@example.com",
+    );
+    const otherFarm = await identity.createFarm(other.ownerContext, {
+      name: "Sede",
+      areaHa: 50,
+    });
+    const theirs = await registry.registerAnimal(other.ownerContext, {
+      farmId: otherFarm.id,
+      visualId: "OT-0001",
+      sex: "female",
+    });
+    expect(await registry.listPhotos(other.ownerContext, theirs.id)).toHaveLength(0);
+
+    // Cross-tenant animalId is invisible under the other tenant's RLS session.
+    await expect(
+      registry.listPhotos(other.ownerContext, mine.id),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
 });
 
 describe.skipIf(available)("AnimalRegistryService (PostgreSQL unavailable)", () => {

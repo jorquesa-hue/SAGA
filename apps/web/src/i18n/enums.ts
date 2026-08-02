@@ -138,6 +138,12 @@ export const enumLabels: Record<Locale, Record<string, string>> = {
     female: "Fêmea",
     male: "Macho",
     unknown: "Desconhecido",
+    // species
+    BOVINE: "Bovino",
+    PORCINE: "Suíno",
+    OVINE: "Ovino",
+    CAPRINE: "Caprino",
+    EQUINE: "Equino",
     // severity
     info: "Informação",
     warning: "Alerta",
@@ -374,6 +380,12 @@ export const enumLabels: Record<Locale, Record<string, string>> = {
     female: "Female",
     male: "Male",
     unknown: "Unknown",
+    // species
+    BOVINE: "Bovine",
+    PORCINE: "Porcine",
+    OVINE: "Ovine",
+    CAPRINE: "Caprine",
+    EQUINE: "Equine",
     info: "Info",
     warning: "Warning",
     critical: "Critical",
@@ -581,6 +593,12 @@ export const enumLabels: Record<Locale, Record<string, string>> = {
     female: "Hembra",
     male: "Macho",
     unknown: "Desconocido",
+    // species
+    BOVINE: "Bovino",
+    PORCINE: "Porcino",
+    OVINE: "Ovino",
+    CAPRINE: "Caprino",
+    EQUINE: "Equino",
     info: "Información",
     warning: "Advertencia",
     critical: "Crítico",
