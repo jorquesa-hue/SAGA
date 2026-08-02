@@ -16,7 +16,7 @@ function capturingClient(): {
   const fetch: FetchLike = async (url, init) => {
     const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
     if ((init?.method ?? "GET") === "POST")
-      posts.push({ path, body: JSON.parse(init?.body ?? "{}") });
+      posts.push({ path, body: JSON.parse((init?.body as string) ?? "{}") });
     return {
       status: 201,
       headers: { get: () => "c" },

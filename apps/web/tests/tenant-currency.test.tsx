@@ -33,7 +33,7 @@ function client(
     if ((init?.method ?? "GET") === "POST") {
       posts.push({
         path,
-        body: JSON.parse(init?.body ?? "{}") as Record<string, unknown>,
+        body: JSON.parse((init?.body as string) ?? "{}") as Record<string, unknown>,
       });
       return {
         status: 201,

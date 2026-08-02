@@ -9,7 +9,7 @@ import {
   RecommendationService,
   ReportService,
 } from "@jk/analytics-intelligence";
-import { AnimalRegistryService } from "@jk/animal-registry";
+import { AnimalRegistryService, PHOTO_MAX_BYTES } from "@jk/animal-registry";
 import { ImportService } from "@jk/data-import";
 import { AssetsMaintenanceService } from "@jk/assets-maintenance";
 import { ConnectorRegistryService, WebhookService } from "@jk/automation-integration";
@@ -28,6 +28,7 @@ import {
   type Logger,
 } from "@jk/observability";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { ApiConfig } from "./config.js";
 import {
@@ -39,6 +40,8 @@ import { RouteNotFoundError, UnauthorizedError } from "./errors.js";
 import type { DatabasePools } from "./pools.js";
 import { PROBLEM_CONTENT_TYPE, toProblem } from "./problem.js";
 import { registerAnimalRoutes } from "./routes/animals.js";
+import { registerAnimalPhotoRoutes } from "./routes/animal-photos.js";
+import { createS3ObjectStorage, type ObjectStorage } from "./storage.js";
 import { registerHealthRoutes as registerHealthProbeRoutes } from "./routes/health.js";
 import { registerHealthRoutes } from "./routes/health.routes.js";
 import { registerHerdRoutes } from "./routes/herd.js";
@@ -69,6 +72,8 @@ export interface AppDependencies {
   logger?: Logger;
   authenticator?: Authenticator;
   identityService?: IdentityService;
+  /** Defaults to a real S3-compatible client (MinIO) built from config. */
+  objectStorage?: ObjectStorage;
 }
 
 const __dir = dirname(fileURLToPath(import.meta.url));
@@ -165,8 +170,12 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     appPool: deps.pools.appPool,
     environment: deps.config.APP_ENV,
   });
+  const objectStorage = deps.objectStorage ?? createS3ObjectStorage(deps.config);
 
   const app = Fastify({ logger: false, bodyLimit: 1_048_576 });
+  await app.register(multipart, {
+    limits: { fileSize: PHOTO_MAX_BYTES, files: 1 },
+  });
 
   // CORS for browser clients (§46). Explicit allowlist in production; in local
   // dev with no allowlist, reflect the request origin so the Vite dev server
@@ -257,6 +266,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   registerHealthProbeRoutes(app, deps.pools);
   registerIdentityRoutes(app, identityService);
   registerAnimalRoutes(app, animalRegistry);
+  registerAnimalPhotoRoutes(app, animalRegistry, objectStorage);
   registerHerdRoutes(app, weighing);
   registerLotRoutes(app, lotsService);
   registerHealthRoutes(app, healthService);

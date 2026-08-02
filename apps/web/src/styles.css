@@ -369,6 +369,20 @@ a.kpi.is-link:hover .kpi-go {
   gap: 0.6rem;
   margin-top: 0.5rem;
 }
+.photo-gallery {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+.photo-card img,
+.photo-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--border);
+}
+.photo-card p {
+  margin: 0.4rem 0 0;
+}
 .badge {
   font-size: 0.7rem;
   padding: 0.1rem 0.45rem;

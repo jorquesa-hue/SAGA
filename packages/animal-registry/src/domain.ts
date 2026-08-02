@@ -13,6 +13,8 @@ export type BirthDatePrecision =
 export type LifecycleStatus =
   "planned" | "active" | "quarantined" | "sold" | "deceased" | "missing" | "transferred";
 export type IdentifierType = "rfid" | "visual" | "official" | "legacy";
+export type SpeciesCode = "BOVINE" | "PORCINE" | "OVINE" | "CAPRINE" | "EQUINE";
+export type PhotoStatus = "active" | "removed";
 
 export interface Animal {
   id: Uuid;
@@ -38,6 +40,22 @@ export interface AnimalIdentifier {
   validFrom: Date;
   validTo: Date | null;
   assignedBy: Uuid | null;
+  createdAt: Date;
+}
+
+export interface AnimalPhoto {
+  id: Uuid;
+  tenantId: Uuid;
+  animalId: Uuid;
+  takenAt: string;
+  caption: string | null;
+  storageKey: string;
+  contentType: string;
+  byteSize: number;
+  checksumSha256: string;
+  status: PhotoStatus;
+  removedReason: string | null;
+  uploadedBy: Uuid | null;
   createdAt: Date;
 }
 
@@ -68,6 +86,19 @@ export const precisionSchema = z.enum([
   "unknown",
 ]);
 export const identifierTypeSchema = z.enum(["rfid", "visual", "official", "legacy"]);
+export const speciesCodeSchema = z.enum([
+  "BOVINE",
+  "PORCINE",
+  "OVINE",
+  "CAPRINE",
+  "EQUINE",
+]);
+
+/** Content types accepted for animal photo uploads. */
+export const PHOTO_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const photoContentTypeSchema = z.enum(PHOTO_CONTENT_TYPES);
+/** 15 MiB — generous for a phone/camera photo, small enough to bound storage cost. */
+export const PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 
 export const registerAnimalInputSchema = z
   .object({
@@ -75,7 +106,7 @@ export const registerAnimalInputSchema = z
     visualId: nonEmpty,
     sex: sexSchema,
     breedCode: nonEmpty.default("BRANGUS"),
-    speciesCode: nonEmpty.default("BOVINE"),
+    speciesCode: speciesCodeSchema.default("BOVINE"),
     birthDate: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "birthDate must be an ISO date (YYYY-MM-DD)")
@@ -112,6 +143,44 @@ export const replaceIdentifierInputSchema = z
   .strict();
 
 export type ReplaceIdentifierInput = z.infer<typeof replaceIdentifierInputSchema>;
+
+// Metadata only — the API layer receives and stores the raw bytes, computes
+// storageKey/checksum/byteSize, then calls this with the result. This
+// package never touches image bytes.
+export const addPhotoInputSchema = z
+  .object({
+    animalId: z.string().uuid(),
+    takenAt: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "takenAt must be an ISO date (YYYY-MM-DD)"),
+    caption: z.string().trim().max(500).optional(),
+    storageKey: z.string().trim().min(1).max(512),
+    contentType: photoContentTypeSchema,
+    byteSize: z.number().int().positive().max(PHOTO_MAX_BYTES),
+    checksumSha256: z
+      .string()
+      .trim()
+      .regex(
+        /^[0-9a-f]{64}$/i,
+        "checksumSha256 must be a 64-character hex sha256 digest",
+      ),
+    uploadedBy: z.string().uuid().optional(),
+    idempotencyKey: idempotencyKeySchema.optional(),
+  })
+  .strict();
+
+export type AddPhotoInput = z.infer<typeof addPhotoInputSchema>;
+
+export const removePhotoInputSchema = z
+  .object({
+    animalId: z.string().uuid(),
+    photoId: z.string().uuid(),
+    reason: z.string().trim().max(500).optional(),
+    idempotencyKey: idempotencyKeySchema.optional(),
+  })
+  .strict();
+
+export type RemovePhotoInput = z.infer<typeof removePhotoInputSchema>;
 
 export function parseInput<S extends z.ZodTypeAny>(
   schema: S,
@@ -189,6 +258,40 @@ export function mapIdentifierRow(row: IdentifierRow): AnimalIdentifier {
     validFrom: row.valid_from,
     validTo: row.valid_to,
     assignedBy: row.assigned_by,
+    createdAt: row.created_at,
+  };
+}
+
+export interface PhotoRow {
+  id: string;
+  tenant_id: string;
+  animal_id: string;
+  taken_at: string;
+  caption: string | null;
+  storage_key: string;
+  content_type: string;
+  byte_size: number;
+  checksum_sha256: string;
+  status: PhotoStatus;
+  removed_reason: string | null;
+  uploaded_by: string | null;
+  created_at: Date;
+}
+
+export function mapPhotoRow(row: PhotoRow): AnimalPhoto {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    animalId: row.animal_id,
+    takenAt: row.taken_at,
+    caption: row.caption,
+    storageKey: row.storage_key,
+    contentType: row.content_type,
+    byteSize: row.byte_size,
+    checksumSha256: row.checksum_sha256,
+    status: row.status,
+    removedReason: row.removed_reason,
+    uploadedBy: row.uploaded_by,
     createdAt: row.created_at,
   };
 }

@@ -22,7 +22,9 @@ function client(reqs: Req[]): JkPlatformClient {
     reqs.push({
       method,
       path,
-      ...(init?.body ? { body: JSON.parse(init.body) as Record<string, unknown> } : {}),
+      ...(init?.body
+        ? { body: JSON.parse(init.body as string) as Record<string, unknown> }
+        : {}),
     });
     if (bare === "/api/v1/finance/budget-variance") {
       return {

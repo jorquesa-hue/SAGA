@@ -14,6 +14,8 @@
     "test:integration": "vitest run tests/integration --passWithNoTests"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1101.0",
+    "@fastify/multipart": "^10.1.0",
     "@fastify/under-pressure": "^9.0.3",
     "@jk/analytics-intelligence": "workspace:*",
     "@jk/animal-registry": "workspace:*",

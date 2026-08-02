@@ -40,12 +40,31 @@ export interface Farm {
   areaHa?: number;
 }
 
+export type SpeciesCode = "BOVINE" | "PORCINE" | "OVINE" | "CAPRINE" | "EQUINE";
+
 export interface Animal {
   id: string;
   visualId?: string;
   sex?: "female" | "male" | "unknown";
+  speciesCode?: SpeciesCode;
   breedCode?: string;
+  birthDate?: string | null;
   lifecycleStatus?: string;
+}
+
+export type PhotoContentType = "image/jpeg" | "image/png" | "image/webp";
+
+/** One entry in an animal's dated photo gallery (JK-ANI photo gallery). */
+export interface AnimalPhoto {
+  id: string;
+  animalId: string;
+  takenAt: string;
+  caption?: string | null;
+  contentType: PhotoContentType;
+  byteSize: number;
+  checksumSha256: string;
+  status: "active" | "removed";
+  createdAt: string;
 }
 
 export interface Recommendation {

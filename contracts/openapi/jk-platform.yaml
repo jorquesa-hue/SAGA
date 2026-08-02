@@ -243,6 +243,92 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Animal" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /animals/{animalId}/photos:
+    post:
+      operationId: uploadAnimalPhoto
+      summary: Upload a dated animal photo (JK-ANI photo gallery)
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, takenAt]
+              properties:
+                file: { type: string, format: binary }
+                takenAt: { type: string, format: date }
+                caption: { type: string, maxLength: 500 }
+      responses:
+        "201":
+          description: Photo recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnimalPhoto" }
+        "415": { description: Unsupported content type }
+        "413": { description: File too large }
+    get:
+      operationId: listAnimalPhotos
+      summary: Chronological photo gallery, newest first (active only)
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+      responses:
+        "200":
+          description: Photo gallery
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/AnimalPhoto" }
+  /animals/{animalId}/photos/{photoId}/download:
+    get:
+      operationId: downloadAnimalPhoto
+      summary: Stream a photo's bytes
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+        - name: photoId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Photo bytes
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /animals/{animalId}/photos/{photoId}:
+    delete:
+      operationId: removeAnimalPhoto
+      summary: Soft-remove a photo (compensating event, not a hard delete)
+      tags: [Animals]
+      parameters:
+        - $ref: "#/components/parameters/AnimalId"
+        - name: photoId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 500 }
+      responses:
+        "204": { description: Photo removed }
+        "404": { $ref: "#/components/responses/NotFound" }
   /device-observations:batch:
     post:
       operationId: ingestDeviceObservationBatch
@@ -1186,6 +1272,12 @@ components:
         visualId: { type: string, minLength: 1, maxLength: 80 }
         rfid: { type: [string, "null"], maxLength: 128 }
         sex: { type: string, enum: [female, male, unknown] }
+        speciesCode:
+          {
+            type: string,
+            enum: [BOVINE, PORCINE, OVINE, CAPRINE, EQUINE],
+            default: BOVINE,
+          }
         breedCode: { type: string, default: BRANGUS }
         birthDate: { type: [string, "null"], format: date }
     Animal:
@@ -1196,9 +1288,25 @@ components:
         farmId: { type: string, format: uuid }
         visualId: { type: string }
         sex: { type: string }
+        speciesCode: { type: string, enum: [BOVINE, PORCINE, OVINE, CAPRINE, EQUINE] }
         breedCode: { type: string }
+        birthDate: { type: [string, "null"], format: date }
         lifecycleStatus: { type: string }
         version: { type: integer, minimum: 0 }
+    AnimalPhoto:
+      type: object
+      required:
+        [id, animalId, takenAt, contentType, byteSize, checksumSha256, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        animalId: { type: string, format: uuid }
+        takenAt: { type: string, format: date }
+        caption: { type: [string, "null"] }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        byteSize: { type: integer, minimum: 1 }
+        checksumSha256: { type: string }
+        status: { type: string, enum: [active, removed] }
+        createdAt: { type: string, format: date-time }
     ObservationBatch:
       type: object
       required: [gatewayId, batchId, observations]

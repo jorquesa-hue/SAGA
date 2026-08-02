@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ApiError } from "@jk/contracts-rest";
+import { ApiError, type AnimalPhoto } from "@jk/contracts-rest";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { useAsync } from "../use-async.js";
 import { metricLabel } from "../i18n/labels.js";
 import { Icon } from "../components/Icon.js";
+import { useCommand, FormMessage } from "../components/Form.js";
 
 /**
  * Animal 360 view — identity plus the cross-context history (weights,
@@ -136,6 +137,8 @@ export function AnimalDetail(): JSX.Element {
         )}
       </Section>
 
+      <PhotoGallery animalId={id} />
+
       <div className="page-head" style={{ marginTop: "1.5rem" }}>
         <h3 style={{ margin: 0 }}>{t("animalDetail.reproduction")}</h3>
       </div>
@@ -159,6 +162,136 @@ export function AnimalDetail(): JSX.Element {
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Dated photo gallery (JK-ANI photo gallery): a chronological album, not a
+ * single replaceable profile picture, so the record shows the animal across
+ * its different ages. Each entry loads its bytes lazily via PhotoThumb.
+ */
+function PhotoGallery({ animalId }: { animalId: string }): JSX.Element {
+  const client = useClient();
+  const { t } = useI18n();
+  const gallery = useAsync(() => client.animals.photos.list(animalId), [animalId]);
+  const upload = useCommand();
+  const [takenAt, setTakenAt] = useState("");
+  const [caption, setCaption] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+
+  const submit = (): void => {
+    if (!file || !takenAt) return;
+    void upload.run(async () => {
+      await client.animals.photos.upload(animalId, {
+        file,
+        filename: file.name,
+        takenAt,
+        caption: caption || undefined,
+      });
+      setFile(null);
+      setCaption("");
+      gallery.reload();
+    }, t("photos.uploaded"));
+  };
+
+  const remove = async (photoId: string): Promise<void> => {
+    await client.animals.photos.remove(animalId, photoId);
+    gallery.reload();
+  };
+
+  return (
+    <>
+      <div className="page-head" style={{ marginTop: "1.5rem" }}>
+        <h3 style={{ margin: 0 }}>{t("photos.title")}</h3>
+      </div>
+
+      <div className="form">
+        <label className="field">
+          <span>{t("photos.file")}</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+        <label className="field">
+          <span>{t("photos.takenAt")}</span>
+          <input type="date" value={takenAt} onChange={(e) => setTakenAt(e.target.value)} />
+        </label>
+        <label className="field">
+          <span>{t("photos.caption")}</span>
+          <input value={caption} onChange={(e) => setCaption(e.target.value)} />
+        </label>
+        <button type="button" disabled={upload.busy || !file || !takenAt} onClick={submit}>
+          {upload.busy ? t("photos.uploading") : t("photos.submit")}
+        </button>
+        <FormMessage state={upload} />
+      </div>
+
+      {gallery.loading && <p className="muted">{t("common.loading")}</p>}
+      {gallery.error && <p className="muted">{t("animalDetail.noRecords")}</p>}
+      {gallery.data && gallery.data.items.length === 0 && (
+        <p className="muted">{t("photos.empty")}</p>
+      )}
+      {gallery.data && gallery.data.items.length > 0 && (
+        <ul className="cards photo-gallery">
+          {gallery.data.items.map((photo) => (
+            <PhotoThumb
+              key={photo.id}
+              animalId={animalId}
+              photo={photo}
+              onRemove={() => void remove(photo.id)}
+            />
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function PhotoThumb({
+  animalId,
+  photo,
+  onRemove,
+}: {
+  animalId: string;
+  photo: AnimalPhoto;
+  onRemove: () => void;
+}): JSX.Element {
+  const client = useClient();
+  const { t, fmt } = useI18n();
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    let cancelled = false;
+    client.animals.photos
+      .download(animalId, photo.id)
+      .then(({ blob }) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setUrl(objectUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [client, animalId, photo.id]);
+
+  return (
+    <li className="card photo-card">
+      {failed && <p className="muted">{t("photos.loadFailed")}</p>}
+      {!failed && (url ? <img src={url} alt={photo.caption ?? photo.takenAt} /> : <div className="photo-placeholder" />)}
+      <p className="mono muted">{fmt.date(photo.takenAt)}</p>
+      {photo.caption && <p>{photo.caption}</p>}
+      <button type="button" onClick={onRemove}>
+        {t("photos.remove")}
+      </button>
+    </li>
   );
 }
 
