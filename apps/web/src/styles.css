@@ -393,6 +393,51 @@ a.kpi.is-link:hover .kpi-go {
   border-color: var(--warn);
 }
 
+/* Tone-coloured status pills (docs/brand §3.2). A faint wash + a coloured rule
+ * so the state reads at a glance without a wall of solid colour. Pasto/Hide
+ * carry their own type (both clear 4.5:1 on Paper); the Tag pill uses Ink type
+ * on a Tag wash, since Tag never carries text on Paper (rule 1). */
+.badge--pasto {
+  color: var(--success);
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--saga-pasto) 12%, transparent);
+}
+.badge--hide {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--saga-hide) 12%, transparent);
+}
+.badge--tag {
+  color: var(--saga-ink);
+  border-color: var(--accent);
+  background: var(--saga-tag-wash);
+}
+.badge--neutral {
+  color: var(--muted);
+}
+
+/* Clickable table rows (docs/brand §3.6 — motion confirms). A row that leads
+ * somewhere lifts a touch and washes on hover, and the whole row is a real
+ * link target (keyboard-navigable via the anchor the caller keeps in a cell). */
+.grid tbody tr.row-link {
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    box-shadow 120ms ease;
+}
+.grid tbody tr.row-link:hover {
+  background: var(--panel-2);
+}
+.grid tbody tr.row-link:hover .row-go {
+  opacity: 1;
+}
+/* A quiet chevron that only asserts itself on hover, so the row reads as a way in. */
+.row-go {
+  color: var(--muted);
+  opacity: 0.35;
+  font-weight: 700;
+}
+
 .signin {
   max-width: 380px;
   margin: 8vh auto;

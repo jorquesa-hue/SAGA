@@ -1,4 +1,5 @@
 import { RecordList } from "../components/RecordList.js";
+import { Badge } from "../components/Badge.js";
 import { useClient } from "../session.js";
 import { useI18n } from "../i18n/index.js";
 import { humanizeKey } from "../i18n/labels.js";
@@ -56,7 +57,7 @@ export function Tasks(): JSX.Element {
           },
           {
             headerKey: "common.status",
-            render: (k) => <span className="badge">{td(k.status)}</span>,
+            render: (k) => <Badge value={k.status} />,
           },
         ]}
       />

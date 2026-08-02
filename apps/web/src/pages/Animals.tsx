@@ -6,6 +6,7 @@ import { useAsync } from "../use-async.js";
 import { Field, FormMessage, SelectField, useCommand } from "../components/Form.js";
 import { Pagination, usePagination } from "../components/Pagination.js";
 import { useI18n } from "../i18n/index.js";
+import { Badge } from "../components/Badge.js";
 
 /**
  * Animal registry: register new animals, filter the list (visual ID / RFID /
@@ -129,7 +130,9 @@ export function Animals(): JSX.Element {
                 </td>
                 <td>{td(a.sex)}</td>
                 <td>{a.breedCode ?? "—"}</td>
-                <td>{td(a.lifecycleStatus)}</td>
+                <td>
+                  <Badge value={a.lifecycleStatus} />
+                </td>
                 <td>
                   <button type="button" onClick={() => void exportPacket(a.id)}>
                     {t("animals.export")}

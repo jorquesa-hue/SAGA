@@ -172,3 +172,5 @@ JK-REPORT-PREVIEW,reporting,packages/reporting/src/reporting-service.ts (preview
 JK-REPORT-AUTHZ,reporting,packages/reporting/src/authorization.ts,packages/reporting/tests/integration/reporting.integration.test.ts (no-membership 403),implemented
 JK-REPORT-CSV,reporting,packages/reporting/src/csv.ts;apps/web/src/pages/Reports.tsx (client-side download),packages/reporting/tests/unit/catalog.test.ts;apps/web/tests/reports.test.tsx,implemented
 JK-REPORT-WEB,reporting,apps/web/src/pages/Reports.tsx;apps/web/src/i18n/messages.ts (nav.reports + reporting.* in pt-BR/en/es),apps/web/tests/reports.test.tsx,implemented
+JK-WEB-STATUS-TONE,web,apps/web/src/components/Badge.tsx (tone map Pasto/Hide/Tag/neutral) applied across list screens (Lots/Tasks/Treatments/Assets/Reproduction/Pasture/Finance/Alerts/Animals),apps/web/tests/badge.test.tsx,implemented
+JK-WEB-ROW-LINK,web,apps/web/src/components/RecordList.tsx (rowHref clickable rows);apps/web/src/pages/Lots.tsx,browser-verified row click navigates to lot detail,implemented
