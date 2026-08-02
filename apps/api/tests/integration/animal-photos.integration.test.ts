@@ -26,7 +26,11 @@ const config: ApiConfig = {
   AI_ENABLED: false,
 };
 
-function multipartUpload(fields: Record<string, string>, file: Buffer, contentType: string) {
+function multipartUpload(
+  fields: Record<string, string>,
+  file: Buffer,
+  contentType: string,
+) {
   const boundary = `jkTestBoundary${Math.random().toString(16).slice(2)}`;
   const parts: Buffer[] = [];
   for (const [key, value] of Object.entries(fields)) {
@@ -43,7 +47,10 @@ function multipartUpload(fields: Record<string, string>, file: Buffer, contentTy
   );
   parts.push(file);
   parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
-  return { body: Buffer.concat(parts), contentType: `multipart/form-data; boundary=${boundary}` };
+  return {
+    body: Buffer.concat(parts),
+    contentType: `multipart/form-data; boundary=${boundary}`,
+  };
 }
 
 describe.skipIf(!available)("Animal photo gallery API (integration)", () => {

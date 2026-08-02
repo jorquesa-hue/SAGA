@@ -251,7 +251,10 @@ export class JkPlatformClient {
         return response.data;
       },
       download: (animalId: string, photoId: string, o?: RequestOptions) =>
-        this.http.downloadBlob(`/api/v1/animals/${animalId}/photos/${photoId}/download`, o),
+        this.http.downloadBlob(
+          `/api/v1/animals/${animalId}/photos/${photoId}/download`,
+          o,
+        ),
       remove: async (
         animalId: string,
         photoId: string,

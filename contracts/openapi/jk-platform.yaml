@@ -1273,7 +1273,11 @@ components:
         rfid: { type: [string, "null"], maxLength: 128 }
         sex: { type: string, enum: [female, male, unknown] }
         speciesCode:
-          { type: string, enum: [BOVINE, PORCINE, OVINE, CAPRINE, EQUINE], default: BOVINE }
+          {
+            type: string,
+            enum: [BOVINE, PORCINE, OVINE, CAPRINE, EQUINE],
+            default: BOVINE,
+          }
         breedCode: { type: string, default: BRANGUS }
         birthDate: { type: [string, "null"], format: date }
     Animal:
@@ -1292,16 +1296,7 @@ components:
     AnimalPhoto:
       type: object
       required:
-        [
-          id,
-          animalId,
-          takenAt,
-          contentType,
-          byteSize,
-          checksumSha256,
-          status,
-          createdAt,
-        ]
+        [id, animalId, takenAt, contentType, byteSize, checksumSha256, status, createdAt]
       properties:
         id: { type: string, format: uuid }
         animalId: { type: string, format: uuid }

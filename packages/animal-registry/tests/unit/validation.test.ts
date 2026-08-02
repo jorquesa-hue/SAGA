@@ -126,13 +126,21 @@ describe("photo input validation", () => {
       ),
     ).toThrow(ValidationError);
     expect(() =>
-      parseInput(addPhotoInputSchema, { ...validPhoto, checksumSha256: "not-hex" }, "addPhoto"),
+      parseInput(
+        addPhotoInputSchema,
+        { ...validPhoto, checksumSha256: "not-hex" },
+        "addPhoto",
+      ),
     ).toThrow(ValidationError);
   });
 
   it("rejects a malformed takenAt date", () => {
     expect(() =>
-      parseInput(addPhotoInputSchema, { ...validPhoto, takenAt: "15/01/2026" }, "addPhoto"),
+      parseInput(
+        addPhotoInputSchema,
+        { ...validPhoto, takenAt: "15/01/2026" },
+        "addPhoto",
+      ),
     ).toThrow(ValidationError);
   });
 

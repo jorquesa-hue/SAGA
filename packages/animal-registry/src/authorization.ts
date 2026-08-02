@@ -12,7 +12,8 @@ import type pg from "pg";
  * explicit predicate (§67 defense in depth).
  */
 
-export type AnimalAction = "register_animal" | "manage_identifiers" | "manage_photos" | "read";
+export type AnimalAction =
+  "register_animal" | "manage_identifiers" | "manage_photos" | "read";
 
 const WRITE_ROLES = new Set(["tenant_owner", "farm_manager", "technician"]);
 

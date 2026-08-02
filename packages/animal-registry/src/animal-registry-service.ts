@@ -352,7 +352,8 @@ export class AnimalRegistryService {
               input.contentType,
               input.byteSize,
               input.checksumSha256,
-              input.uploadedBy ?? (context.actor.type === "user" ? context.actor.id : null),
+              input.uploadedBy ??
+                (context.actor.type === "user" ? context.actor.id : null),
             ],
           );
           photoRow = inserted.rows[0]!;
@@ -471,7 +472,11 @@ export class AnimalRegistryService {
   }
 
   /** A single active photo's metadata, e.g. to resolve its storage key for download. */
-  async getPhoto(context: TenantContext, animalId: Uuid, photoId: Uuid): Promise<AnimalPhoto> {
+  async getPhoto(
+    context: TenantContext,
+    animalId: Uuid,
+    photoId: Uuid,
+  ): Promise<AnimalPhoto> {
     return this.authorized(
       context,
       "read",
@@ -486,7 +491,9 @@ export class AnimalRegistryService {
           [photoId, animalId],
         );
         if (result.rows.length === 0)
-          throw new NotFoundError(`Active photo ${photoId} not found for animal ${animalId}`);
+          throw new NotFoundError(
+            `Active photo ${photoId} not found for animal ${animalId}`,
+          );
         return mapPhotoRow(result.rows[0]!);
       },
     );

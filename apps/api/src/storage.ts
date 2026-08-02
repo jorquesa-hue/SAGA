@@ -29,11 +29,18 @@ export function createS3ObjectStorage(config: ApiConfig): ObjectStorage {
   return {
     async putObject(key, body, contentType) {
       await client.send(
-        new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }),
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+        }),
       );
     },
     async getObject(key) {
-      const result = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+      const result = await client.send(
+        new GetObjectCommand({ Bucket: bucket, Key: key }),
+      );
       return {
         stream: result.Body as Readable,
         contentType: result.ContentType ?? null,

@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import { PHOTO_CONTENT_TYPES, type AnimalRegistryService } from "@jk/animal-registry";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { MissingHeaderError, PayloadTooLargeError, UnsupportedMediaTypeError } from "../errors.js";
+import {
+  MissingHeaderError,
+  PayloadTooLargeError,
+  UnsupportedMediaTypeError,
+} from "../errors.js";
 import { buildTenantContext } from "../request-context.js";
 import type { ObjectStorage } from "../storage.js";
 
@@ -97,7 +101,10 @@ export function registerAnimalPhotoRoutes(
   app.get(
     "/api/v1/animals/:animalId/photos/:photoId/download",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { animalId, photoId } = request.params as { animalId: string; photoId: string };
+      const { animalId, photoId } = request.params as {
+        animalId: string;
+        photoId: string;
+      };
       const photo = await service.getPhoto(ctx(request), animalId, photoId);
       const object = await storage.getObject(photo.storageKey);
       reply.type(object.contentType ?? photo.contentType);
@@ -109,7 +116,10 @@ export function registerAnimalPhotoRoutes(
   app.delete(
     "/api/v1/animals/:animalId/photos/:photoId",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { animalId, photoId } = request.params as { animalId: string; photoId: string };
+      const { animalId, photoId } = request.params as {
+        animalId: string;
+        photoId: string;
+      };
       const body = (request.body ?? {}) as Record<string, unknown>;
       await service.removePhoto(ctx(request), {
         animalId,

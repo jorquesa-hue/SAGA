@@ -184,7 +184,9 @@ export class HttpClient {
 
     if (response.status >= 200 && response.status < 300) {
       if (!response.blob) {
-        throw new Error("The configured fetch implementation does not support blob() downloads");
+        throw new Error(
+          "The configured fetch implementation does not support blob() downloads",
+        );
       }
       return {
         blob: await response.blob(),

@@ -328,9 +328,9 @@ describe.skipIf(!available)("AnimalRegistryService (integration)", () => {
     expect(await registry.listPhotos(other.ownerContext, theirs.id)).toHaveLength(0);
 
     // Cross-tenant animalId is invisible under the other tenant's RLS session.
-    await expect(
-      registry.listPhotos(other.ownerContext, mine.id),
-    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(registry.listPhotos(other.ownerContext, mine.id)).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });
 

@@ -86,7 +86,13 @@ export const precisionSchema = z.enum([
   "unknown",
 ]);
 export const identifierTypeSchema = z.enum(["rfid", "visual", "official", "legacy"]);
-export const speciesCodeSchema = z.enum(["BOVINE", "PORCINE", "OVINE", "CAPRINE", "EQUINE"]);
+export const speciesCodeSchema = z.enum([
+  "BOVINE",
+  "PORCINE",
+  "OVINE",
+  "CAPRINE",
+  "EQUINE",
+]);
 
 /** Content types accepted for animal photo uploads. */
 export const PHOTO_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -154,7 +160,10 @@ export const addPhotoInputSchema = z
     checksumSha256: z
       .string()
       .trim()
-      .regex(/^[0-9a-f]{64}$/i, "checksumSha256 must be a 64-character hex sha256 digest"),
+      .regex(
+        /^[0-9a-f]{64}$/i,
+        "checksumSha256 must be a 64-character hex sha256 digest",
+      ),
     uploadedBy: z.string().uuid().optional(),
     idempotencyKey: idempotencyKeySchema.optional(),
   })
