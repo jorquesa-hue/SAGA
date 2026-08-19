@@ -14,8 +14,8 @@
     "test:integration": "vitest run tests/integration --passWithNoTests"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1101.0",
-    "@fastify/multipart": "^10.1.0",
+    "@aws-sdk/client-s3": "^3.1111.0",
+    "@fastify/multipart": "^10.1.1",
     "@fastify/under-pressure": "^9.0.3",
     "@jk/analytics-intelligence": "workspace:*",
     "@jk/animal-registry": "workspace:*",
@@ -33,17 +33,17 @@
     "@jk/reporting": "workspace:*",
     "@jk/reproduction-genetics": "workspace:*",
     "dotenv": "^17.4.2",
-    "fastify": "^5.8.3",
+    "fastify": "^5.12.0",
     "jose": "^5.9.2",
-    "pg": "^8.12.0",
+    "pg": "^8.23.0",
     "zod": "^3.23.8",
     "@jk/data-import": "workspace:*",
     "@fastify/cors": "^10.0.2"
   },
   "devDependencies": {
     "@jk/testkit": "workspace:*",
-    "@types/pg": "^8.11.0",
-    "tsx": "^4.19.0",
+    "@types/pg": "^8.21.0",
+    "tsx": "^4.23.12",
     "typescript": "^5.6.2",
     "vitest": "^3.2.6"
   }
