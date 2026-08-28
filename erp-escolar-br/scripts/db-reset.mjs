@@ -17,7 +17,9 @@ const root = path.resolve(__dirname, "..");
 
 const databaseUrl = process.env.ADMIN_DATABASE_URL;
 if (!databaseUrl) {
-  console.error("ADMIN_DATABASE_URL is required (superuser connection to the target database).");
+  console.error(
+    "ADMIN_DATABASE_URL is required (superuser connection to the target database).",
+  );
   process.exit(1);
 }
 
@@ -33,7 +35,10 @@ async function run() {
     await client.query("create schema public;");
 
     if (applyLocalShim) {
-      const shim = readFileSync(path.join(root, "tests/support/local-auth-shim.sql"), "utf8");
+      const shim = readFileSync(
+        path.join(root, "tests/support/local-auth-shim.sql"),
+        "utf8",
+      );
       await client.query(shim);
     }
 
@@ -53,7 +58,10 @@ async function run() {
     }
 
     if (applyFixtures) {
-      const fixture = readFileSync(path.join(root, "tests/fixtures/seed-two-escolas.sql"), "utf8");
+      const fixture = readFileSync(
+        path.join(root, "tests/fixtures/seed-two-escolas.sql"),
+        "utf8",
+      );
       await client.query(fixture);
     }
 

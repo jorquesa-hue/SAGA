@@ -50,7 +50,11 @@ const actors = {
   secretariaA: { sub: authUsers.secretariaA, escola_id: escolaA, role: "secretaria" },
   professorA: { sub: authUsers.professorA, escola_id: escolaA, role: "professor" },
   responsavelA: { sub: authUsers.responsavelA, escola_id: escolaA, role: "responsavel" },
-  outroResponsavelA: { sub: authUsers.outroResponsavelA, escola_id: escolaA, role: "responsavel" },
+  outroResponsavelA: {
+    sub: authUsers.outroResponsavelA,
+    escola_id: escolaA,
+    role: "responsavel",
+  },
 };
 
 async function withActor(actor, fn) {
@@ -66,9 +70,10 @@ async function withActor(actor, fn) {
 }
 
 async function countWhereEscola(table, escolaId) {
-  const { rows } = await client.query(`select count(*)::int as n from ${table} where escola_id = $1`, [
-    escolaId,
-  ]);
+  const { rows } = await client.query(
+    `select count(*)::int as n from ${table} where escola_id = $1`,
+    [escolaId],
+  );
   return rows[0].n;
 }
 
@@ -105,9 +110,10 @@ for (const [actorName, actor] of Object.entries(actors)) {
 
   test(`${actorName} reading escolas sees zero escola B rows`, async () => {
     const n = await withActor(actor, async () => {
-      const { rows } = await client.query("select count(*)::int as n from escolas where id = $1", [
-        escolaB,
-      ]);
+      const { rows } = await client.query(
+        "select count(*)::int as n from escolas where id = $1",
+        [escolaB],
+      );
       return rows[0].n;
     });
     assert.equal(n, 0, `${actorName} could read escola B's own escolas row`);
@@ -141,13 +147,17 @@ test("adminA reading own escola sees its own rows", async () => {
 });
 
 test("adminA reading logs_acesso sees escola A rows (admin-only access within tenant)", async () => {
-  const n = await withActor(actors.adminA, () => countWhereEscola("logs_acesso", escolaA));
+  const n = await withActor(actors.adminA, () =>
+    countWhereEscola("logs_acesso", escolaA),
+  );
   assert.ok(n > 0, "adminA saw 0 logs_acesso rows for its own escola");
 });
 
 for (const actorName of ["secretariaA", "professorA", "responsavelA"]) {
   test(`${actorName} reading logs_acesso sees zero rows even within escola A (admin-only)`, async () => {
-    const n = await withActor(actors[actorName], () => countWhereEscola("logs_acesso", escolaA));
+    const n = await withActor(actors[actorName], () =>
+      countWhereEscola("logs_acesso", escolaA),
+    );
     assert.equal(n, 0, `${actorName} could read logs_acesso despite not being admin`);
   });
 }
@@ -163,7 +173,11 @@ test("professorA sees aluno A (own turma) but not aluno A2 (unassigned turma)", 
     return { visible: v.rowCount, hidden: h.rowCount };
   });
   assert.equal(visible, 1, "professorA could not see the aluno in its own turma");
-  assert.equal(hidden, 0, "professorA could see an aluno in a turma it is not assigned to");
+  assert.equal(
+    hidden,
+    0,
+    "professorA could see an aluno in a turma it is not assigned to",
+  );
 });
 
 test("professorA sees turma A but not turma A2", async () => {
@@ -183,25 +197,38 @@ test("responsavelA sees own aluno but not the other aluno in escola A", async ()
     return { visible: v.rowCount, hidden: h.rowCount };
   });
   assert.equal(visible, 1, "responsavelA could not see its own dependente");
-  assert.equal(hidden, 0, "responsavelA could see an aluno it has no responsaveis_alunos link to");
+  assert.equal(
+    hidden,
+    0,
+    "responsavelA could see an aluno it has no responsaveis_alunos link to",
+  );
 });
 
 test("outroResponsavelA (no linked aluno) sees zero alunos in escola A", async () => {
   const n = await withActor(actors.outroResponsavelA, async () => {
-    const { rows } = await client.query("select count(*)::int as n from alunos where escola_id = $1", [
-      escolaA,
-    ]);
+    const { rows } = await client.query(
+      "select count(*)::int as n from alunos where escola_id = $1",
+      [escolaA],
+    );
     return rows[0].n;
   });
-  assert.equal(n, 0, "a responsavel with no responsaveis_alunos link could still see alunos");
+  assert.equal(
+    n,
+    0,
+    "a responsavel with no responsaveis_alunos link could still see alunos",
+  );
 });
 
 test("responsavelA (financeiro=true) can see own contrato/parcela/pagamento/nota_fiscal", async () => {
   const counts = await withActor(actors.responsavelA, async () => {
     const c = await client.query("select 1 from contratos where id = $1", [contratos.a]);
     const p = await client.query("select 1 from parcelas where id = $1", [parcelas.a]);
-    const pg_ = await client.query("select 1 from pagamentos where id = $1", [pagamentos.a]);
-    const nf = await client.query("select 1 from notas_fiscais where id = $1", [notasFiscais.a]);
+    const pg_ = await client.query("select 1 from pagamentos where id = $1", [
+      pagamentos.a,
+    ]);
+    const nf = await client.query("select 1 from notas_fiscais where id = $1", [
+      notasFiscais.a,
+    ]);
     return { c: c.rowCount, p: p.rowCount, pg: pg_.rowCount, nf: nf.rowCount };
   });
   assert.equal(counts.c, 1, "responsavelA could not see its own contrato");
@@ -212,12 +239,14 @@ test("responsavelA (financeiro=true) can see own contrato/parcela/pagamento/nota
 
 test("professorA has zero access to financeiro tables (data minimisation)", async () => {
   const counts = await withActor(actors.professorA, async () => {
-    const c = await client.query("select count(*)::int as n from contratos where escola_id = $1", [
-      escolaA,
-    ]);
-    const p = await client.query("select count(*)::int as n from parcelas where escola_id = $1", [
-      escolaA,
-    ]);
+    const c = await client.query(
+      "select count(*)::int as n from contratos where escola_id = $1",
+      [escolaA],
+    );
+    const p = await client.query(
+      "select count(*)::int as n from parcelas where escola_id = $1",
+      [escolaA],
+    );
     return { c: c.rows[0].n, p: p.rows[0].n };
   });
   assert.equal(counts.c, 0, "professorA could read contratos");
@@ -231,17 +260,19 @@ test("adminA cannot INSERT a row into escola B", async () => {
       withActor(actors.adminA, () =>
         client.query(
           "insert into unidades (escola_id, nome, endereco) values ($1, 'Ataque', '{}'::jsonb)",
-          [escolaB]
-        )
+          [escolaB],
+        ),
       ),
     /row-level security/i,
-    "adminA was able to insert a row tagged with escola B's id"
+    "adminA was able to insert a row tagged with escola B's id",
   );
 });
 
 test("adminA UPDATE targeting a known escola B row affects zero rows", async () => {
   const rowCount = await withActor(actors.adminA, async () => {
-    const res = await client.query("update parcelas set status = 'pago' where id = $1", [parcelas.b]);
+    const res = await client.query("update parcelas set status = 'pago' where id = $1", [
+      parcelas.b,
+    ]);
     return res.rowCount;
   });
   assert.equal(rowCount, 0, "adminA's UPDATE matched a row belonging to escola B");
@@ -253,10 +284,10 @@ test("adminA cannot INSERT a pessoa claiming escola B's id (WITH CHECK enforced)
       withActor(actors.adminA, () =>
         client.query(
           "insert into pessoas (escola_id, nome, data_nascimento, papeis) values ($1, 'Invasor', '2000-01-01', array['aluno']::pessoa_papel[])",
-          [escolaB]
-        )
+          [escolaB],
+        ),
       ),
-    /row-level security/i
+    /row-level security/i,
   );
 });
 
@@ -267,9 +298,12 @@ test("adminA cannot INSERT a pessoa claiming escola B's id (WITH CHECK enforced)
 // policy to satisfy.
 test("adminA cannot hard-delete its own escola's data (no DELETE grant, no DELETE policy)", async () => {
   await assert.rejects(
-    () => withActor(actors.adminA, () => client.query("delete from comunicados where id = $1", [comunicados.a])),
+    () =>
+      withActor(actors.adminA, () =>
+        client.query("delete from comunicados where id = $1", [comunicados.a]),
+      ),
     /permission denied/i,
-    "adminA was able to hard-delete a row — DELETE must be denied for every role"
+    "adminA was able to hard-delete a row — DELETE must be denied for every role",
   );
 });
 
@@ -279,11 +313,12 @@ test("adminA cannot UPDATE a consentimento_lgpd row (append-only, guarda permane
   await assert.rejects(
     () =>
       withActor(actors.adminA, () =>
-        client.query("update consentimentos_lgpd set finalidade = 'alterado' where id = $1", [
-          consentimentos.a,
-        ])
+        client.query(
+          "update consentimentos_lgpd set finalidade = 'alterado' where id = $1",
+          [consentimentos.a],
+        ),
       ),
     /permission denied/i,
-    "a consentimento_lgpd row was updated — consent records must be immutable"
+    "a consentimento_lgpd row was updated — consent records must be immutable",
   );
 });

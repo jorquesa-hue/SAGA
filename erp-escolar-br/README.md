@@ -70,7 +70,7 @@ already exist there, so the shim must **not** be applied.
   no exceptions.
 - Every child→parent reference uses a **composite foreign key** —
   `unique (id, escola_id)` on the parent, `foreign key (parent_id, escola_id)
-  references parent(id, escola_id)` on the child — so a row can never point
+references parent(id, escola_id)` on the child — so a row can never point
   at a parent belonging to a different escola, as defense-in-depth
   alongside RLS.
 - `escola_id` and `role` are custom JWT claims, read via `fn_jwt_escola_id()`
@@ -93,8 +93,8 @@ already exist there, so the shim must **not** be applied.
 
 ## Desvios da especificação (flagged, not silent)
 
-The spec says: *"Se encontrar uma contradição na spec, pare e pergunte em
-vez de decidir sozinho."* These are gaps, not contradictions — additions
+The spec says: _"Se encontrar uma contradição na spec, pare e pergunte em
+vez de decidir sozinho."_ These are gaps, not contradictions — additions
 needed to implement an explicit requirement that had no table to hang off
 of. Flagged here for review rather than decided silently:
 
@@ -118,7 +118,7 @@ of. Flagged here for review rather than decided silently:
    known.
 5. **CPF is nullable on `pessoas`** — most `aluno` rows won't have one
    (minors). Validity (`fn_cpf_valido`) is still enforced whenever a CPF
-   *is* present.
+   _is_ present.
 
 ## Guardrails honored (spec §6)
 
