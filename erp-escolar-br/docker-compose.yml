@@ -1,0 +1,27 @@
+# ERP Escolar BR — local Postgres for migrations + tenant-isolation tests.
+#
+# Kept on its own port (5433) and its own compose project so it never
+# collides with SAGA's own `infrastructure/compose/docker-compose.yml`
+# (which uses 5432) — this is a separate, unrelated product living in the
+# same repository (see README).
+name: erp-escolar-br
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: erp
+      POSTGRES_PASSWORD: erp
+      POSTGRES_DB: erp_escolar_br
+    ports:
+      - "5433:5432"
+    volumes:
+      - erp-escolar-br-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp -d erp_escolar_br"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  erp-escolar-br-postgres-data:

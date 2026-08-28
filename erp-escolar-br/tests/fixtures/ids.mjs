@@ -1,0 +1,107 @@
+// Fixed, deterministic UUIDs used by both seed-two-escolas.sql and
+// tenant-isolation.test.mjs, so the JS test file can reference exactly the
+// rows the SQL fixture inserts. All synthetic — no real CPF/CNPJ/personal
+// data (valid check digits only, generated from placeholder base numbers,
+// per CLAUDE.md invariant 7: no personal data in fixtures).
+
+export const escolaA = "a0000000-0000-0000-0000-000000000000";
+export const escolaB = "b0000000-0000-0000-0000-000000000000";
+
+export const pessoas = {
+  adminA: "a0000000-0000-0000-0000-000000000001",
+  secretariaA: "a0000000-0000-0000-0000-000000000002",
+  professorA: "a0000000-0000-0000-0000-000000000003",
+  responsavelA: "a0000000-0000-0000-0000-000000000004",
+  alunoA: "a0000000-0000-0000-0000-000000000005",
+  outroResponsavelA: "a0000000-0000-0000-0000-000000000006",
+  alunoA2: "a0000000-0000-0000-0000-000000000007",
+
+  adminB: "b0000000-0000-0000-0000-000000000001",
+  secretariaB: "b0000000-0000-0000-0000-000000000002",
+  professorB: "b0000000-0000-0000-0000-000000000003",
+  responsavelB: "b0000000-0000-0000-0000-000000000004",
+  alunoB: "b0000000-0000-0000-0000-000000000005",
+};
+
+export const anosLetivos = {
+  a: "a0000000-0000-0000-0000-000000000010",
+  b: "b0000000-0000-0000-0000-000000000010",
+};
+
+export const cursos = {
+  a: "a0000000-0000-0000-0000-000000000011",
+  b: "b0000000-0000-0000-0000-000000000011",
+};
+
+export const turmas = {
+  a: "a0000000-0000-0000-0000-000000000012",
+  a2: "a0000000-0000-0000-0000-000000000013",
+  b: "b0000000-0000-0000-0000-000000000012",
+};
+
+export const alunos = {
+  a: "a0000000-0000-0000-0000-000000000020",
+  a2: "a0000000-0000-0000-0000-000000000021",
+  b: "b0000000-0000-0000-0000-000000000020",
+};
+
+export const responsaveisAlunos = {
+  a: "a0000000-0000-0000-0000-000000000030",
+  b: "b0000000-0000-0000-0000-000000000030",
+};
+
+export const professoresTurmas = {
+  a: "a0000000-0000-0000-0000-000000000040",
+  b: "b0000000-0000-0000-0000-000000000040",
+};
+
+export const matriculas = {
+  a: "a0000000-0000-0000-0000-000000000050",
+  a2: "a0000000-0000-0000-0000-000000000051",
+  b: "b0000000-0000-0000-0000-000000000050",
+};
+
+export const contratos = {
+  a: "a0000000-0000-0000-0000-000000000060",
+  b: "b0000000-0000-0000-0000-000000000060",
+};
+
+export const parcelas = {
+  a: "a0000000-0000-0000-0000-000000000070",
+  b: "b0000000-0000-0000-0000-000000000070",
+};
+
+export const pagamentos = {
+  a: "a0000000-0000-0000-0000-000000000080",
+  b: "b0000000-0000-0000-0000-000000000080",
+};
+
+export const notasFiscais = {
+  a: "a0000000-0000-0000-0000-000000000090",
+  b: "b0000000-0000-0000-0000-000000000090",
+};
+
+export const comunicados = {
+  a: "a0000000-0000-0000-0000-0000000000a0",
+  b: "b0000000-0000-0000-0000-0000000000a0",
+};
+
+export const consentimentos = {
+  a: "a0000000-0000-0000-0000-0000000000b0",
+  b: "b0000000-0000-0000-0000-0000000000b0",
+};
+
+// auth_user_id values (fake auth.users.id equivalents — the local shim
+// resolves auth.uid() from the JWT's "sub" claim to one of these).
+export const authUsers = {
+  adminA: "a0000000-0000-0000-0000-0000000000f1",
+  secretariaA: "a0000000-0000-0000-0000-0000000000f2",
+  professorA: "a0000000-0000-0000-0000-0000000000f3",
+  responsavelA: "a0000000-0000-0000-0000-0000000000f4",
+  outroResponsavelA: "a0000000-0000-0000-0000-0000000000f6",
+
+  adminB: "b0000000-0000-0000-0000-0000000000f1",
+  secretariaB: "b0000000-0000-0000-0000-0000000000f2",
+  professorB: "b0000000-0000-0000-0000-0000000000f3",
+  responsavelB: "b0000000-0000-0000-0000-0000000000f4",
+};
