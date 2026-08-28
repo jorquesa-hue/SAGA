@@ -45,15 +45,29 @@ after(async () => {
   await client.end();
 });
 
+// `escola_role` (not `role` — Supabase reserves the top-level `role` claim
+// for anon/authenticated; see 0010_fix_role_claim_key.sql).
 const actors = {
-  adminA: { sub: authUsers.adminA, escola_id: escolaA, role: "admin" },
-  secretariaA: { sub: authUsers.secretariaA, escola_id: escolaA, role: "secretaria" },
-  professorA: { sub: authUsers.professorA, escola_id: escolaA, role: "professor" },
-  responsavelA: { sub: authUsers.responsavelA, escola_id: escolaA, role: "responsavel" },
+  adminA: { sub: authUsers.adminA, escola_id: escolaA, escola_role: "admin" },
+  secretariaA: {
+    sub: authUsers.secretariaA,
+    escola_id: escolaA,
+    escola_role: "secretaria",
+  },
+  professorA: {
+    sub: authUsers.professorA,
+    escola_id: escolaA,
+    escola_role: "professor",
+  },
+  responsavelA: {
+    sub: authUsers.responsavelA,
+    escola_id: escolaA,
+    escola_role: "responsavel",
+  },
   outroResponsavelA: {
     sub: authUsers.outroResponsavelA,
     escola_id: escolaA,
-    role: "responsavel",
+    escola_role: "responsavel",
   },
 };
 

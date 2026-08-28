@@ -44,6 +44,13 @@ begin
   if not exists (select 1 from pg_roles where rolname = 'app_test_user') then
     create role app_test_user login password 'local_test_only_password' in role authenticated;
   end if;
+  -- Real Supabase's GoTrue calls the Custom Access Token Hook as this
+  -- role (0011_custom_access_token_hook.sql grants it SELECT on
+  -- pessoas). Nothing in this test harness invokes the hook itself — it
+  -- only needs to exist so that GRANT statement doesn't fail locally.
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    create role supabase_auth_admin nologin;
+  end if;
 end
 $$;
 
