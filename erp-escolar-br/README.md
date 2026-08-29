@@ -146,6 +146,13 @@ appropriate to do unprompted. All are one-time, a few minutes each.
 6. **Real Asaas + WhatsApp accounts** — see "What's not done" below; these
    are the same accounts CLAUDE.md-equivalent invariants require before
    any real student/financial data is loaded.
+7. **Legal review of `legal/*.md`** — a Brazilian lawyer (LGPD/education
+   law) needs to review the termo de uso, política de privacidade, and
+   contrato de operador de dados drafted there, fill in every
+   `[PLACEHOLDER]` per school/unidade, and publish a final version. Bump
+   `VERSAO_TERMO_ATUAL` in
+   `apps/web/src/app/(app)/portal/consentimento-form.tsx` once that's
+   done — see `legal/README.md`.
 
 ## Known tool gaps hit during this session (for whoever picks this up)
 
@@ -309,13 +316,19 @@ rather than decided silently:
   (see "Post-Milestone-8 additions"), but with no `NFE_PROVIDER_API_URL`
   configured it falls back to recording a `pendente` bookkeeping row —
   there is no real NFS-e/prefeitura call happening yet.
-- No termo de uso / política de privacidade / contrato de operador de
-  dados as a legal document — the LGPD consent _capture_ now exists
-  (portal → Consentimento LGPD, backed by `src/app/api/consentimento`),
-  but `finalidade`/`versao_termo` are hardcoded placeholder text, not
-  reviewed legal copy. Per spec §6, real student data must never be
-  loaded before real legal documents exist, regardless of how much code
-  now exists.
+- **Termo de uso / política de privacidade / contrato de operador de
+  dados now exist as drafts** (`legal/`), replacing pure placeholder
+  text — they cover the LGPD-required content (data categories, legal
+  basis, third-party sharing with Asaas/eNF provider/Make.com, retention,
+  data-subject rights, DPO contact, sub-processor list) and the consent
+  form's `finalidade` copy was aligned to match. **They are explicitly
+  marked as unreviewed drafts** (`legal/README.md`) — no lawyer has read
+  them, every `[PLACEHOLDER]` (razão social, CNPJ, DPO contact, foro)
+  still needs filling in per school/unidade, and `VERSAO_TERMO_ATUAL`
+  in `consentimento-form.tsx` needs bumping once a reviewed version is
+  published. Per spec §6, real student data must never be loaded before
+  a lawyer has signed off on these, regardless of how much text now
+  exists.
 - No automated test coverage for `apps/web` itself (only the database
   layer has automated tests — the 106-case tenant-isolation suite, which
   doesn't cover any UI added after Milestone 1).

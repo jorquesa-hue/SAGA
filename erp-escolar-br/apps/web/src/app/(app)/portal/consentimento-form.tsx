@@ -2,6 +2,10 @@
 
 import { useState, type FormEvent } from "react";
 
+// Mantida em sincronia com a versão declarada em
+// legal/politica-de-privacidade.md — bump aqui e lá juntos. Enquanto o
+// documento estiver em minuta (ver legal/README.md), esta é a versão de
+// desenvolvimento, não uma versão juridicamente vigente.
 const VERSAO_TERMO_ATUAL = "2026-08-v1";
 
 interface Aluno {
@@ -65,13 +69,17 @@ export default function ConsentimentoForm({ alunos }: { alunos: Aluno[] }) {
           ) : (
             <form
               onSubmit={(e) => handleSubmit(e, a.pessoa_id)}
-              className="flex items-center gap-2"
+              className="flex flex-col items-end gap-1"
             >
               <input
                 type="hidden"
                 name="finalidade"
-                value="Tratamento de dados pessoais do aluno para fins pedagógicos, financeiros e de comunicação da escola (LGPD, base legal: melhor interesse da criança)."
+                value="Tratamento de dados pessoais do aluno para fins pedagógicos, financeiros e de comunicação da escola, conforme a Política de Privacidade (LGPD, base legal: melhor interesse da criança)."
               />
+              <p className="text-xs text-slate-400">
+                Ao registrar, você concorda com a Política de Privacidade da escola
+                (versão {VERSAO_TERMO_ATUAL}).
+              </p>
               <button type="submit" disabled={loading === a.pessoa_id} className="btn">
                 {loading === a.pessoa_id ? "Registrando..." : "Registrar consentimento"}
               </button>
