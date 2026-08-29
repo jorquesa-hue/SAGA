@@ -53,21 +53,42 @@ export default function CadastrosPage() {
 function TurmasTab() {
   const supabase = createClient();
   const [turmas, setTurmas] = useState<
-    { id: string; nome: string; turno: string; capacidade: number }[]
+    {
+      id: string;
+      nome: string;
+      turno: string;
+      capacidade: number;
+      unidades: { nome: string } | null;
+    }[]
   >([]);
   const [anosLetivos, setAnosLetivos] = useState<{ id: string; ano: number }[]>([]);
   const [cursos, setCursos] = useState<{ id: string; nome: string }[]>([]);
+  const [unidades, setUnidades] = useState<{ id: string; nome: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const [t, a, c] = await Promise.all([
-      supabase.from("turmas").select("id, nome, turno, capacidade").order("nome"),
+    const [t, a, c, u] = await Promise.all([
+      supabase
+        .from("turmas")
+        .select("id, nome, turno, capacidade, unidades(nome)")
+        .order("nome")
+        .returns<
+          {
+            id: string;
+            nome: string;
+            turno: string;
+            capacidade: number;
+            unidades: { nome: string } | null;
+          }[]
+        >(),
       supabase.from("anos_letivos").select("id, ano").order("ano", { ascending: false }),
       supabase.from("cursos").select("id, nome").order("nome"),
+      supabase.from("unidades").select("id, nome").order("nome"),
     ]);
     setTurmas(t.data ?? []);
     setAnosLetivos(a.data ?? []);
     setCursos(c.data ?? []);
+    setUnidades(u.data ?? []);
   }
 
   useEffect(() => {
@@ -114,6 +135,7 @@ function TurmasTab() {
       capacidade: Number(fd.get("capacidade")),
       ano_letivo_id: fd.get("ano_letivo_id"),
       curso_id: fd.get("curso_id"),
+      unidade_id: fd.get("unidade_id"),
     });
     if (error) setError(error.message);
     else {
@@ -200,8 +222,22 @@ function TurmasTab() {
               </option>
             ))}
           </select>
+          <select name="unidade_id" required className="input">
+            <option value="">Unidade (CNPJ)</option>
+            {unidades.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
+              </option>
+            ))}
+          </select>
           <button className="btn">Criar</button>
         </div>
+        {unidades.length === 0 && (
+          <p className="mt-2 text-xs text-slate-400">
+            Cadastre uma unidade na aba Unidades antes de criar turmas — toda turma fatura
+            sob o CNPJ de uma unidade.
+          </p>
+        )}
       </form>
 
       <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
@@ -210,6 +246,7 @@ function TurmasTab() {
             <th className="px-4 py-2 font-medium text-slate-600">Turma</th>
             <th className="px-4 py-2 font-medium text-slate-600">Turno</th>
             <th className="px-4 py-2 font-medium text-slate-600">Capacidade</th>
+            <th className="px-4 py-2 font-medium text-slate-600">Unidade</th>
           </tr>
         </thead>
         <tbody>
@@ -218,6 +255,7 @@ function TurmasTab() {
               <td className="px-4 py-2">{t.nome}</td>
               <td className="px-4 py-2">{t.turno}</td>
               <td className="px-4 py-2">{t.capacidade}</td>
+              <td className="px-4 py-2">{t.unidades?.nome}</td>
             </tr>
           ))}
         </tbody>
@@ -515,17 +553,31 @@ function MatriculasTab() {
 }
 
 // ── Unidades
+// Unidades are the legal entities in this app: each one carries its own
+// CNPJ/razão social/inscrição municipal/município, since a school network
+// commonly bills/invoices each physical campus under a different CNPJ —
+// sometimes in a different município (each with its own NFS-e system).
 function UnidadesTab() {
   const supabase = createClient();
   const [unidades, setUnidades] = useState<
-    { id: string; nome: string; endereco: { cidade?: string; uf?: string } }[]
+    {
+      id: string;
+      nome: string;
+      razao_social: string;
+      cnpj: string;
+      municipio_ibge: string;
+      inscricao_municipal: string | null;
+      endereco: { cidade?: string; uf?: string };
+    }[]
   >([]);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
     const { data } = await supabase
       .from("unidades")
-      .select("id, nome, endereco")
+      .select(
+        "id, nome, razao_social, cnpj, municipio_ibge, inscricao_municipal, endereco",
+      )
       .order("nome");
     setUnidades(data ?? []);
   }
@@ -541,6 +593,10 @@ function UnidadesTab() {
     const fd = new FormData(e.currentTarget);
     const { error } = await supabase.from("unidades").insert({
       nome: fd.get("nome"),
+      razao_social: fd.get("razao_social"),
+      cnpj: fd.get("cnpj"),
+      municipio_ibge: fd.get("municipio_ibge"),
+      inscricao_municipal: fd.get("inscricao_municipal") || null,
       endereco: {
         logradouro: fd.get("logradouro"),
         cidade: fd.get("cidade"),
@@ -562,9 +618,41 @@ function UnidadesTab() {
         onSubmit={handleCreate}
         className="rounded-lg border border-slate-200 bg-white p-4"
       >
-        <h3 className="mb-2 text-sm font-medium text-slate-900">Nova unidade</h3>
+        <h3 className="mb-2 text-sm font-medium text-slate-900">
+          Nova unidade (CNPJ próprio)
+        </h3>
         <div className="flex flex-wrap gap-2">
-          <input name="nome" placeholder="Nome" required className="input" />
+          <input
+            name="nome"
+            placeholder="Nome (ex: Unidade Centro)"
+            required
+            className="input"
+          />
+          <input
+            name="razao_social"
+            placeholder="Razão social"
+            required
+            className="input"
+          />
+          <input
+            name="cnpj"
+            placeholder="CNPJ"
+            maxLength={14}
+            required
+            className="input w-40"
+          />
+          <input
+            name="municipio_ibge"
+            placeholder="Cód. IBGE município"
+            maxLength={7}
+            required
+            className="input w-40"
+          />
+          <input
+            name="inscricao_municipal"
+            placeholder="Inscrição municipal (opcional)"
+            className="input"
+          />
           <input name="logradouro" placeholder="Logradouro" required className="input" />
           <input name="cidade" placeholder="Cidade" required className="input" />
           <input
@@ -577,12 +665,18 @@ function UnidadesTab() {
           <input name="cep" placeholder="CEP" required className="input w-32" />
           <button className="btn">Criar</button>
         </div>
+        <p className="mt-2 text-xs text-slate-400">
+          Cada unidade fatura sob o próprio CNPJ (útil para redes com múltiplas
+          escolas/CNPJs) — turmas escolhem sua unidade na aba Turmas.
+        </p>
       </form>
 
       <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
         <thead className="border-b border-slate-200 bg-slate-50">
           <tr>
             <th className="px-4 py-2 font-medium text-slate-600">Nome</th>
+            <th className="px-4 py-2 font-medium text-slate-600">Razão social</th>
+            <th className="px-4 py-2 font-medium text-slate-600">CNPJ</th>
             <th className="px-4 py-2 font-medium text-slate-600">Cidade</th>
             <th className="px-4 py-2 font-medium text-slate-600">UF</th>
           </tr>
@@ -591,6 +685,8 @@ function UnidadesTab() {
           {unidades.map((u) => (
             <tr key={u.id} className="border-b border-slate-100 last:border-0">
               <td className="px-4 py-2">{u.nome}</td>
+              <td className="px-4 py-2">{u.razao_social}</td>
+              <td className="px-4 py-2">{u.cnpj}</td>
               <td className="px-4 py-2">{u.endereco?.cidade}</td>
               <td className="px-4 py-2">{u.endereco?.uf}</td>
             </tr>

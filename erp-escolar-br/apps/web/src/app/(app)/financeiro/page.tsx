@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 interface Matricula {
@@ -13,7 +14,10 @@ interface Contrato {
   num_parcelas: number;
   vencimento_dia: number;
   assinado_em: string | null;
-  matriculas: { alunos: { pessoas: { nome: string } | null } | null } | null;
+  matriculas: {
+    alunos: { pessoas: { nome: string } | null } | null;
+    turmas: { unidades: { nome: string; cnpj: string } | null } | null;
+  } | null;
 }
 interface Parcela {
   id: string;
@@ -56,7 +60,7 @@ export default function FinanceiroPage() {
     const { data } = await supabase
       .from("contratos")
       .select(
-        "id, valor_anuidade, num_parcelas, vencimento_dia, assinado_em, matriculas(alunos(pessoas(nome)))",
+        "id, valor_anuidade, num_parcelas, vencimento_dia, assinado_em, matriculas(alunos(pessoas(nome)), turmas(unidades(nome, cnpj)))",
       )
       .returns<Contrato[]>();
     setContratos(data ?? []);
@@ -160,10 +164,17 @@ export default function FinanceiroPage() {
   async function handleEmitirNota(pagamentoId: string) {
     if (!selectedContrato) return;
     setError(null);
-    const { error } = await supabase
-      .from("notas_fiscais")
-      .insert({ pagamento_id: pagamentoId, status: "pendente" });
-    if (error) setError(error.message);
+    // emitir-nota-fiscal resolves the pagamento's unidade (and therefore
+    // which CNPJ it bills under) and calls whatever eNF provider is
+    // configured (NFE_PROVIDER_API_URL) — falls back to a `pendente`
+    // bookkeeping row when none is configured, same end result as before,
+    // but now through the integration point instead of a raw insert.
+    const { data, error: fnError } = await supabase.functions.invoke(
+      "emitir-nota-fiscal",
+      { body: { pagamento_id: pagamentoId } },
+    );
+    if (fnError || data?.error)
+      setError(data?.error ?? fnError?.message ?? "Falha ao emitir NF.");
     else loadParcelas(selectedContrato);
   }
 
@@ -212,9 +223,14 @@ export default function FinanceiroPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-slate-900">
-        Financeiro — Contratos e parcelas
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-slate-900">
+          Financeiro — Contratos e parcelas
+        </h1>
+        <Link href="/financeiro/relatorios" className="text-sm underline">
+          Ver relatórios financeiros
+        </Link>
+      </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {info && <p className="text-sm text-green-700">{info}</p>}
 
@@ -266,6 +282,7 @@ export default function FinanceiroPage() {
         <thead className="border-b border-slate-200 bg-slate-50">
           <tr>
             <th className="px-4 py-2 font-medium text-slate-600">Aluno</th>
+            <th className="px-4 py-2 font-medium text-slate-600">Unidade (CNPJ)</th>
             <th className="px-4 py-2 font-medium text-slate-600">Anuidade</th>
             <th className="px-4 py-2 font-medium text-slate-600">Parcelas</th>
             <th className="px-4 py-2 font-medium text-slate-600">Assinado</th>
@@ -276,6 +293,10 @@ export default function FinanceiroPage() {
           {contratos.map((c) => (
             <tr key={c.id} className="border-b border-slate-100 last:border-0">
               <td className="px-4 py-2">{c.matriculas?.alunos?.pessoas?.nome}</td>
+              <td className="px-4 py-2 text-xs text-slate-500">
+                {c.matriculas?.turmas?.unidades?.nome} (
+                {c.matriculas?.turmas?.unidades?.cnpj})
+              </td>
               <td className="px-4 py-2">{brl(c.valor_anuidade)}</td>
               <td className="px-4 py-2">{c.num_parcelas}x</td>
               <td className="px-4 py-2">

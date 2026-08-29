@@ -7,13 +7,16 @@
 -- Applied by scripts/db-reset.mjs (APPLY_FIXTURES=1) using the superuser
 -- connection, so RLS does not interfere with seeding.
 
-insert into escolas (id, razao_social, cnpj, municipio_ibge, plano) values
-  ('a0000000-0000-0000-0000-000000000000', 'Escola Teste A Ltda', '11122233000183', '3550308', 'standard'),
-  ('b0000000-0000-0000-0000-000000000000', 'Escola Teste B Ltda', '22233344000183', '3304557', 'standard');
+insert into escolas (id, razao_social, plano) values
+  ('a0000000-0000-0000-0000-000000000000', 'Escola Teste A Ltda', 'standard'),
+  ('b0000000-0000-0000-0000-000000000000', 'Escola Teste B Ltda', 'standard');
 
-insert into unidades (escola_id, nome, endereco) values
-  ('a0000000-0000-0000-0000-000000000000', 'Unidade Sede A', '{"cidade": "Sao Paulo"}'::jsonb),
-  ('b0000000-0000-0000-0000-000000000000', 'Unidade Sede B', '{"cidade": "Rio de Janeiro"}'::jsonb);
+-- Two unidades under escola A (distinct CNPJs, distinct municípios — the
+-- multi-CNPJ-per-network case) and one under escola B.
+insert into unidades (id, escola_id, nome, endereco, razao_social, cnpj, municipio_ibge) values
+  ('a0000000-0000-0000-0000-0000000000c0', 'a0000000-0000-0000-0000-000000000000', 'Unidade Sede A', '{"cidade": "Sao Paulo"}'::jsonb, 'Escola Teste A Ltda', '11122233000183', '3550308'),
+  ('a0000000-0000-0000-0000-0000000000c1', 'a0000000-0000-0000-0000-000000000000', 'Unidade Norte A', '{"cidade": "Campinas"}'::jsonb, 'Escola Teste A Filial Norte Ltda', '11444777000161', '3509502'),
+  ('b0000000-0000-0000-0000-0000000000c0', 'b0000000-0000-0000-0000-000000000000', 'Unidade Sede B', '{"cidade": "Rio de Janeiro"}'::jsonb, 'Escola Teste B Ltda', '22233344000183', '3304557');
 
 insert into anos_letivos (id, escola_id, ano, data_inicio, data_fim, status) values
   ('a0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000000', 2026, '2026-02-01', '2026-12-15', 'ativo'),
@@ -23,10 +26,12 @@ insert into cursos (id, escola_id, nome, etapa_ensino) values
   ('a0000000-0000-0000-0000-000000000011', 'a0000000-0000-0000-0000-000000000000', 'Fundamental I', 'fundamental_i'),
   ('b0000000-0000-0000-0000-000000000011', 'b0000000-0000-0000-0000-000000000000', 'Fundamental I', 'fundamental_i');
 
-insert into turmas (id, escola_id, ano_letivo_id, curso_id, nome, turno, capacidade) values
-  ('a0000000-0000-0000-0000-000000000012', 'a0000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000011', '3o Ano A', 'manha', 25),
-  ('a0000000-0000-0000-0000-000000000013', 'a0000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000011', '3o Ano B', 'tarde', 25),
-  ('b0000000-0000-0000-0000-000000000012', 'b0000000-0000-0000-0000-000000000000', 'b0000000-0000-0000-0000-000000000010', 'b0000000-0000-0000-0000-000000000011', '3o Ano A', 'manha', 25);
+-- 3o Ano A stays at the sede unidade; 3o Ano B is at the Norte unidade —
+-- proves a contrato's CNPJ can differ by turma within the same escola.
+insert into turmas (id, escola_id, ano_letivo_id, curso_id, unidade_id, nome, turno, capacidade) values
+  ('a0000000-0000-0000-0000-000000000012', 'a0000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000011', 'a0000000-0000-0000-0000-0000000000c0', '3o Ano A', 'manha', 25),
+  ('a0000000-0000-0000-0000-000000000013', 'a0000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000010', 'a0000000-0000-0000-0000-000000000011', 'a0000000-0000-0000-0000-0000000000c1', '3o Ano B', 'tarde', 25),
+  ('b0000000-0000-0000-0000-000000000012', 'b0000000-0000-0000-0000-000000000000', 'b0000000-0000-0000-0000-000000000010', 'b0000000-0000-0000-0000-000000000011', 'b0000000-0000-0000-0000-0000000000c0', '3o Ano A', 'manha', 25);
 
 insert into pessoas (id, escola_id, nome, cpf, data_nascimento, papeis, auth_user_id) values
   ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000000', 'Admin A', '11122233043', '1980-01-01', array['admin']::pessoa_papel[], 'a0000000-0000-0000-0000-0000000000f1'),

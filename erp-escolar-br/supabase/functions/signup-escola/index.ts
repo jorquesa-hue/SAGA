@@ -27,6 +27,8 @@ interface SignupBody {
   cnpj?: string;
   municipio_ibge?: string;
   inep_codigo?: string;
+  cidade?: string;
+  uf?: string;
   admin_nome?: string;
   admin_email?: string;
   admin_password?: string;
@@ -65,17 +67,36 @@ Deno.serve(async (req: Request) => {
 
   const { data: escola, error: escolaError } = await supabase
     .from("escolas")
-    .insert({
-      razao_social: body.razao_social,
-      cnpj: body.cnpj,
-      municipio_ibge: body.municipio_ibge,
-      inep_codigo: body.inep_codigo ?? null,
-    })
+    .insert({ razao_social: body.razao_social })
     .select("id")
     .single();
 
   if (escolaError || !escola) {
     return json({ error: "escola_insert_failed", detail: escolaError?.message }, 400);
+  }
+
+  // Fiscal identity (CNPJ, razão social, município, INEP) lives on the
+  // unidade, not the escola — a network can have more per-CNPJ unidades
+  // later (cadastros → Unidades), but signup always creates the first
+  // one ("Sede") so a tenant is never left with zero legal entities to
+  // bill/invoice under.
+  const { data: unidade, error: unidadeError } = await supabase
+    .from("unidades")
+    .insert({
+      escola_id: escola.id,
+      nome: "Sede",
+      razao_social: body.razao_social,
+      cnpj: body.cnpj,
+      municipio_ibge: body.municipio_ibge,
+      inep_codigo: body.inep_codigo ?? null,
+      endereco: { cidade: body.cidade ?? null, uf: body.uf ?? null },
+    })
+    .select("id")
+    .single();
+
+  if (unidadeError || !unidade) {
+    await supabase.from("escolas").delete().eq("id", escola.id);
+    return json({ error: "unidade_insert_failed", detail: unidadeError?.message }, 400);
   }
 
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
@@ -90,6 +111,7 @@ Deno.serve(async (req: Request) => {
     // rollback of a failed signup attempt, not a violation of the
     // append-only / no-hard-delete invariant that governs committed
     // domain history.
+    await supabase.from("unidades").delete().eq("id", unidade.id);
     await supabase.from("escolas").delete().eq("id", escola.id);
     return json({ error: "auth_user_create_failed", detail: authError?.message }, 400);
   }
@@ -105,9 +127,13 @@ Deno.serve(async (req: Request) => {
 
   if (pessoaError) {
     await supabase.auth.admin.deleteUser(authUser.user.id);
+    await supabase.from("unidades").delete().eq("id", unidade.id);
     await supabase.from("escolas").delete().eq("id", escola.id);
     return json({ error: "pessoa_insert_failed", detail: pessoaError.message }, 400);
   }
 
-  return json({ escola_id: escola.id, admin_user_id: authUser.user.id }, 201);
+  return json(
+    { escola_id: escola.id, unidade_id: unidade.id, admin_user_id: authUser.user.id },
+    201,
+  );
 });
