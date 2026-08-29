@@ -41,6 +41,21 @@ provisioned along the way (see below) — this is not a local-only exercise.
   Two earlier project names (`erp-escolar-br`, `erp-escolar-br-web`) were
   created by mistake during this session and are now stuck unable to
   accept deployments — see "Known tool gaps."
+  The `erp-escolar-br` one did get git-linked to this repo, so it was
+  auto-building on every push and failing, surfacing as a red
+  `Vercel – erp-escolar-br` check on the PR. Root cause (from its build
+  log): its Root Directory is the **repo root**, not
+  `erp-escolar-br/apps/web`, so it read the root `vercel.json`, ran
+  `pnpm install --no-frozen-lockfile` against the whole SAGA workspace,
+  and died with `ERR_PNPM_UNSUPPORTED_ENGINE` — Vercel hands that project
+  pnpm 6.35.1 while the root `package.json` requires `engines.pnpm >= 9`.
+  Fixed by adding `"ignoreCommand": "exit 0"` to the **root**
+  `vercel.json`, the same pattern `apps/api/vercel.json` already uses to
+  keep `saga-api` from building. Only a project whose Root Directory is
+  the repo root reads that file, and `erp-escolar-br` is the only one, so
+  `saga-web` (root dir `apps/web`) and `saga-api` (root dir `apps/api`)
+  are unaffected. Delete the stray project in the Vercel dashboard and
+  that line can be reverted.
 - **Make.com**: org `JQ`, team `My Team`. Two real scenarios created
   (inactive): "Régua de Cobrança" (daily, 08:00) and "Relatório Semanal de
   Inadimplência" (weekly, Monday 08:00).
