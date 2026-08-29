@@ -9,4 +9,5 @@
 export const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://xozhqzdniagwjlxoiarx.supabase.co";
 export const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "sb_publishable_mVVELF7O3ZoG3TfWZuCQ2w_igUhucR2";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  "sb_publishable_mVVELF7O3ZoG3TfWZuCQ2w_igUhucR2";

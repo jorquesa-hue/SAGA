@@ -53,7 +53,9 @@ export default function EquipePage() {
       ];
     }
 
-    const { data, error: fnError } = await supabase.functions.invoke("invite-pessoa", { body });
+    const { data, error: fnError } = await supabase.functions.invoke("invite-pessoa", {
+      body,
+    });
     setLoading(false);
 
     if (fnError || data?.error) {
@@ -69,13 +71,23 @@ export default function EquipePage() {
     <div className="max-w-xl space-y-6">
       <h1 className="text-lg font-semibold text-slate-900">Equipe — convidar usuário</h1>
       <p className="text-sm text-slate-500">
-        Envia um e-mail de convite (via Supabase Auth) para a pessoa definir a própria senha.
+        Envia um e-mail de convite (via Supabase Auth) para a pessoa definir a própria
+        senha.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
+      >
         <div className="grid grid-cols-2 gap-3">
           <input name="nome" placeholder="Nome" required className="input" />
-          <input name="email" type="email" placeholder="E-mail" required className="input" />
+          <input
+            name="email"
+            type="email"
+            placeholder="E-mail"
+            required
+            className="input"
+          />
           <input name="cpf" placeholder="CPF (opcional)" className="input" />
           <input name="data_nascimento" type="date" required className="input" />
         </div>
@@ -96,7 +108,9 @@ export default function EquipePage() {
 
         {papel === "responsavel" && (
           <div className="space-y-2 rounded-md border border-slate-100 bg-slate-50 p-3">
-            <label className="block text-sm font-medium text-slate-700">Vincular a aluno</label>
+            <label className="block text-sm font-medium text-slate-700">
+              Vincular a aluno
+            </label>
             <select
               value={selectedAlunoId}
               onChange={(e) => setSelectedAlunoId(e.target.value)}

@@ -18,7 +18,10 @@ export default function LoginPage() {
     setError(null);
 
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (signInError) {
       setError(signInError.message);
@@ -38,7 +41,10 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="email">
+            <label
+              className="mb-1 block text-sm font-medium text-slate-700"
+              htmlFor="email"
+            >
               E-mail
             </label>
             <input
@@ -51,7 +57,10 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="password">
+            <label
+              className="mb-1 block text-sm font-medium text-slate-700"
+              htmlFor="password"
+            >
               Senha
             </label>
             <input

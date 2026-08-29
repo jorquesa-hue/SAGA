@@ -69,7 +69,10 @@ Deno.serve(async (req: Request) => {
 
   const callerPapeis: string[] = callerPessoa.papeis ?? [];
   if (!callerPapeis.includes("admin") && !callerPapeis.includes("secretaria")) {
-    return json({ error: "forbidden", detail: "apenas admin ou secretaria pode convidar" }, 403);
+    return json(
+      { error: "forbidden", detail: "apenas admin ou secretaria pode convidar" },
+      403,
+    );
   }
 
   let body: InviteBody;
@@ -130,7 +133,11 @@ Deno.serve(async (req: Request) => {
       // bad vinculo shouldn't undo their account) — report the partial
       // failure so the caller can retry linking, don't compensate.
       return json(
-        { pessoa_id: pessoa.id, invited_user_id: invited.user.id, vinculo_error: vinculoError.message },
+        {
+          pessoa_id: pessoa.id,
+          invited_user_id: invited.user.id,
+          vinculo_error: vinculoError.message,
+        },
         207,
       );
     }

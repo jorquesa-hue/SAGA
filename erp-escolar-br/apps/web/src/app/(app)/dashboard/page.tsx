@@ -29,8 +29,8 @@ export default async function DashboardPage() {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-6">
       <p className="text-sm text-slate-600">
-        Acesse o Portal do responsável no menu acima para ver as parcelas e comunicados dos seus
-        dependentes.
+        Acesse o Portal do responsável no menu acima para ver as parcelas e comunicados
+        dos seus dependentes.
       </p>
     </div>
   );
@@ -49,13 +49,17 @@ async function PainelDaDirecao() {
     .returns<ParcelaRow[]>();
 
   if (error) {
-    return <p className="text-sm text-red-600">Erro ao carregar painel: {error.message}</p>;
+    return (
+      <p className="text-sm text-red-600">Erro ao carregar painel: {error.message}</p>
+    );
   }
 
   const parcelas = data ?? [];
   const hoje = new Date().toISOString().slice(0, 10);
 
-  const emAberto = parcelas.filter((p) => p.status === "pendente" || p.status === "atrasado");
+  const emAberto = parcelas.filter(
+    (p) => p.status === "pendente" || p.status === "atrasado",
+  );
   const vencidas = emAberto.filter((p) => p.vencimento < hoje);
 
   const porTurma = new Map<string, { nome: string; total: number; count: number }>();
@@ -72,7 +76,8 @@ async function PainelDaDirecao() {
   const buckets = { "0-30": 0, "31-60": 0, "61-90": 0, "90+": 0 };
   for (const p of vencidas) {
     const dias = Math.floor(
-      (new Date(hoje).getTime() - new Date(p.vencimento).getTime()) / (1000 * 60 * 60 * 24),
+      (new Date(hoje).getTime() - new Date(p.vencimento).getTime()) /
+        (1000 * 60 * 60 * 24),
     );
     const valor = Number(p.valor_liquido);
     if (dias <= 30) buckets["0-30"] += valor;
@@ -89,7 +94,8 @@ async function PainelDaDirecao() {
     );
   }
 
-  const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const brl = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
     <div className="space-y-8">
@@ -106,7 +112,9 @@ async function PainelDaDirecao() {
       </div>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">Inadimplência por turma</h2>
+        <h2 className="mb-2 text-sm font-semibold text-slate-900">
+          Inadimplência por turma
+        </h2>
         <Table
           head={["Turma", "Parcelas vencidas", "Total"]}
           rows={[...porTurma.values()]
@@ -125,7 +133,9 @@ async function PainelDaDirecao() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">Previsão de recebíveis</h2>
+        <h2 className="mb-2 text-sm font-semibold text-slate-900">
+          Previsão de recebíveis
+        </h2>
         <Table
           head={["Competência", "Valor previsto"]}
           rows={[...previsaoPorCompetencia.entries()]
@@ -150,7 +160,11 @@ async function MinhasTurmas() {
   return (
     <div>
       <h1 className="mb-4 text-lg font-semibold text-slate-900">Minhas turmas</h1>
-      <Table head={["Turma"]} rows={(data ?? []).map((t) => [t.nome])} empty="Nenhuma turma atribuída." />
+      <Table
+        head={["Turma"]}
+        rows={(data ?? []).map((t) => [t.nome])}
+        empty="Nenhuma turma atribuída."
+      />
     </div>
   );
 }
@@ -164,7 +178,15 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Table({ head, rows, empty }: { head: string[]; rows: string[][]; empty?: string }) {
+function Table({
+  head,
+  rows,
+  empty,
+}: {
+  head: string[];
+  rows: string[][];
+  empty?: string;
+}) {
   if (rows.length === 0) {
     return <p className="text-sm text-slate-500">{empty ?? "Nenhum registro."}</p>;
   }

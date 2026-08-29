@@ -7,7 +7,9 @@ interface Parcela {
   valor_liquido: string;
   status: string;
   asaas_cobranca_id: string | null;
-  contratos: { matriculas: { alunos: { pessoas: { nome: string } | null } | null } | null } | null;
+  contratos: {
+    matriculas: { alunos: { pessoas: { nome: string } | null } | null } | null;
+  } | null;
 }
 
 interface Pagamento {
@@ -36,7 +38,8 @@ export default async function PortalPage() {
       .returns<Pagamento[]>(),
   ]);
 
-  const brl = (v: string) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const brl = (v: string) =>
+    Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
     <div className="space-y-8">
@@ -59,13 +62,17 @@ export default async function PortalPage() {
             <tbody>
               {(parcelas ?? []).map((p) => (
                 <tr key={p.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-2">{p.contratos?.matriculas?.alunos?.pessoas?.nome}</td>
+                  <td className="px-4 py-2">
+                    {p.contratos?.matriculas?.alunos?.pessoas?.nome}
+                  </td>
                   <td className="px-4 py-2">{p.competencia}</td>
                   <td className="px-4 py-2">{p.vencimento}</td>
                   <td className="px-4 py-2">{brl(p.valor_liquido)}</td>
                   <td className="px-4 py-2">{p.status}</td>
                   <td className="px-4 py-2 text-xs text-slate-400">
-                    {p.asaas_cobranca_id ? "2ª via / PIX disponíveis" : "Aguardando integração Asaas"}
+                    {p.asaas_cobranca_id
+                      ? "2ª via / PIX disponíveis"
+                      : "Aguardando integração Asaas"}
                   </td>
                 </tr>
               ))}
@@ -80,8 +87,8 @@ export default async function PortalPage() {
           </table>
         </div>
         <p className="mt-2 text-xs text-slate-400">
-          Boleto (2ª via) e PIX copia-e-cola são emitidos pelo Asaas (Milestone 5); esta conta
-          ainda não está conectada a um Asaas real — ver erp-escolar-br/README.md.
+          Boleto (2ª via) e PIX copia-e-cola são emitidos pelo Asaas (Milestone 5); esta
+          conta ainda não está conectada a um Asaas real — ver erp-escolar-br/README.md.
         </p>
       </section>
 

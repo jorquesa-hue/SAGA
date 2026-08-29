@@ -14,7 +14,10 @@ export default function SignOutButton() {
   }
 
   return (
-    <button onClick={handleSignOut} className="text-slate-500 underline hover:text-slate-900">
+    <button
+      onClick={handleSignOut}
+      className="text-slate-500 underline hover:text-slate-900"
+    >
       Sair
     </button>
   );

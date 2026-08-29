@@ -122,17 +122,29 @@ function TurmasTab() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <form onSubmit={handleCreateAnoLetivo} className="rounded-lg border border-slate-200 bg-white p-4">
+        <form
+          onSubmit={handleCreateAnoLetivo}
+          className="rounded-lg border border-slate-200 bg-white p-4"
+        >
           <h3 className="mb-2 text-sm font-medium text-slate-900">Novo ano letivo</h3>
           <div className="flex flex-wrap gap-2">
-            <input name="ano" type="number" placeholder="Ano" required className="input w-24" />
+            <input
+              name="ano"
+              type="number"
+              placeholder="Ano"
+              required
+              className="input w-24"
+            />
             <input name="data_inicio" type="date" required className="input" />
             <input name="data_fim" type="date" required className="input" />
             <button className="btn">Criar</button>
           </div>
         </form>
 
-        <form onSubmit={handleCreateCurso} className="rounded-lg border border-slate-200 bg-white p-4">
+        <form
+          onSubmit={handleCreateCurso}
+          className="rounded-lg border border-slate-200 bg-white p-4"
+        >
           <h3 className="mb-2 text-sm font-medium text-slate-900">Novo curso</h3>
           <div className="flex flex-wrap gap-2">
             <input name="nome" placeholder="Nome" required className="input" />
@@ -147,7 +159,10 @@ function TurmasTab() {
         </form>
       </div>
 
-      <form onSubmit={handleCreateTurma} className="rounded-lg border border-slate-200 bg-white p-4">
+      <form
+        onSubmit={handleCreateTurma}
+        className="rounded-lg border border-slate-200 bg-white p-4"
+      >
         <h3 className="mb-2 text-sm font-medium text-slate-900">Nova turma</h3>
         <div className="flex flex-wrap gap-2">
           <input name="nome" placeholder="Nome" required className="input" />
@@ -157,7 +172,13 @@ function TurmasTab() {
             <option value="integral">Integral</option>
             <option value="noite">Noite</option>
           </select>
-          <input name="capacidade" type="number" placeholder="Capacidade" required className="input w-28" />
+          <input
+            name="capacidade"
+            type="number"
+            placeholder="Capacidade"
+            required
+            className="input w-28"
+          />
           <select name="ano_letivo_id" required className="input">
             <option value="">Ano letivo</option>
             {anosLetivos.map((a) => (
@@ -224,13 +245,13 @@ function PessoasTab() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-500">
-        Novos usuários com acesso ao sistema (professor, secretaria, responsável) são criados na
-        aba{" "}
+        Novos usuários com acesso ao sistema (professor, secretaria, responsável) são
+        criados na aba{" "}
         <a href="/equipe" className="underline">
           Equipe
         </a>
-        , que envia um convite por e-mail. Esta lista mostra todas as pessoas já cadastradas na
-        escola.
+        , que envia um convite por e-mail. Esta lista mostra todas as pessoas já
+        cadastradas na escola.
       </p>
       <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
         <thead className="border-b border-slate-200 bg-slate-50">
@@ -258,7 +279,12 @@ function PessoasTab() {
 function AlunosTab() {
   const supabase = createClient();
   const [alunos, setAlunos] = useState<
-    { id: string; matricula_codigo: string; status: string; pessoas: { nome: string } | null }[]
+    {
+      id: string;
+      matricula_codigo: string;
+      status: string;
+      pessoas: { nome: string } | null;
+    }[]
   >([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -268,7 +294,12 @@ function AlunosTab() {
       .select("id, matricula_codigo, status, pessoas(nome)")
       .order("matricula_codigo")
       .returns<
-        { id: string; matricula_codigo: string; status: string; pessoas: { nome: string } | null }[]
+        {
+          id: string;
+          matricula_codigo: string;
+          status: string;
+          pessoas: { nome: string } | null;
+        }[]
       >();
     setAlunos(data ?? []);
   }
@@ -314,13 +345,21 @@ function AlunosTab() {
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <form onSubmit={handleCreate} className="rounded-lg border border-slate-200 bg-white p-4">
+      <form
+        onSubmit={handleCreate}
+        className="rounded-lg border border-slate-200 bg-white p-4"
+      >
         <h3 className="mb-2 text-sm font-medium text-slate-900">Novo aluno</h3>
         <div className="flex flex-wrap gap-2">
           <input name="nome" placeholder="Nome" required className="input" />
           <input name="data_nascimento" type="date" required className="input" />
           <input name="cpf" placeholder="CPF (opcional)" className="input" />
-          <input name="matricula_codigo" placeholder="Código de matrícula" required className="input" />
+          <input
+            name="matricula_codigo"
+            placeholder="Código de matrícula"
+            required
+            className="input"
+          />
           <button className="btn">Criar</button>
         </div>
       </form>
@@ -358,8 +397,12 @@ function MatriculasTab() {
       turmas: { nome: string } | null;
     }[]
   >([]);
-  const [alunos, setAlunos] = useState<{ id: string; pessoas: { nome: string } | null }[]>([]);
-  const [turmas, setTurmas] = useState<{ id: string; nome: string; ano_letivo_id: string }[]>([]);
+  const [alunos, setAlunos] = useState<
+    { id: string; pessoas: { nome: string } | null }[]
+  >([]);
+  const [turmas, setTurmas] = useState<
+    { id: string; nome: string; ano_letivo_id: string }[]
+  >([]);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
@@ -375,9 +418,10 @@ function MatriculasTab() {
             turmas: { nome: string } | null;
           }[]
         >(),
-      supabase.from("alunos").select("id, pessoas(nome)").returns<
-        { id: string; pessoas: { nome: string } | null }[]
-      >(),
+      supabase
+        .from("alunos")
+        .select("id, pessoas(nome)")
+        .returns<{ id: string; pessoas: { nome: string } | null }[]>(),
       supabase.from("turmas").select("id, nome, ano_letivo_id"),
     ]);
     setMatriculas(m.data ?? []);
@@ -416,7 +460,10 @@ function MatriculasTab() {
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <form onSubmit={handleCreate} className="rounded-lg border border-slate-200 bg-white p-4">
+      <form
+        onSubmit={handleCreate}
+        className="rounded-lg border border-slate-200 bg-white p-4"
+      >
         <h3 className="mb-2 text-sm font-medium text-slate-900">Nova matrícula</h3>
         <div className="flex flex-wrap gap-2">
           <select name="aluno_id" required className="input">

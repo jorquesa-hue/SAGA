@@ -64,7 +64,9 @@ export default function FinanceiroPage() {
     setSelectedContrato(contratoId);
     const { data } = await supabase
       .from("parcelas")
-      .select("id, competencia, vencimento, valor_bruto, valor_desconto, valor_liquido, status")
+      .select(
+        "id, competencia, vencimento, valor_bruto, valor_desconto, valor_liquido, status",
+      )
       .eq("contrato_id", contratoId)
       .order("competencia")
       .returns<Parcela[]>();
@@ -101,7 +103,9 @@ export default function FinanceiroPage() {
   async function handleGerarParcelas(contratoId: string) {
     setError(null);
     setInfo(null);
-    const { error } = await supabase.rpc("fn_gerar_parcelas", { p_contrato_id: contratoId });
+    const { error } = await supabase.rpc("fn_gerar_parcelas", {
+      p_contrato_id: contratoId,
+    });
     if (error) setError(error.message);
     else {
       setInfo("Parcelas geradas.");
@@ -109,15 +113,21 @@ export default function FinanceiroPage() {
     }
   }
 
-  const brl = (v: string) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const brl = (v: string) =>
+    Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-slate-900">Financeiro — Contratos e parcelas</h1>
+      <h1 className="text-lg font-semibold text-slate-900">
+        Financeiro — Contratos e parcelas
+      </h1>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {info && <p className="text-sm text-green-700">{info}</p>}
 
-      <form onSubmit={handleCreateContrato} className="rounded-lg border border-slate-200 bg-white p-4">
+      <form
+        onSubmit={handleCreateContrato}
+        className="rounded-lg border border-slate-200 bg-white p-4"
+      >
         <h3 className="mb-2 text-sm font-medium text-slate-900">Novo contrato</h3>
         <div className="flex flex-wrap gap-2">
           <select name="matricula_id" required className="input">
@@ -175,16 +185,24 @@ export default function FinanceiroPage() {
               <td className="px-4 py-2">{brl(c.valor_anuidade)}</td>
               <td className="px-4 py-2">{c.num_parcelas}x</td>
               <td className="px-4 py-2">
-                {c.assinado_em ? new Date(c.assinado_em).toLocaleDateString("pt-BR") : "—"}
+                {c.assinado_em
+                  ? new Date(c.assinado_em).toLocaleDateString("pt-BR")
+                  : "—"}
               </td>
               <td className="flex gap-2 px-4 py-2">
                 {!c.assinado_em && (
-                  <button onClick={() => handleAssinar(c.id)} className="text-xs underline">
+                  <button
+                    onClick={() => handleAssinar(c.id)}
+                    className="text-xs underline"
+                  >
                     Assinar
                   </button>
                 )}
                 {c.assinado_em && (
-                  <button onClick={() => handleGerarParcelas(c.id)} className="text-xs underline">
+                  <button
+                    onClick={() => handleGerarParcelas(c.id)}
+                    className="text-xs underline"
+                  >
                     Gerar parcelas
                   </button>
                 )}

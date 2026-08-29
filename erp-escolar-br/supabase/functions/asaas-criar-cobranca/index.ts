@@ -73,7 +73,10 @@ Deno.serve(async (req: Request) => {
 
   if (parcelaError || !parcela) return json({ error: "parcela_not_found" }, 404);
   if (parcela.asaas_cobranca_id) {
-    return json({ error: "cobranca_already_exists", asaas_cobranca_id: parcela.asaas_cobranca_id }, 409);
+    return json(
+      { error: "cobranca_already_exists", asaas_cobranca_id: parcela.asaas_cobranca_id },
+      409,
+    );
   }
 
   // Real integration TODO (spec §5), against https://api.asaas.com/v3:
@@ -84,5 +87,8 @@ Deno.serve(async (req: Request) => {
   // apiKey as the `access_token` header per Asaas's documented auth. Left
   // unimplemented because it cannot be tested against a real Asaas
   // sandbox from this session.
-  return json({ error: "asaas_not_configured", detail: "integration stubbed, see README" }, 501);
+  return json(
+    { error: "asaas_not_configured", detail: "integration stubbed, see README" },
+    501,
+  );
 });

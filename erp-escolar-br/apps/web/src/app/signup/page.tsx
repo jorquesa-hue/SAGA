@@ -65,7 +65,11 @@ export default function SignupPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Razão social" value={form.razao_social} onChange={update("razao_social")} />
+          <Field
+            label="Razão social"
+            value={form.razao_social}
+            onChange={update("razao_social")}
+          />
           <Field
             label="CNPJ"
             value={form.cnpj}
@@ -79,7 +83,11 @@ export default function SignupPage() {
             placeholder="7 dígitos"
           />
           <hr className="border-slate-200" />
-          <Field label="Seu nome (admin)" value={form.admin_nome} onChange={update("admin_nome")} />
+          <Field
+            label="Seu nome (admin)"
+            value={form.admin_nome}
+            onChange={update("admin_nome")}
+          />
           <Field
             label="Seu e-mail"
             type="email"

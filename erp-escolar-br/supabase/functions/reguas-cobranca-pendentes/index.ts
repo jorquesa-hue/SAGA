@@ -19,7 +19,13 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-const OFFSETS: Record<string, number> = { "D-3": -3, "D+1": 1, "D+7": 7, "D+15": 15, "D+30": 30 };
+const OFFSETS: Record<string, number> = {
+  "D-3": -3,
+  "D+1": 1,
+  "D+7": 7,
+  "D+15": 15,
+  "D+30": 30,
+};
 
 interface ParcelaBusca {
   id: string;

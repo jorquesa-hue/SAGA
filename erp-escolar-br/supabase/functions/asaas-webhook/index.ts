@@ -92,7 +92,8 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (!existingPagamento) {
-      const meio = MEIO_BY_BILLING_TYPE[event.payment.billingType ?? ""] ?? "transferencia";
+      const meio =
+        MEIO_BY_BILLING_TYPE[event.payment.billingType ?? ""] ?? "transferencia";
       await admin.from("pagamentos").insert({
         parcela_id: parcela.id,
         valor: event.payment.value,
