@@ -14,10 +14,10 @@ Supabase + Next.js + Make.com + Asaas + WhatsApp stack).
 | --- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Schema + RLS                | Done — 106/106 tenant-isolation tests passing                                                                                               |
 | 2   | Auth e onboarding de escola | Done — signup/invite Edge Functions + Custom Access Token Hook deployed                                                                     |
-| 3   | Cadastros                   | Done — pessoas/alunos/turmas/matrículas CRUD in `apps/web`                                                                                  |
-| 4   | Contratos e parcelas        | Done — `fn_gerar_parcelas` engine + UI, smoke-tested                                                                                        |
+| 3   | Cadastros                   | Done — pessoas/alunos/turmas/matrículas/unidades CRUD + professor↔turma assignment in `apps/web`                                            |
+| 4   | Contratos e parcelas        | Done — `fn_gerar_parcelas` engine + UI (contratos, descontos, manual baixa, NF tracking), smoke-tested                                      |
 | 5   | Asaas                       | **Stubbed** — real Edge Functions deployed, return `501` until `ASAAS_API_KEY`/`ASAAS_WEBHOOK_TOKEN` are set (no Asaas account exists)      |
-| 6   | Portal do responsável       | Done — installable PWA (`apps/web`)                                                                                                         |
+| 6   | Portal do responsável       | Done — installable PWA, incl. LGPD consent capture (`apps/web`)                                                                             |
 | 7   | Painel da direção           | Done — inadimplência por turma, aging, previsão de recebíveis                                                                               |
 | 8   | Réguas no Make              | **Stubbed** — real Make.com scenarios created (inactive), notification channel steps are placeholders (no Twilio/Z-API/SMTP account exists) |
 
@@ -247,16 +247,29 @@ rather than decided silently:
 
 ## What's not done — do not treat as production-ready
 
-- **Nobody has clicked through the live app in a browser.** See "Known
-  tool gaps" — this session could not reach the deployed URLs over HTTP.
+- **The Custom Access Token Hook is still not enabled** (see "Manual
+  steps required" above) — until it is, every role-scoped RLS policy
+  denies, so most of the UI below will render empty even though it now
+  exists.
 - Asaas and WhatsApp/e-mail/push are entirely stubbed pending real
   accounts — see "Manual steps required" above.
+- `notas_fiscais` emission (financeiro page, "Emitir NF") is
+  bookkeeping only — it records a `pendente` row, there is no real
+  NFS-e/prefeitura integration.
 - No termo de uso / política de privacidade / contrato de operador de
-  dados — per spec §6, real student data must never be loaded before
-  those exist, regardless of how much code now exists.
+  dados as a legal document — the LGPD consent _capture_ now exists
+  (portal → Consentimento LGPD, backed by `src/app/api/consentimento`),
+  but `finalidade`/`versao_termo` are hardcoded placeholder text, not
+  reviewed legal copy. Per spec §6, real student data must never be
+  loaded before real legal documents exist, regardless of how much code
+  now exists.
 - No automated test coverage for `apps/web` itself (only the database
-  layer has automated tests — the 106-case tenant-isolation suite).
+  layer has automated tests — the 106-case tenant-isolation suite, which
+  doesn't cover any UI added after Milestone 1).
 - No CI wiring for any of this (SAGA's own `pull-request`/`security`
   GitHub Actions workflows run against the whole repo and will lint/
   format-check `apps/web`, but nothing runs the Next.js build or the
   Supabase migrations in CI).
+- Two stray Vercel projects (`erp-escolar-br`, `erp-escolar-br-web`,
+  see "Known tool gaps") still exist and are harmless but unused —
+  worth deleting from the dashboard.
