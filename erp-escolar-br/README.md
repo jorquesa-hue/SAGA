@@ -72,7 +72,7 @@ provisioned along the way (see below) — this is not a local-only exercise.
 ## Real infrastructure this now runs against
 
 - **Supabase project**: `erp-escolar-br` (`xozhqzdniagwjlxoiarx`, `sa-east-1`),
-  org `jorquesa@icloud.com's Org`. 16 migrations applied. An existing
+  org `jorquesa@icloud.com's Org`. 18 migrations applied. An existing
   project in the same org (`Elara PMS`) was **paused** to free a slot under
   the org's 2-project free-tier cap — unpause it from the Supabase
   dashboard if you need it back.
@@ -109,11 +109,15 @@ None of these could be done from this session — either the capability
 doesn't exist in the tools available, or doing it destructively wasn't
 appropriate to do unprompted. All are one-time, a few minutes each.
 
-1. **Enable the Custom Access Token Hook** (blocks all of Milestones 3–8
-   functionally — without it, `escola_id`/`escola_role` never reach the
-   JWT and every role-scoped RLS policy denies everything). Supabase
-   dashboard → this project → Authentication → Hooks → Custom Access
-   Token → select `custom_access_token_hook` → Enable.
+1. ~~**Enable the Custom Access Token Hook**~~ — **no longer required.**
+   Migration `0017` rewrote `fn_jwt_escola_id()`/`fn_jwt_role()` to derive
+   the caller's escola and papel from their own `pessoas` row via
+   `auth.uid()` instead of from hook-stamped JWT claims, so every
+   role-scoped policy now works on a stock project with nothing toggled in
+   the dashboard. Enabling the hook (Authentication → Hooks → Custom
+   Access Token → `custom_access_token_hook`) remains harmless and is
+   still worth doing if you later want the claims present in the JWT for
+   some other consumer — the policies simply no longer read them.
 2. **Set Supabase project secrets** (dashboard → Edge Functions → Secrets,
    or `supabase secrets set` via the CLI, which this session doesn't have):
    - `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` — once a real Asaas account
@@ -216,12 +220,20 @@ npm run dev
 references parent(id, escola_id)` on the child — so a row can never point
   at a parent belonging to a different escola, as defense-in-depth
   alongside RLS.
-- `escola_id` and `escola_role` are custom JWT claims, stamped server-side
-  by the Custom Access Token Hook (`0011_custom_access_token_hook.sql`)
-  from the caller's own `pessoas` row — never derived from anything
-  client-supplied. **`escola_role`, not `role`**: Supabase reserves the
-  top-level `role` claim for `anon`/`authenticated` (PostgREST uses it to
-  pick the Postgres role) — a real bug caught via `search_docs` before
+- The caller's escola and papel are resolved server-side from their own
+  `pessoas` row, keyed on `auth.uid()` — never from anything
+  client-supplied. Since `0017` that lookup happens **directly in
+  `fn_jwt_escola_id()`/`fn_jwt_role()`** (SECURITY DEFINER, so policies on
+  `pessoas` don't recurse; grants closed to `authenticated` only in
+  `0018`), rather than by reading JWT claims. The Custom Access Token Hook
+  (`0011`) still exists and still stamps `escola_id`/`escola_role` when
+  enabled, but nothing depends on it any more — which both removes a
+  dashboard-only setup step and closes a real revocation gap, since a JWT
+  keeps its stamped claims until it expires (a demoted admin stayed admin
+  for the life of their token) while the table is read fresh per
+  statement. **`escola_role`, not `role`**, in that hook: Supabase reserves
+  the top-level `role` claim for `anon`/`authenticated` (PostgREST uses it
+  to pick the Postgres role) — a real bug caught via `search_docs` before
   shipping, see `0010_fix_role_claim_key.sql`.
 - No table ever gets a `DELETE` policy or grant, for any profile — hard
   deletes are not part of the app-level contract (`deleted_at` + RLS
@@ -306,10 +318,16 @@ rather than decided silently:
 
 ## What's not done — do not treat as production-ready
 
-- **The Custom Access Token Hook is still not enabled** (see "Manual
-  steps required" above) — until it is, every role-scoped RLS policy
-  denies, so most of the UI below will render empty even though it now
-  exists.
+- ~~The Custom Access Token Hook is still not enabled~~ — **fixed in
+  `0017`/`0018`**: the RLS helpers no longer depend on that hook (see
+  "Manual steps required" #1). A logged-in user now sees their own
+  school's data on a stock project. Verified against the real project
+  with a rolled-back transaction simulating a JWT carrying only `sub`:
+  the caller's escola/papel resolve correctly and rows from a second
+  escola stay invisible. The 106-case tenant-isolation suite passes
+  unchanged, and an extra local check exercises the no-claims path
+  directly for admin/professor/responsável plus an unknown user (who
+  gets NULL/NULL and sees nothing).
 - Asaas, WhatsApp/e-mail/push, and eNF (NFS-e) are entirely stubbed
   pending real accounts — see "Manual steps required" above.
   `emitir-nota-fiscal` is a real, provider-agnostic integration point
