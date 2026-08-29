@@ -29,6 +29,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <Link href="/dashboard" className="hover:text-slate-900">
                 Painel
               </Link>
+              <Link href="/comunicados" className="hover:text-slate-900">
+                Comunicados
+              </Link>
               {isStaff && (
                 <>
                   <Link href="/cadastros" className="hover:text-slate-900">

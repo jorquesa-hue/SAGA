@@ -3,7 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Tab = "turmas" | "pessoas" | "alunos" | "matriculas";
+type Tab =
+  "turmas" | "pessoas" | "alunos" | "matriculas" | "unidades" | "professores_turmas";
 
 export default function CadastrosPage() {
   const [tab, setTab] = useState<Tab>("turmas");
@@ -11,13 +12,15 @@ export default function CadastrosPage() {
   return (
     <div>
       <h1 className="mb-4 text-lg font-semibold text-slate-900">Cadastros</h1>
-      <div className="mb-6 flex gap-1 border-b border-slate-200">
+      <div className="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
         {(
           [
             ["turmas", "Turmas"],
             ["pessoas", "Pessoas"],
             ["alunos", "Alunos"],
             ["matriculas", "Matrículas"],
+            ["unidades", "Unidades"],
+            ["professores_turmas", "Professores × Turmas"],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -38,6 +41,8 @@ export default function CadastrosPage() {
       {tab === "pessoas" && <PessoasTab />}
       {tab === "alunos" && <AlunosTab />}
       {tab === "matriculas" && <MatriculasTab />}
+      {tab === "unidades" && <UnidadesTab />}
+      {tab === "professores_turmas" && <ProfessoresTurmasTab />}
     </div>
   );
 }
@@ -501,6 +506,205 @@ function MatriculasTab() {
               <td className="px-4 py-2">{m.alunos?.pessoas?.nome}</td>
               <td className="px-4 py-2">{m.turmas?.nome}</td>
               <td className="px-4 py-2">{m.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Unidades
+function UnidadesTab() {
+  const supabase = createClient();
+  const [unidades, setUnidades] = useState<
+    { id: string; nome: string; endereco: { cidade?: string; uf?: string } }[]
+  >([]);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    const { data } = await supabase
+      .from("unidades")
+      .select("id, nome, endereco")
+      .order("nome");
+    setUnidades(data ?? []);
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch-on-mount, not a render loop
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleCreate(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("unidades").insert({
+      nome: fd.get("nome"),
+      endereco: {
+        logradouro: fd.get("logradouro"),
+        cidade: fd.get("cidade"),
+        uf: fd.get("uf"),
+        cep: fd.get("cep"),
+      },
+    });
+    if (error) setError(error.message);
+    else {
+      e.currentTarget.reset();
+      load();
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <form
+        onSubmit={handleCreate}
+        className="rounded-lg border border-slate-200 bg-white p-4"
+      >
+        <h3 className="mb-2 text-sm font-medium text-slate-900">Nova unidade</h3>
+        <div className="flex flex-wrap gap-2">
+          <input name="nome" placeholder="Nome" required className="input" />
+          <input name="logradouro" placeholder="Logradouro" required className="input" />
+          <input name="cidade" placeholder="Cidade" required className="input" />
+          <input
+            name="uf"
+            placeholder="UF"
+            maxLength={2}
+            required
+            className="input w-16"
+          />
+          <input name="cep" placeholder="CEP" required className="input w-32" />
+          <button className="btn">Criar</button>
+        </div>
+      </form>
+
+      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50">
+          <tr>
+            <th className="px-4 py-2 font-medium text-slate-600">Nome</th>
+            <th className="px-4 py-2 font-medium text-slate-600">Cidade</th>
+            <th className="px-4 py-2 font-medium text-slate-600">UF</th>
+          </tr>
+        </thead>
+        <tbody>
+          {unidades.map((u) => (
+            <tr key={u.id} className="border-b border-slate-100 last:border-0">
+              <td className="px-4 py-2">{u.nome}</td>
+              <td className="px-4 py-2">{u.endereco?.cidade}</td>
+              <td className="px-4 py-2">{u.endereco?.uf}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Professores × Turmas (assigns a professor to a turma — required for
+// the professor's own dashboard/MinhasTurmas view to show anything).
+function ProfessoresTurmasTab() {
+  const supabase = createClient();
+  const [vinculos, setVinculos] = useState<
+    { id: string; pessoas: { nome: string } | null; turmas: { nome: string } | null }[]
+  >([]);
+  const [professores, setProfessores] = useState<{ id: string; nome: string }[]>([]);
+  const [turmas, setTurmas] = useState<{ id: string; nome: string }[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    const [v, p, t] = await Promise.all([
+      supabase
+        .from("professores_turmas")
+        .select("id, pessoas:professor_pessoa_id(nome), turmas(nome)")
+        .returns<
+          {
+            id: string;
+            pessoas: { nome: string } | null;
+            turmas: { nome: string } | null;
+          }[]
+        >(),
+      supabase
+        .from("pessoas")
+        .select("id, nome")
+        .contains("papeis", ["professor"])
+        .order("nome"),
+      supabase.from("turmas").select("id, nome").order("nome"),
+    ]);
+    setVinculos(v.data ?? []);
+    setProfessores(p.data ?? []);
+    setTurmas(t.data ?? []);
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch-on-mount, not a render loop
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleCreate(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("professores_turmas").insert({
+      professor_pessoa_id: fd.get("professor_pessoa_id"),
+      turma_id: fd.get("turma_id"),
+    });
+    if (error) setError(error.message);
+    else {
+      e.currentTarget.reset();
+      load();
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <form
+        onSubmit={handleCreate}
+        className="rounded-lg border border-slate-200 bg-white p-4"
+      >
+        <h3 className="mb-2 text-sm font-medium text-slate-900">
+          Atribuir professor a turma
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          <select name="professor_pessoa_id" required className="input">
+            <option value="">Professor</option>
+            {professores.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}
+              </option>
+            ))}
+          </select>
+          <select name="turma_id" required className="input">
+            <option value="">Turma</option>
+            {turmas.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome}
+              </option>
+            ))}
+          </select>
+          <button className="btn">Atribuir</button>
+        </div>
+        {professores.length === 0 && (
+          <p className="mt-2 text-xs text-slate-400">
+            Nenhuma pessoa com papel &quot;professor&quot; ainda — convide uma na aba
+            Equipe.
+          </p>
+        )}
+      </form>
+
+      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50">
+          <tr>
+            <th className="px-4 py-2 font-medium text-slate-600">Professor</th>
+            <th className="px-4 py-2 font-medium text-slate-600">Turma</th>
+          </tr>
+        </thead>
+        <tbody>
+          {vinculos.map((v) => (
+            <tr key={v.id} className="border-b border-slate-100 last:border-0">
+              <td className="px-4 py-2">{v.pessoas?.nome}</td>
+              <td className="px-4 py-2">{v.turmas?.nome}</td>
             </tr>
           ))}
         </tbody>

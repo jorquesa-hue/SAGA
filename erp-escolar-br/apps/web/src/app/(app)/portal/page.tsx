@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import ConsentimentoForm from "./consentimento-form";
 
 interface Parcela {
   id: string;
@@ -23,7 +24,12 @@ interface Pagamento {
 export default async function PortalPage() {
   const supabase = await createClient();
 
-  const [{ data: parcelas }, { data: pagamentos }] = await Promise.all([
+  const [
+    { data: parcelas },
+    { data: pagamentos },
+    { data: vinculos },
+    { data: consentimentos },
+  ] = await Promise.all([
     supabase
       .from("parcelas")
       .select(
@@ -36,7 +42,28 @@ export default async function PortalPage() {
       .select("id, valor, data, meio, parcelas(competencia)")
       .order("data", { ascending: false })
       .returns<Pagamento[]>(),
+    supabase
+      .from("responsaveis_alunos")
+      .select("aluno_id, alunos(pessoa_id, pessoas(nome))")
+      .is("deleted_at", null)
+      .returns<
+        {
+          aluno_id: string;
+          alunos: { pessoa_id: string; pessoas: { nome: string } | null } | null;
+        }[]
+      >(),
+    supabase.from("consentimentos_lgpd").select("titular_pessoa_id"),
   ]);
+
+  const consentidoIds = new Set((consentimentos ?? []).map((c) => c.titular_pessoa_id));
+  const alunosVinculados = (vinculos ?? [])
+    .filter((v) => v.alunos)
+    .map((v) => ({
+      aluno_id: v.aluno_id,
+      pessoa_id: v.alunos!.pessoa_id,
+      nome: v.alunos!.pessoas?.nome ?? "—",
+      jaConsentiu: consentidoIds.has(v.alunos!.pessoa_id),
+    }));
 
   const brl = (v: string) =>
     Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -123,6 +150,15 @@ export default async function PortalPage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold text-slate-900">Consentimento LGPD</h2>
+        <p className="mb-3 text-xs text-slate-400">
+          Registro do consentimento para tratamento de dados pessoais do(s) seu(s)
+          dependente(s), conforme a Lei Geral de Proteção de Dados.
+        </p>
+        <ConsentimentoForm alunos={alunosVinculados} />
       </section>
     </div>
   );
