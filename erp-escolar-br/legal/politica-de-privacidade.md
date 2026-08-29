@@ -17,16 +17,16 @@ como **operadora** (art. 5º, VII) nos termos do `contrato-operador-de-dados.md`
 
 ## 2. Dados que coletamos
 
-| Categoria | Titular | Exemplos | Finalidade |
-|---|---|---|---|
-| Identificação | Aluno | Nome, data de nascimento, CPF (se houver) | Matrícula, identificação escolar |
-| Identificação | Responsável/colaborador | Nome, CPF, e-mail, telefone | Cadastro, comunicação, acesso ao sistema |
-| Financeiros | Responsável financeiro | Dados de contrato, parcelas, forma de pagamento, histórico de pagamento | Cobrança, emissão de nota fiscal, relatórios financeiros |
-| Fiscais | Escola (pessoa jurídica) | Razão social, CNPJ, inscrição municipal, código IBGE do município, por unidade | Emissão de nota fiscal de serviço (NFS-e) |
-| Pedagógicos | Aluno | Turma, matrícula, frequência (quando aplicável) | Gestão escolar |
-| Comunicação | Responsável | Registros de envio de comunicados, réguas de cobrança | Comunicação institucional e de cobrança |
-| Acesso ao sistema | Todos os usuários | E-mail, papel (admin/secretaria/professor/responsável), IP no momento do consentimento | Autenticação, controle de acesso (RLS), auditoria |
-| Consentimento LGPD | Responsável/titular | Finalidade aceita, versão do termo, data/hora, IP | Comprovação de consentimento (art. 8º LGPD) |
+| Categoria          | Titular                  | Exemplos                                                                               | Finalidade                                               |
+| ------------------ | ------------------------ | -------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Identificação      | Aluno                    | Nome, data de nascimento, CPF (se houver)                                              | Matrícula, identificação escolar                         |
+| Identificação      | Responsável/colaborador  | Nome, CPF, e-mail, telefone                                                            | Cadastro, comunicação, acesso ao sistema                 |
+| Financeiros        | Responsável financeiro   | Dados de contrato, parcelas, forma de pagamento, histórico de pagamento                | Cobrança, emissão de nota fiscal, relatórios financeiros |
+| Fiscais            | Escola (pessoa jurídica) | Razão social, CNPJ, inscrição municipal, código IBGE do município, por unidade         | Emissão de nota fiscal de serviço (NFS-e)                |
+| Pedagógicos        | Aluno                    | Turma, matrícula, frequência (quando aplicável)                                        | Gestão escolar                                           |
+| Comunicação        | Responsável              | Registros de envio de comunicados, réguas de cobrança                                  | Comunicação institucional e de cobrança                  |
+| Acesso ao sistema  | Todos os usuários        | E-mail, papel (admin/secretaria/professor/responsável), IP no momento do consentimento | Autenticação, controle de acesso (RLS), auditoria        |
+| Consentimento LGPD | Responsável/titular      | Finalidade aceita, versão do termo, data/hora, IP                                      | Comprovação de consentimento (art. 8º LGPD)              |
 
 Não coletamos dados sensíveis (art. 5º, II) além do estritamente
 necessário para a prestação do serviço educacional, e nunca os
@@ -50,12 +50,12 @@ utilizamos para fins diversos dos aqui descritos.
 
 ## 4. Com quem compartilhamos dados
 
-| Terceiro | Dados compartilhados | Finalidade | Base |
-|---|---|---|---|
-| Provedor de pagamentos (Asaas, quando configurado) | Nome, CPF, valor, dados de cobrança do responsável financeiro | Emissão de boleto/cobrança | Execução de contrato |
-| Provedor de eNF (PlugNotas/eNotas/NFE.io/prefeitura, quando configurado) | Razão social/CNPJ da unidade, nome/CPF do tomador, valor | Emissão de nota fiscal de serviço | Obrigação legal |
-| Make.com (réguas de cobrança) | Nome do responsável, valor/vencimento da parcela | Envio de lembrete de cobrança (WhatsApp/e-mail, quando configurado) | Execução de contrato / interesse legítimo |
-| Supabase (infraestrutura, região `sa-east-1`, São Paulo) | Todos os dados acima, como subcontratada de infraestrutura | Hospedagem do banco de dados e autenticação | Necessário à prestação do serviço |
+| Terceiro                                                                 | Dados compartilhados                                          | Finalidade                                                          | Base                                      |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| Provedor de pagamentos (Asaas, quando configurado)                       | Nome, CPF, valor, dados de cobrança do responsável financeiro | Emissão de boleto/cobrança                                          | Execução de contrato                      |
+| Provedor de eNF (PlugNotas/eNotas/NFE.io/prefeitura, quando configurado) | Razão social/CNPJ da unidade, nome/CPF do tomador, valor      | Emissão de nota fiscal de serviço                                   | Obrigação legal                           |
+| Make.com (réguas de cobrança)                                            | Nome do responsável, valor/vencimento da parcela              | Envio de lembrete de cobrança (WhatsApp/e-mail, quando configurado) | Execução de contrato / interesse legítimo |
+| Supabase (infraestrutura, região `sa-east-1`, São Paulo)                 | Todos os dados acima, como subcontratada de infraestrutura    | Hospedagem do banco de dados e autenticação                         | Necessário à prestação do serviço         |
 
 Nenhum dado é vendido ou compartilhado para fins de publicidade.
 Nenhuma transferência internacional de dados ocorre além da eventual

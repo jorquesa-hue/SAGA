@@ -76,12 +76,12 @@ responsáveis e colaboradores da Escola.
 
 ## 6. Subcontratados (sub-operadores) atuais
 
-| Sub-operador | Função | Dados envolvidos |
-|---|---|---|
-| Supabase (infraestrutura, região `sa-east-1`) | Hospedagem de banco de dados, autenticação | Todos |
-| Provedor de pagamentos (Asaas, quando configurado) | Cobrança | Dados financeiros do responsável |
-| Provedor de eNF (quando configurado) | Emissão de nota fiscal | Dados fiscais da unidade + tomador |
-| Make.com | Automação de réguas de cobrança/comunicação | Nome, valor/vencimento de parcela |
+| Sub-operador                                       | Função                                      | Dados envolvidos                   |
+| -------------------------------------------------- | ------------------------------------------- | ---------------------------------- |
+| Supabase (infraestrutura, região `sa-east-1`)      | Hospedagem de banco de dados, autenticação  | Todos                              |
+| Provedor de pagamentos (Asaas, quando configurado) | Cobrança                                    | Dados financeiros do responsável   |
+| Provedor de eNF (quando configurado)               | Emissão de nota fiscal                      | Dados fiscais da unidade + tomador |
+| Make.com                                           | Automação de réguas de cobrança/comunicação | Nome, valor/vencimento de parcela  |
 
 A Operadora compromete-se a comunicar a Escola sobre qualquer alteração
 relevante nesta lista.
