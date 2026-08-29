@@ -10,16 +10,16 @@ Supabase + Next.js + Make.com + Asaas + WhatsApp stack).
 
 ## Status: Milestones 1–8 built. Not production-ready — read "What's not done" below.
 
-| # | Milestone | Status |
-|---|---|---|
-| 1 | Schema + RLS | Done — 106/106 tenant-isolation tests passing |
-| 2 | Auth e onboarding de escola | Done — signup/invite Edge Functions + Custom Access Token Hook deployed |
-| 3 | Cadastros | Done — pessoas/alunos/turmas/matrículas CRUD in `apps/web` |
-| 4 | Contratos e parcelas | Done — `fn_gerar_parcelas` engine + UI, smoke-tested |
-| 5 | Asaas | **Stubbed** — real Edge Functions deployed, return `501` until `ASAAS_API_KEY`/`ASAAS_WEBHOOK_TOKEN` are set (no Asaas account exists) |
-| 6 | Portal do responsável | Done — installable PWA (`apps/web`) |
-| 7 | Painel da direção | Done — inadimplência por turma, aging, previsão de recebíveis |
-| 8 | Réguas no Make | **Stubbed** — real Make.com scenarios created (inactive), notification channel steps are placeholders (no Twilio/Z-API/SMTP account exists) |
+| #   | Milestone                   | Status                                                                                                                                      |
+| --- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Schema + RLS                | Done — 106/106 tenant-isolation tests passing                                                                                               |
+| 2   | Auth e onboarding de escola | Done — signup/invite Edge Functions + Custom Access Token Hook deployed                                                                     |
+| 3   | Cadastros                   | Done — pessoas/alunos/turmas/matrículas CRUD in `apps/web`                                                                                  |
+| 4   | Contratos e parcelas        | Done — `fn_gerar_parcelas` engine + UI, smoke-tested                                                                                        |
+| 5   | Asaas                       | **Stubbed** — real Edge Functions deployed, return `501` until `ASAAS_API_KEY`/`ASAAS_WEBHOOK_TOKEN` are set (no Asaas account exists)      |
+| 6   | Portal do responsável       | Done — installable PWA (`apps/web`)                                                                                                         |
+| 7   | Painel da direção           | Done — inadimplência por turma, aging, previsão de recebíveis                                                                               |
+| 8   | Réguas no Make              | **Stubbed** — real Make.com scenarios created (inactive), notification channel steps are placeholders (no Twilio/Z-API/SMTP account exists) |
 
 This ran in one continuous session at the user's explicit instruction to
 "keep going until the full Schools ERP is finished," overriding the spec's
@@ -190,14 +190,14 @@ rather than decided silently:
    fields. Reasonable domain-standard values were chosen.
 5. **CPF is nullable on `pessoas`** — most `aluno` rows won't have one
    (minors). Validity (`fn_cpf_valido`) is still enforced whenever a CPF
-   *is* present.
+   _is_ present.
 6. **Role priority when a pessoa holds multiple `papeis`** — spec §4
    explicitly allows a person to be e.g. professor AND responsavel
    simultaneously, but doesn't say which "hat" governs a session. The
    Custom Access Token Hook picks the highest-priority role by
    `pessoa_papel`'s enum declaration order (admin > secretaria > professor
    > responsavel > aluno). A future "act as" role switcher could replace
-   this with an explicit per-session choice.
+   > this with an explicit per-session choice.
 7. **No separate REST API layer** — `apps/web` talks to Supabase directly
    (PostgREST + RPC + Edge Functions) from client and server components,
    per the spec's own architecture (§2: Supabase + Next.js, no mention of
