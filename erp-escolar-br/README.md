@@ -21,6 +21,49 @@ Supabase + Next.js + Make.com + Asaas + WhatsApp stack).
 | 7   | Painel da direção           | Done — inadimplência por turma, aging, previsão de recebíveis                                                                               |
 | 8   | Réguas no Make              | **Stubbed** — real Make.com scenarios created (inactive), notification channel steps are placeholders (no Twilio/Z-API/SMTP account exists) |
 
+## Post-Milestone-8 additions (user follow-up requests)
+
+Three things added on top of the 8 milestones above, at the user's
+explicit follow-up request:
+
+- **Per-unidade CNPJ** (Migration `0014`) — CNPJ, razão social, inscrição
+  municipal, município IBGE, and código INEP moved from `escolas` (the
+  tenant) down to `unidades` (the legal entity). A Brazilian school
+  network commonly bills each physical campus under its own CNPJ,
+  sometimes in a different município. `turmas` now requires a
+  `unidade_id`, so every contrato/parcela/pagamento chain resolves which
+  CNPJ it bills under. `cadastros → Unidades` captures the new fields;
+  `cadastros → Turmas` requires picking a unidade; `signup-escola`
+  creates the tenant's first ("Sede") unidade automatically.
+- **Financial reporting** (`financeiro → Ver relatórios financeiros`,
+  Migrations `0015`/`0016`) — `fn_relatorio_financeiro(data_inicio,
+data_fim)`, one RPC aggregating receita bruta/desconto/líquida/recebida
+  and parcelas pendentes/atrasadas, grouped by unidade and competência.
+  Plain SQL function (not `security definer`), so it inherits the same
+  RLS as hand-written queries — no separate role check needed. Also
+  directly callable via the Supabase REST/RPC API
+  (`/rest/v1/rpc/fn_relatorio_financeiro`) by an external BI tool with a
+  staff-scoped key — the "integration friendly" half of the same ask.
+  The UI adds a date-range filter, totals, and CSV export.
+- **Pluggable eNF (nota fiscal) integration** — `emitir-nota-fiscal`
+  (staff-only Edge Function) resolves a pagamento's unidade/CNPJ and
+  POSTs a provider-agnostic `{prestador, tomador, valor, dataEmissao}`
+  payload to whatever `NFE_PROVIDER_API_URL`/`NFE_PROVIDER_API_KEY` are
+  configured — swapping providers (PlugNotas, eNotas, NFE.io, a
+  município's own API) needs zero code change. `nfe-webhook` receives
+  async status callbacks, idempotent on `referencia_externa` (mirrors
+  the `asaas-webhook` pattern). When no provider is configured — this
+  account's current state, no real eNF account exists — it falls back
+  to recording a `pendente` bookkeeping row, same UX as the earlier
+  placeholder but now through the real integration point instead of a
+  raw client-side insert.
+
+All three: 106/106 tenant-isolation tests still pass; the full
+escola→unidade→turma→matrícula→contrato→parcela→pagamento chain was
+smoke-tested end-to-end against the real Supabase project inside a
+rolled-back transaction; `get_advisors` is clean except the pre-existing
+`fn_current_pessoa_id` finding already documented below.
+
 This ran in one continuous session at the user's explicit instruction to
 "keep going until the full Schools ERP is finished," overriding the spec's
 own "stop after each milestone" default. Real cloud infrastructure was
@@ -29,7 +72,7 @@ provisioned along the way (see below) — this is not a local-only exercise.
 ## Real infrastructure this now runs against
 
 - **Supabase project**: `erp-escolar-br` (`xozhqzdniagwjlxoiarx`, `sa-east-1`),
-  org `jorquesa@icloud.com's Org`. 13 migrations applied. An existing
+  org `jorquesa@icloud.com's Org`. 16 migrations applied. An existing
   project in the same org (`Elara PMS`) was **paused** to free a slot under
   the org's 2-project free-tier cap — unpause it from the Supabase
   dashboard if you need it back.
@@ -78,6 +121,15 @@ appropriate to do unprompted. All are one-time, a few minutes each.
    - `REGUAS_API_TOKEN` — any random secret string; also paste the same
      value into both Make scenarios' HTTP module header (currently
      `Bearer SET-ME-REGUAS-API-TOKEN`) before activating them.
+   - `NFE_PROVIDER_API_URL`, `NFE_PROVIDER_API_KEY` — once a real eNF
+     provider account exists (PlugNotas, eNotas, NFE.io, or a
+     município's own API — `emitir-nota-fiscal` accepts any provider
+     that speaks its `{prestador, tomador, valor, dataEmissao}` →
+     `{referencia, status}` contract). Until set, "Emitir NF" records a
+     `pendente` bookkeeping row instead of calling a real provider.
+   - `NFE_WEBHOOK_TOKEN` — any random secret string, configured the same
+     way as `ASAAS_WEBHOOK_TOKEN`; paste the same value into the eNF
+     provider's webhook configuration once one exists.
 3. **Connect the Vercel project to GitHub** for auto-deploy on push
    (Project Settings → Git, project `erp-escolar-br-app`) — see "Known
    tool gaps."
@@ -251,11 +303,12 @@ rather than decided silently:
   steps required" above) — until it is, every role-scoped RLS policy
   denies, so most of the UI below will render empty even though it now
   exists.
-- Asaas and WhatsApp/e-mail/push are entirely stubbed pending real
-  accounts — see "Manual steps required" above.
-- `notas_fiscais` emission (financeiro page, "Emitir NF") is
-  bookkeeping only — it records a `pendente` row, there is no real
-  NFS-e/prefeitura integration.
+- Asaas, WhatsApp/e-mail/push, and eNF (NFS-e) are entirely stubbed
+  pending real accounts — see "Manual steps required" above.
+  `emitir-nota-fiscal` is a real, provider-agnostic integration point
+  (see "Post-Milestone-8 additions"), but with no `NFE_PROVIDER_API_URL`
+  configured it falls back to recording a `pendente` bookkeeping row —
+  there is no real NFS-e/prefeitura call happening yet.
 - No termo de uso / política de privacidade / contrato de operador de
   dados as a legal document — the LGPD consent _capture_ now exists
   (portal → Consentimento LGPD, backed by `src/app/api/consentimento`),
