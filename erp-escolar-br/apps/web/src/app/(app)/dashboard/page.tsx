@@ -100,7 +100,7 @@ async function PainelDaDirecao() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="mb-4 text-lg font-semibold text-slate-900">Painel da direção</h1>
+        <h1 className="h-page mb-4">Painel da direção</h1>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Stat label="Parcelas em aberto" value={String(emAberto.length)} />
           <Stat label="Parcelas vencidas" value={String(vencidas.length)} />
@@ -112,9 +112,7 @@ async function PainelDaDirecao() {
       </div>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">
-          Inadimplência por turma
-        </h2>
+        <h2 className="h-section mb-2">Inadimplência por turma</h2>
         <Table
           head={["Turma", "Parcelas vencidas", "Total"]}
           rows={[...porTurma.values()]
@@ -125,7 +123,7 @@ async function PainelDaDirecao() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">Aging</h2>
+        <h2 className="h-section mb-2">Aging</h2>
         <Table
           head={["0-30 dias", "31-60 dias", "61-90 dias", "90+ dias"]}
           rows={[Object.values(buckets).map((v) => brl(v))]}
@@ -133,9 +131,7 @@ async function PainelDaDirecao() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">
-          Previsão de recebíveis
-        </h2>
+        <h2 className="h-section mb-2">Previsão de recebíveis</h2>
         <Table
           head={["Competência", "Valor previsto"]}
           rows={[...previsaoPorCompetencia.entries()]
@@ -159,7 +155,7 @@ async function MinhasTurmas() {
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold text-slate-900">Minhas turmas</h1>
+      <h1 className="h-page mb-4">Minhas turmas</h1>
       <Table
         head={["Turma"]}
         rows={(data ?? []).map((t) => [t.nome])}
@@ -171,7 +167,7 @@ async function MinhasTurmas() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <div className="card p-4">
       <p className="text-xs text-slate-500">{label}</p>
       <p className="mt-1 text-xl font-semibold text-slate-900">{value}</p>
     </div>
@@ -191,9 +187,9 @@ function Table({
     return <p className="text-sm text-slate-500">{empty ?? "Nenhum registro."}</p>;
   }
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50">
+    <div className="table-wrap">
+      <table>
+        <thead>
           <tr>
             {head.map((h) => (
               <th key={h} className="px-4 py-2 font-medium text-slate-600">

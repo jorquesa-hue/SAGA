@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { LogoMark } from "@/components/brand";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -57,10 +58,11 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
-      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-1 text-xl font-semibold text-slate-900">Cadastrar escola</h1>
-        <p className="mb-6 text-sm text-slate-500">
+    <div className="flex min-h-screen items-center justify-center bg-ink-50 px-4 py-10">
+      <div className="card w-full max-w-md p-6 sm:p-8">
+        <LogoMark size={40} />
+        <h1 className="h-page mt-4 mb-1">Cadastrar escola</h1>
+        <p className="subtle mb-6">
           Fase 1 — Cobrança e Retenção. Você será o admin desta escola.
         </p>
 
@@ -107,20 +109,20 @@ export default function SignupPage() {
             onChange={update("admin_data_nascimento")}
           />
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <p role="alert" className="alert alert-danger">
+              {error}
+            </p>
+          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading} className="btn w-full">
             {loading ? "Cadastrando..." : "Cadastrar escola"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="subtle mt-6 text-center">
           Já tem conta?{" "}
-          <Link href="/login" className="font-medium text-slate-900 underline">
+          <Link href="/login" className="font-medium text-brand-700 underline">
             Entrar
           </Link>
         </p>
@@ -144,14 +146,16 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
+      <label className="mb-1 block text-[0.8125rem] font-medium text-ink-700">
+        {label}
+      </label>
       <input
         type={type}
         required
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+        className="input"
       />
     </div>
   );

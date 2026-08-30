@@ -6,13 +6,13 @@ import type { MetadataRoute } from "next";
 // branding before launch.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ERP Escolar BR",
+    name: "Escolar BR — Gestão escolar",
     short_name: "Escolar BR",
     description: "Portal do responsável — parcelas, comunicados e comprovantes",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#f8fafc",
-    theme_color: "#0f172a",
+    background_color: "#ffffff",
+    theme_color: "#2440de",
     icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
   };
 }

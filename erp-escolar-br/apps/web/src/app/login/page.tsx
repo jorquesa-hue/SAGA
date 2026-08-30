@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { BRAND, Logo, LogoMark } from "@/components/brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,7 +25,11 @@ export default function LoginPage() {
     });
 
     if (signInError) {
-      setError(signInError.message);
+      setError(
+        signInError.message === "Invalid login credentials"
+          ? "E-mail ou senha incorretos."
+          : signInError.message,
+      );
       setLoading(false);
       return;
     }
@@ -34,63 +39,81 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-1 text-xl font-semibold text-slate-900">ERP Escolar BR</h1>
-        <p className="mb-6 text-sm text-slate-500">Entrar na sua conta</p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              className="mb-1 block text-sm font-medium text-slate-700"
-              htmlFor="email"
-            >
-              E-mail
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label
-              className="mb-1 block text-sm font-medium text-slate-700"
-              htmlFor="password"
-            >
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-            />
-          </div>
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-          >
-            {loading ? "Entrando..." : "Entrar"}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-500">
-          Sua escola ainda não tem conta?{" "}
-          <Link href="/signup" className="font-medium text-slate-900 underline">
-            Cadastre sua escola
-          </Link>
+    <div className="flex min-h-screen flex-col lg:flex-row">
+      {/* Brand panel — collapses to a slim header strip on mobile */}
+      <aside className="bg-brand-900 px-6 py-6 lg:flex lg:w-[42%] lg:flex-col lg:justify-between lg:px-12 lg:py-12">
+        <Logo size={34} inverted />
+        <div className="mt-8 hidden lg:mt-0 lg:block">
+          <h2 className="text-3xl leading-tight font-bold tracking-tight text-white">
+            A secretaria e o financeiro
+            <br />
+            da escola em um só lugar.
+          </h2>
+          <p className="mt-4 max-w-sm text-sm text-brand-200">
+            Matrículas, contratos, cobrança por unidade e CNPJ, comunicação com as
+            famílias e portal do responsável.
+          </p>
+        </div>
+        <p className="mt-8 hidden text-xs text-brand-300 lg:block">
+          {BRAND.full} · dados protegidos por isolamento entre escolas (LGPD)
         </p>
-      </div>
+      </aside>
+
+      {/* Form panel */}
+      <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+        <div className="w-full max-w-sm">
+          <div className="mb-6 lg:hidden">
+            <LogoMark size={40} />
+          </div>
+          <h1 className="h-page">Entrar</h1>
+          <p className="subtle mt-1 mb-6">Acesse com o e-mail cadastrado na escola.</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="field" htmlFor="email">
+              <span>E-mail</span>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input"
+              />
+            </label>
+            <label className="field" htmlFor="password">
+              <span>Senha</span>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+              />
+            </label>
+
+            {error && (
+              <p role="alert" className="alert alert-danger">
+                {error}
+              </p>
+            )}
+
+            <button type="submit" disabled={loading} className="btn w-full">
+              {loading ? "Entrando..." : "Entrar"}
+            </button>
+          </form>
+
+          <p className="subtle mt-6 text-center">
+            Sua escola ainda não tem conta?{" "}
+            <Link href="/signup" className="font-medium text-brand-700 underline">
+              Cadastre sua escola
+            </Link>
+          </p>
+        </div>
+      </main>
     </div>
   );
 }

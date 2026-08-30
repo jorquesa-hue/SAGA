@@ -70,20 +70,20 @@ export default async function PortalPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-lg font-semibold text-slate-900">Portal do responsável</h1>
+      <h1 className="h-page">Portal do responsável</h1>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">Parcelas</h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50">
+        <h2 className="h-section mb-2">Parcelas</h2>
+        <div className="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <th className="px-4 py-2 font-medium text-slate-600">Aluno</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Competência</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Vencimento</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Valor</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Status</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Pagamento</th>
+                <th>Aluno</th>
+                <th>Competência</th>
+                <th>Vencimento</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Pagamento</th>
               </tr>
             </thead>
             <tbody>
@@ -120,15 +120,15 @@ export default async function PortalPage() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">Comprovantes</h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50">
+        <h2 className="h-section mb-2">Comprovantes</h2>
+        <div className="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <th className="px-4 py-2 font-medium text-slate-600">Competência</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Data</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Meio</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Valor</th>
+                <th>Competência</th>
+                <th>Data</th>
+                <th>Meio</th>
+                <th>Valor</th>
               </tr>
             </thead>
             <tbody>
@@ -153,7 +153,7 @@ export default async function PortalPage() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">Consentimento LGPD</h2>
+        <h2 className="h-section mb-2">Consentimento LGPD</h2>
         <p className="mb-3 text-xs text-slate-400">
           Registro do consentimento para tratamento de dados pessoais do(s) seu(s)
           dependente(s), conforme a Lei Geral de Proteção de Dados.

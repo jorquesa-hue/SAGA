@@ -114,7 +114,7 @@ export default function RelatoriosPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-slate-900">Financeiro — Relatórios</h1>
+      <h1 className="h-page">Financeiro — Relatórios</h1>
       <p className="text-sm text-slate-500">
         Receita bruta/líquida, descontos, recebido e inadimplência por unidade (CNPJ) e
         competência. Também acessível via RPC{" "}
@@ -168,19 +168,19 @@ export default function RelatoriosPage() {
         <Stat label="Recebido" value={brl(String(totais.recebido))} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50">
+      <div className="table-wrap">
+        <table>
+          <thead>
             <tr>
-              <th className="px-4 py-2 font-medium text-slate-600">Unidade</th>
-              <th className="px-4 py-2 font-medium text-slate-600">CNPJ</th>
-              <th className="px-4 py-2 font-medium text-slate-600">Competência</th>
-              <th className="px-4 py-2 font-medium text-slate-600">Bruto</th>
-              <th className="px-4 py-2 font-medium text-slate-600">Desconto</th>
-              <th className="px-4 py-2 font-medium text-slate-600">Líquido</th>
-              <th className="px-4 py-2 font-medium text-slate-600">Recebido</th>
-              <th className="px-4 py-2 font-medium text-slate-600">Pendentes</th>
-              <th className="px-4 py-2 font-medium text-slate-600">Atrasadas</th>
+              <th>Unidade</th>
+              <th>CNPJ</th>
+              <th>Competência</th>
+              <th>Bruto</th>
+              <th>Desconto</th>
+              <th>Líquido</th>
+              <th>Recebido</th>
+              <th>Pendentes</th>
+              <th>Atrasadas</th>
             </tr>
           </thead>
           <tbody>
@@ -216,7 +216,7 @@ export default function RelatoriosPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <div className="card p-4">
       <p className="text-xs text-slate-500">{label}</p>
       <p className="mt-1 text-xl font-semibold text-slate-900">{value}</p>
     </div>

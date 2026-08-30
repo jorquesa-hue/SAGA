@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ERP Escolar BR",
-  description: "Fase 1 — Cobrança e Retenção",
+  title: { default: "Escolar BR", template: "%s · Escolar BR" },
+  description: "Gestão escolar — matrículas, cobrança e comunicação",
   manifest: "/manifest.webmanifest",
 };
 

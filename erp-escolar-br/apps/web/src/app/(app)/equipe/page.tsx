@@ -69,16 +69,13 @@ export default function EquipePage() {
 
   return (
     <div className="max-w-xl space-y-6">
-      <h1 className="text-lg font-semibold text-slate-900">Equipe — convidar usuário</h1>
+      <h1 className="h-page">Equipe — convidar usuário</h1>
       <p className="text-sm text-slate-500">
         Envia um e-mail de convite (via Supabase Auth) para a pessoa definir a própria
         senha.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
-      >
+      <form onSubmit={handleSubmit} className="card space-y-3 p-4">
         <div className="grid grid-cols-2 gap-3">
           <input name="nome" placeholder="Nome" required className="input" />
           <input

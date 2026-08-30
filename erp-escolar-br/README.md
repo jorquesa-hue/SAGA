@@ -69,10 +69,46 @@ This ran in one continuous session at the user's explicit instruction to
 own "stop after each milestone" default. Real cloud infrastructure was
 provisioned along the way (see below) — this is not a local-only exercise.
 
+## Segunda rodada de ajustes (feedback de uso)
+
+Cinco pontos levantados depois do primeiro teste com dados reais:
+
+- **Identidade visual ("Escolar BR")** — marca própria em
+  `src/components/brand.tsx` (mark SVG + wordmark) usada no login, no
+  cabeçalho, no favicon e no manifest PWA, com tokens de cor/tipografia
+  em `globals.css`. O tema escuro parcial foi removido: antes só trocava
+  fundo/texto do `body` enquanto todos os cards continuavam brancos
+  fixos, o que quebrava em aparelhos configurados no modo escuro.
+- **Hierarquia do menu e dos títulos** — cabeçalho reconstruído
+  (`app-nav.tsx`) com `<nav aria-label>`, estado ativo por rota
+  (`aria-current="page"`) e escala tipográfica explícita
+  (`.h-page`/`.h-section`/`.h-card`) no lugar de classes soltas.
+- **Responsivo de verdade** — menu hamburguer abaixo de `md`, toda
+  tabela dentro de `.table-wrap` (rolagem horizontal própria, em vez de
+  empurrar a página inteira), formulários em `grid` que empilham no
+  celular, e campos com `font-size: 16px` no mobile para o Safari do iOS
+  não dar zoom ao focar.
+- **Busca de aluno** (`/financeiro/alunos`, Migration `0020`) —
+  `fn_buscar_alunos(p_busca)` devolve, por aluno, parcelas abertas e
+  atrasadas, valor em aberto, competência mais antiga e próximo
+  vencimento. Usa `unaccent` (busca por "theo" acha "Théo" — o navegador
+  não tem como normalizar o lado _armazenado_ da comparação). Função sem
+  `security definer`, então herda RLS: o responsável só encontra os
+  próprios filhos.
+- **Ordem de quitação das parcelas** (Migration `0019`) — trigger
+  `trg_pagamentos_ordem` recusa pagamento de uma competência mais recente
+  enquanto existir parcela anterior em aberto no mesmo contrato. Está no
+  banco, e não só na tela, porque o app fala direto com o PostgREST: um
+  cliente com token válido poderia postar em `/rest/v1/pagamentos` e
+  passar por cima de qualquer validação de formulário. A tela reforça a
+  regra oferecendo apenas a parcela mais antiga em aberto e listando
+  quais ficam bloqueadas. Ver a nota na migração sobre o caminho de
+  reconciliação necessário quando o Asaas entrar.
+
 ## Real infrastructure this now runs against
 
 - **Supabase project**: `erp-escolar-br` (`xozhqzdniagwjlxoiarx`, `sa-east-1`),
-  org `jorquesa@icloud.com's Org`. 18 migrations applied. An existing
+  org `jorquesa@icloud.com's Org`. 20 migrations applied. An existing
   project in the same org (`Elara PMS`) was **paused** to free a slot under
   the org's 2-project free-tier cap — unpause it from the Supabase
   dashboard if you need it back.

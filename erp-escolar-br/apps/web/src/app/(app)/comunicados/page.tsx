@@ -55,15 +55,12 @@ export default function ComunicadosPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-slate-900">Comunicados</h1>
+      <h1 className="h-page">Comunicados</h1>
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {isStaff && (
-        <form
-          onSubmit={handleCreate}
-          className="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
-        >
-          <h3 className="text-sm font-medium text-slate-900">Novo comunicado</h3>
+        <form onSubmit={handleCreate} className="card space-y-3 p-4">
+          <h3 className="h-card">Novo comunicado</h3>
           <input name="titulo" placeholder="Título" required className="input w-full" />
           <textarea
             name="corpo"
@@ -86,7 +83,7 @@ export default function ComunicadosPage() {
 
       <div className="space-y-3">
         {comunicados.map((c) => (
-          <article key={c.id} className="rounded-lg border border-slate-200 bg-white p-4">
+          <article key={c.id} className="card p-4">
             <div className="mb-1 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-900">{c.titulo}</h3>
               <span className="text-xs text-slate-400">

@@ -45,6 +45,13 @@ interface Pagamento {
   notas_fiscais: { id: string; status: string; numero: string | null }[];
 }
 
+const ABERTA = ["pendente", "atrasado"];
+
+const brl = (v: string | number) =>
+  Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const mesAno = (d: string) => d.slice(0, 7).split("-").reverse().join("/");
+const dataBr = (d: string) => d.split("-").reverse().join("/");
+
 export default function FinanceiroPage() {
   const supabase = createClient();
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
@@ -111,6 +118,15 @@ export default function FinanceiroPage() {
     setPagamentos(pg.data ?? []);
   }
 
+  // Only the oldest open parcela may be settled — mirrors the database
+  // trigger (0019). Showing the whole list and letting the server reject
+  // the choice would be a worse experience than not offering it.
+  const abertas = parcelas
+    .filter((p) => ABERTA.includes(p.status))
+    .sort((a, b) => a.competencia.localeCompare(b.competencia));
+  const proximaPagavel = abertas[0] ?? null;
+  const bloqueadas = abertas.slice(1);
+
   async function handleCreateDesconto(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selectedContrato) return;
@@ -134,13 +150,14 @@ export default function FinanceiroPage() {
 
   async function handleRegistrarPagamento(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!selectedContrato) return;
+    if (!selectedContrato || !proximaPagavel) return;
     setError(null);
+    setInfo(null);
     const fd = new FormData(e.currentTarget);
-    const parcelaId = fd.get("parcela_id") as string;
+    const form = e.currentTarget;
 
     const { error: pagamentoError } = await supabase.from("pagamentos").insert({
-      parcela_id: parcelaId,
+      parcela_id: proximaPagavel.id,
       valor: Number(fd.get("valor")),
       data: fd.get("data"),
       meio: fd.get("meio"),
@@ -153,10 +170,13 @@ export default function FinanceiroPage() {
     const { error: parcelaError } = await supabase
       .from("parcelas")
       .update({ status: "pago" })
-      .eq("id", parcelaId);
+      .eq("id", proximaPagavel.id);
     if (parcelaError) setError(parcelaError.message);
     else {
-      e.currentTarget.reset();
+      form.reset();
+      setInfo(
+        `Pagamento da competência ${mesAno(proximaPagavel.competencia)} registrado.`,
+      );
       loadParcelas(selectedContrato);
     }
   }
@@ -164,11 +184,6 @@ export default function FinanceiroPage() {
   async function handleEmitirNota(pagamentoId: string) {
     if (!selectedContrato) return;
     setError(null);
-    // emitir-nota-fiscal resolves the pagamento's unidade (and therefore
-    // which CNPJ it bills under) and calls whatever eNF provider is
-    // configured (NFE_PROVIDER_API_URL) — falls back to a `pendente`
-    // bookkeeping row when none is configured, same end result as before,
-    // but now through the integration point instead of a raw insert.
     const { data, error: fnError } = await supabase.functions.invoke(
       "emitir-nota-fiscal",
       { body: { pagamento_id: pagamentoId } },
@@ -182,6 +197,7 @@ export default function FinanceiroPage() {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
     const { error } = await supabase.from("contratos").insert({
       matricula_id: fd.get("matricula_id"),
       valor_anuidade: Number(fd.get("valor_anuidade")),
@@ -190,7 +206,7 @@ export default function FinanceiroPage() {
     });
     if (error) setError(error.message);
     else {
-      e.currentTarget.reset();
+      form.reset();
       loadContratos();
     }
   }
@@ -218,332 +234,408 @@ export default function FinanceiroPage() {
     }
   }
 
-  const brl = (v: string) =>
-    Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">
-          Financeiro — Contratos e parcelas
-        </h1>
-        <Link href="/financeiro/relatorios" className="text-sm underline">
-          Ver relatórios financeiros
-        </Link>
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {info && <p className="text-sm text-green-700">{info}</p>}
-
-      <form
-        onSubmit={handleCreateContrato}
-        className="rounded-lg border border-slate-200 bg-white p-4"
-      >
-        <h3 className="mb-2 text-sm font-medium text-slate-900">Novo contrato</h3>
-        <div className="flex flex-wrap gap-2">
-          <select name="matricula_id" required className="input">
-            <option value="">Matrícula (aluno)</option>
-            {matriculas.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.alunos?.pessoas?.nome}
-              </option>
-            ))}
-          </select>
-          <input
-            name="valor_anuidade"
-            type="number"
-            step="0.01"
-            placeholder="Valor anuidade"
-            required
-            className="input w-36"
-          />
-          <input
-            name="num_parcelas"
-            type="number"
-            min={1}
-            max={12}
-            placeholder="Nº parcelas"
-            required
-            className="input w-28"
-          />
-          <input
-            name="vencimento_dia"
-            type="number"
-            min={1}
-            max={28}
-            placeholder="Dia vencimento"
-            required
-            className="input w-32"
-          />
-          <button className="btn">Criar</button>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="h-page">Financeiro</h1>
+          <p className="subtle mt-1">Contratos, parcelas, descontos e pagamentos.</p>
         </div>
-      </form>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/financeiro/alunos" className="btn btn-secondary">
+            Buscar aluno
+          </Link>
+          <Link href="/financeiro/relatorios" className="btn btn-secondary">
+            Relatórios
+          </Link>
+        </div>
+      </div>
 
-      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50">
-          <tr>
-            <th className="px-4 py-2 font-medium text-slate-600">Aluno</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Unidade (CNPJ)</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Anuidade</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Parcelas</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Assinado</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {contratos.map((c) => (
-            <tr key={c.id} className="border-b border-slate-100 last:border-0">
-              <td className="px-4 py-2">{c.matriculas?.alunos?.pessoas?.nome}</td>
-              <td className="px-4 py-2 text-xs text-slate-500">
-                {c.matriculas?.turmas?.unidades?.nome} (
-                {c.matriculas?.turmas?.unidades?.cnpj})
-              </td>
-              <td className="px-4 py-2">{brl(c.valor_anuidade)}</td>
-              <td className="px-4 py-2">{c.num_parcelas}x</td>
-              <td className="px-4 py-2">
-                {c.assinado_em
-                  ? new Date(c.assinado_em).toLocaleDateString("pt-BR")
-                  : "—"}
-              </td>
-              <td className="flex gap-2 px-4 py-2">
-                {!c.assinado_em && (
-                  <button
-                    onClick={() => handleAssinar(c.id)}
-                    className="text-xs underline"
-                  >
-                    Assinar
-                  </button>
-                )}
-                {c.assinado_em && (
-                  <button
-                    onClick={() => handleGerarParcelas(c.id)}
-                    className="text-xs underline"
-                  >
-                    Gerar parcelas
-                  </button>
-                )}
-                <button onClick={() => loadParcelas(c.id)} className="text-xs underline">
-                  Ver parcelas
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {selectedContrato && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">Parcelas</h2>
-          <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-4 py-2 font-medium text-slate-600">Competência</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Vencimento</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Bruto</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Desconto</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Líquido</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {parcelas.map((p) => (
-                <tr key={p.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-2">{p.competencia}</td>
-                  <td className="px-4 py-2">{p.vencimento}</td>
-                  <td className="px-4 py-2">{brl(p.valor_bruto)}</td>
-                  <td className="px-4 py-2">{brl(p.valor_desconto)}</td>
-                  <td className="px-4 py-2">{brl(p.valor_liquido)}</td>
-                  <td className="px-4 py-2">{p.status}</td>
-                </tr>
-              ))}
-              {parcelas.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
-                    Nenhuma parcela gerada ainda.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </section>
+      {error && (
+        <p role="alert" className="alert alert-danger">
+          {error}
+        </p>
       )}
+      {info && <p className="alert alert-ok">{info}</p>}
 
-      {selectedContrato && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">Descontos</h2>
-          <form
-            onSubmit={handleCreateDesconto}
-            className="mb-3 rounded-lg border border-slate-200 bg-white p-4"
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <select name="tipo" required className="input">
-                <option value="bolsa">Bolsa</option>
-                <option value="irmao">Irmão</option>
-                <option value="pontualidade">Pontualidade</option>
-                <option value="convenio">Convênio</option>
-              </select>
-              <input
-                name="percentual"
-                type="number"
-                step="0.01"
-                min={0}
-                max={100}
-                placeholder="% (ou preencha valor)"
-                className="input w-44"
-              />
-              <input
-                name="valor"
-                type="number"
-                step="0.01"
-                min={0}
-                placeholder="Valor fixo (ou preencha %)"
-                className="input w-44"
-              />
-              <label className="text-xs text-slate-500">
-                Vigência
-                <input
-                  name="vigencia_inicio"
-                  type="date"
-                  required
-                  className="input ml-1"
-                />
-              </label>
-              <span className="text-xs text-slate-400">até</span>
-              <input name="vigencia_fim" type="date" required className="input" />
-              <button className="btn">Adicionar</button>
-            </div>
-          </form>
-          <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-4 py-2 font-medium text-slate-600">Tipo</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Percentual</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Valor fixo</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Vigência</th>
-              </tr>
-            </thead>
-            <tbody>
-              {descontos.map((d) => (
-                <tr key={d.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-2">{d.tipo}</td>
-                  <td className="px-4 py-2">{d.percentual ? `${d.percentual}%` : "—"}</td>
-                  <td className="px-4 py-2">{d.valor ? brl(d.valor) : "—"}</td>
-                  <td className="px-4 py-2">{d.vigencia}</td>
-                </tr>
+      <section className="card p-4">
+        <h2 className="h-section mb-3">Novo contrato</h2>
+        <form onSubmit={handleCreateContrato} className="grid gap-3 sm:grid-cols-2">
+          <label className="field sm:col-span-2">
+            <span>Matrícula (aluno)</span>
+            <select name="matricula_id" required className="input">
+              <option value="">Selecione</option>
+              {matriculas.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.alunos?.pessoas?.nome}
+                </option>
               ))}
-              {descontos.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-slate-500">
-                    Nenhum desconto cadastrado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <p className="mt-2 text-xs text-slate-400">
-            &quot;Gerar parcelas&quot; aplica os descontos vigentes na data de cada
-            parcela — cadastre o desconto antes de gerar, ou regenere as parcelas depois
-            (fn_gerar_parcelas é reexecutável).
-          </p>
-        </section>
-      )}
+            </select>
+          </label>
+          <label className="field">
+            <span>Valor da anuidade</span>
+            <input
+              name="valor_anuidade"
+              type="number"
+              step="0.01"
+              inputMode="decimal"
+              required
+              className="input"
+            />
+          </label>
+          <label className="field">
+            <span>Nº de parcelas</span>
+            <input
+              name="num_parcelas"
+              type="number"
+              min={1}
+              max={12}
+              inputMode="numeric"
+              required
+              className="input"
+            />
+          </label>
+          <label className="field">
+            <span>Dia de vencimento</span>
+            <input
+              name="vencimento_dia"
+              type="number"
+              min={1}
+              max={28}
+              inputMode="numeric"
+              required
+              className="input"
+            />
+          </label>
+          <div className="flex items-end">
+            <button className="btn w-full sm:w-auto">Criar contrato</button>
+          </div>
+        </form>
+      </section>
 
-      {selectedContrato && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">
-            Pagamentos e notas fiscais
-          </h2>
-          <form
-            onSubmit={handleRegistrarPagamento}
-            className="mb-3 rounded-lg border border-slate-200 bg-white p-4"
-          >
-            <h3 className="mb-2 text-sm font-medium text-slate-900">
-              Registrar pagamento (baixa manual)
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <select name="parcela_id" required className="input">
-                <option value="">Parcela</option>
-                {parcelas
-                  .filter((p) => p.status !== "pago" && p.status !== "cancelado")
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.competencia} — {brl(p.valor_liquido)}
-                    </option>
-                  ))}
-              </select>
-              <input
-                name="valor"
-                type="number"
-                step="0.01"
-                placeholder="Valor pago"
-                required
-                className="input w-36"
-              />
-              <input name="data" type="date" required className="input" />
-              <select name="meio" required className="input">
-                <option value="boleto">Boleto</option>
-                <option value="pix">Pix</option>
-                <option value="cartao">Cartão</option>
-                <option value="dinheiro">Dinheiro</option>
-                <option value="transferencia">Transferência</option>
-              </select>
-              <button className="btn">Registrar</button>
-            </div>
-            <p className="mt-2 text-xs text-slate-400">
-              Para pagamentos via Asaas (boleto/Pix online), o webhook registra isso
-              automaticamente — use este formulário só para pagamentos recebidos fora do
-              Asaas (dinheiro, transferência, etc).
-            </p>
-          </form>
-
-          <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50">
+      <section>
+        <h2 className="h-section mb-2">Contratos</h2>
+        <div className="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <th className="px-4 py-2 font-medium text-slate-600">Data</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Meio</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Valor</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Nota fiscal</th>
-                <th className="px-4 py-2 font-medium text-slate-600">Ações</th>
+                <th>Aluno</th>
+                <th>Unidade (CNPJ)</th>
+                <th>Anuidade</th>
+                <th>Parcelas</th>
+                <th>Assinado</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {pagamentos.map((pg) => (
-                <tr key={pg.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-2">{pg.data}</td>
-                  <td className="px-4 py-2">{pg.meio}</td>
-                  <td className="px-4 py-2">{brl(pg.valor)}</td>
-                  <td className="px-4 py-2">
-                    {pg.notas_fiscais[0]
-                      ? `${pg.notas_fiscais[0].status}${pg.notas_fiscais[0].numero ? ` (${pg.notas_fiscais[0].numero})` : ""}`
-                      : "—"}
+              {contratos.map((c) => (
+                <tr key={c.id}>
+                  <td className="font-medium">{c.matriculas?.alunos?.pessoas?.nome}</td>
+                  <td className="text-xs text-ink-500">
+                    {c.matriculas?.turmas?.unidades?.nome}
+                    {c.matriculas?.turmas?.unidades?.cnpj
+                      ? ` (${c.matriculas.turmas.unidades.cnpj})`
+                      : ""}
                   </td>
-                  <td className="px-4 py-2">
-                    {!pg.notas_fiscais[0] && (
-                      <button
-                        onClick={() => handleEmitirNota(pg.id)}
-                        className="text-xs underline"
-                      >
-                        Emitir NF
-                      </button>
+                  <td>{brl(c.valor_anuidade)}</td>
+                  <td>{c.num_parcelas}x</td>
+                  <td>
+                    {c.assinado_em ? (
+                      new Date(c.assinado_em).toLocaleDateString("pt-BR")
+                    ) : (
+                      <span className="badge badge-neutral">Não assinado</span>
                     )}
                   </td>
+                  <td>
+                    <span className="flex flex-wrap gap-2">
+                      {!c.assinado_em && (
+                        <button onClick={() => handleAssinar(c.id)} className="btn-link">
+                          Assinar
+                        </button>
+                      )}
+                      {c.assinado_em && (
+                        <button
+                          onClick={() => handleGerarParcelas(c.id)}
+                          className="btn-link"
+                        >
+                          Gerar parcelas
+                        </button>
+                      )}
+                      <button onClick={() => loadParcelas(c.id)} className="btn-link">
+                        Ver parcelas
+                      </button>
+                    </span>
+                  </td>
                 </tr>
               ))}
-              {pagamentos.length === 0 && (
+              {contratos.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
-                    Nenhum pagamento registrado.
+                  <td colSpan={6} className="py-6 text-center text-ink-500">
+                    Nenhum contrato cadastrado.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-          <p className="mt-2 text-xs text-slate-400">
-            &quot;Emitir NF&quot; apenas registra a nota como pendente — não há integração
-            real com uma prefeitura/emissor de NFS-e nesta sessão (ver
-            erp-escolar-br/README.md).
-          </p>
-        </section>
+        </div>
+      </section>
+
+      {selectedContrato && (
+        <>
+          <section>
+            <h2 className="h-section mb-2">Parcelas</h2>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Competência</th>
+                    <th>Vencimento</th>
+                    <th>Bruto</th>
+                    <th>Desconto</th>
+                    <th>Líquido</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parcelas.map((p) => (
+                    <tr key={p.id}>
+                      <td className="font-medium">{mesAno(p.competencia)}</td>
+                      <td>{dataBr(p.vencimento)}</td>
+                      <td>{brl(p.valor_bruto)}</td>
+                      <td>{brl(p.valor_desconto)}</td>
+                      <td>{brl(p.valor_liquido)}</td>
+                      <td>
+                        <StatusBadge status={p.status} />
+                      </td>
+                    </tr>
+                  ))}
+                  {parcelas.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-6 text-center text-ink-500">
+                        Nenhuma parcela gerada ainda.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="card p-4">
+            <h2 className="h-section mb-3">Descontos</h2>
+            <form onSubmit={handleCreateDesconto} className="grid gap-3 sm:grid-cols-2">
+              <label className="field">
+                <span>Tipo</span>
+                <select name="tipo" required className="input">
+                  <option value="bolsa">Bolsa</option>
+                  <option value="irmao">Irmão</option>
+                  <option value="pontualidade">Pontualidade</option>
+                  <option value="convenio">Convênio</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Percentual (%)</span>
+                <input
+                  name="percentual"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  max={100}
+                  inputMode="decimal"
+                  className="input"
+                />
+              </label>
+              <label className="field">
+                <span>Ou valor fixo (R$)</span>
+                <input
+                  name="valor"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  inputMode="decimal"
+                  className="input"
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="field">
+                  <span>Vigência de</span>
+                  <input name="vigencia_inicio" type="date" required className="input" />
+                </label>
+                <label className="field">
+                  <span>até</span>
+                  <input name="vigencia_fim" type="date" required className="input" />
+                </label>
+              </div>
+              <div className="sm:col-span-2">
+                <button className="btn w-full sm:w-auto">Adicionar desconto</button>
+              </div>
+            </form>
+
+            <div className="table-wrap mt-4">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Percentual</th>
+                    <th>Valor fixo</th>
+                    <th>Vigência</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {descontos.map((d) => (
+                    <tr key={d.id}>
+                      <td className="capitalize">{d.tipo}</td>
+                      <td>{d.percentual ? `${d.percentual}%` : "—"}</td>
+                      <td>{d.valor ? brl(d.valor) : "—"}</td>
+                      <td className="text-xs">{d.vigencia}</td>
+                    </tr>
+                  ))}
+                  {descontos.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-ink-500">
+                        Nenhum desconto cadastrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <p className="subtle mt-2">
+              &quot;Gerar parcelas&quot; aplica os descontos vigentes na data de
+              assinatura — cadastre o desconto antes de gerar.
+            </p>
+          </section>
+
+          <section className="card p-4">
+            <h2 className="h-section mb-1">Pagamentos e notas fiscais</h2>
+            <p className="subtle mb-3">
+              As parcelas são quitadas da mais antiga para a mais recente.
+            </p>
+
+            {proximaPagavel ? (
+              <form
+                onSubmit={handleRegistrarPagamento}
+                className="grid gap-3 rounded-lg bg-ink-50 p-3 sm:grid-cols-2"
+              >
+                <p className="text-sm sm:col-span-2">
+                  Próxima parcela a quitar:{" "}
+                  <strong>{mesAno(proximaPagavel.competencia)}</strong> · vence{" "}
+                  {dataBr(proximaPagavel.vencimento)} ·{" "}
+                  <strong>{brl(proximaPagavel.valor_liquido)}</strong>
+                </p>
+                <label className="field">
+                  <span>Valor pago</span>
+                  <input
+                    name="valor"
+                    type="number"
+                    step="0.01"
+                    inputMode="decimal"
+                    defaultValue={proximaPagavel.valor_liquido}
+                    required
+                    className="input"
+                  />
+                </label>
+                <label className="field">
+                  <span>Data do pagamento</span>
+                  <input name="data" type="date" required className="input" />
+                </label>
+                <label className="field">
+                  <span>Meio</span>
+                  <select name="meio" required className="input">
+                    <option value="boleto">Boleto</option>
+                    <option value="pix">Pix</option>
+                    <option value="cartao">Cartão</option>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="transferencia">Transferência</option>
+                  </select>
+                </label>
+                <div className="flex items-end">
+                  <button className="btn w-full sm:w-auto">Registrar pagamento</button>
+                </div>
+                {bloqueadas.length > 0 && (
+                  <p className="alert alert-warn sm:col-span-2">
+                    {bloqueadas.length} parcela{bloqueadas.length > 1 ? "s" : ""} mais
+                    recente{bloqueadas.length > 1 ? "s" : ""} (
+                    {bloqueadas.map((p) => mesAno(p.competencia)).join(", ")}) só poderá
+                    {bloqueadas.length > 1 ? "ão" : ""} ser quitada
+                    {bloqueadas.length > 1 ? "s" : ""} depois desta.
+                  </p>
+                )}
+              </form>
+            ) : (
+              <p className="alert alert-ok">Não há parcelas em aberto neste contrato.</p>
+            )}
+
+            <div className="table-wrap mt-4">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Meio</th>
+                    <th>Valor</th>
+                    <th>Nota fiscal</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagamentos.map((pg) => (
+                    <tr key={pg.id}>
+                      <td>{dataBr(pg.data)}</td>
+                      <td className="capitalize">{pg.meio}</td>
+                      <td>{brl(pg.valor)}</td>
+                      <td>
+                        {pg.notas_fiscais[0] ? (
+                          <span className="badge badge-ok">
+                            {pg.notas_fiscais[0].status}
+                            {pg.notas_fiscais[0].numero
+                              ? ` nº ${pg.notas_fiscais[0].numero}`
+                              : ""}
+                          </span>
+                        ) : (
+                          <span className="badge badge-neutral">sem NF</span>
+                        )}
+                      </td>
+                      <td>
+                        {!pg.notas_fiscais[0] && (
+                          <button
+                            onClick={() => handleEmitirNota(pg.id)}
+                            className="btn-link"
+                          >
+                            Emitir NF
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {pagamentos.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-6 text-center text-ink-500">
+                        Nenhum pagamento registrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <p className="subtle mt-2">
+              Sem provedor de eNF configurado, &quot;Emitir NF&quot; registra a nota como
+              pendente — ver erp-escolar-br/README.md.
+            </p>
+          </section>
+        </>
       )}
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const cls =
+    status === "pago"
+      ? "badge-ok"
+      : status === "atrasado"
+        ? "badge-danger"
+        : status === "pendente"
+          ? "badge-warn"
+          : "badge-neutral";
+  return <span className={`badge ${cls} capitalize`}>{status}</span>;
 }

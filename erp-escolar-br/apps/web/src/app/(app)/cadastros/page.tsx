@@ -11,7 +11,7 @@ export default function CadastrosPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold text-slate-900">Cadastros</h1>
+      <h1 className="h-page mb-4">Cadastros</h1>
       <div className="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
         {(
           [
@@ -149,11 +149,8 @@ function TurmasTab() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <form
-          onSubmit={handleCreateAnoLetivo}
-          className="rounded-lg border border-slate-200 bg-white p-4"
-        >
-          <h3 className="mb-2 text-sm font-medium text-slate-900">Novo ano letivo</h3>
+        <form onSubmit={handleCreateAnoLetivo} className="card p-4">
+          <h3 className="h-card mb-2">Novo ano letivo</h3>
           <div className="flex flex-wrap gap-2">
             <input
               name="ano"
@@ -168,11 +165,8 @@ function TurmasTab() {
           </div>
         </form>
 
-        <form
-          onSubmit={handleCreateCurso}
-          className="rounded-lg border border-slate-200 bg-white p-4"
-        >
-          <h3 className="mb-2 text-sm font-medium text-slate-900">Novo curso</h3>
+        <form onSubmit={handleCreateCurso} className="card p-4">
+          <h3 className="h-card mb-2">Novo curso</h3>
           <div className="flex flex-wrap gap-2">
             <input name="nome" placeholder="Nome" required className="input" />
             <select name="etapa_ensino" required className="input">
@@ -186,11 +180,8 @@ function TurmasTab() {
         </form>
       </div>
 
-      <form
-        onSubmit={handleCreateTurma}
-        className="rounded-lg border border-slate-200 bg-white p-4"
-      >
-        <h3 className="mb-2 text-sm font-medium text-slate-900">Nova turma</h3>
+      <form onSubmit={handleCreateTurma} className="card p-4">
+        <h3 className="h-card mb-2">Nova turma</h3>
         <div className="flex flex-wrap gap-2">
           <input name="nome" placeholder="Nome" required className="input" />
           <select name="turno" required className="input">
@@ -240,26 +231,28 @@ function TurmasTab() {
         )}
       </form>
 
-      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50">
-          <tr>
-            <th className="px-4 py-2 font-medium text-slate-600">Turma</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Turno</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Capacidade</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Unidade</th>
-          </tr>
-        </thead>
-        <tbody>
-          {turmas.map((t) => (
-            <tr key={t.id} className="border-b border-slate-100 last:border-0">
-              <td className="px-4 py-2">{t.nome}</td>
-              <td className="px-4 py-2">{t.turno}</td>
-              <td className="px-4 py-2">{t.capacidade}</td>
-              <td className="px-4 py-2">{t.unidades?.nome}</td>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Turma</th>
+              <th>Turno</th>
+              <th>Capacidade</th>
+              <th>Unidade</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {turmas.map((t) => (
+              <tr key={t.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-4 py-2">{t.nome}</td>
+                <td className="px-4 py-2">{t.turno}</td>
+                <td className="px-4 py-2">{t.capacidade}</td>
+                <td className="px-4 py-2">{t.unidades?.nome}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -296,24 +289,26 @@ function PessoasTab() {
         , que envia um convite por e-mail. Esta lista mostra todas as pessoas já
         cadastradas na escola.
       </p>
-      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50">
-          <tr>
-            <th className="px-4 py-2 font-medium text-slate-600">Nome</th>
-            <th className="px-4 py-2 font-medium text-slate-600">CPF</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Papéis</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pessoas.map((p) => (
-            <tr key={p.id} className="border-b border-slate-100 last:border-0">
-              <td className="px-4 py-2">{p.nome}</td>
-              <td className="px-4 py-2">{p.cpf ?? "—"}</td>
-              <td className="px-4 py-2">{p.papeis.join(", ")}</td>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>CPF</th>
+              <th>Papéis</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {pessoas.map((p) => (
+              <tr key={p.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-4 py-2">{p.nome}</td>
+                <td className="px-4 py-2">{p.cpf ?? "—"}</td>
+                <td className="px-4 py-2">{p.papeis.join(", ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -388,11 +383,8 @@ function AlunosTab() {
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <form
-        onSubmit={handleCreate}
-        className="rounded-lg border border-slate-200 bg-white p-4"
-      >
-        <h3 className="mb-2 text-sm font-medium text-slate-900">Novo aluno</h3>
+      <form onSubmit={handleCreate} className="card p-4">
+        <h3 className="h-card mb-2">Novo aluno</h3>
         <div className="flex flex-wrap gap-2">
           <input name="nome" placeholder="Nome" required className="input" />
           <input name="data_nascimento" type="date" required className="input" />
@@ -407,24 +399,26 @@ function AlunosTab() {
         </div>
       </form>
 
-      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50">
-          <tr>
-            <th className="px-4 py-2 font-medium text-slate-600">Nome</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Matrícula</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {alunos.map((a) => (
-            <tr key={a.id} className="border-b border-slate-100 last:border-0">
-              <td className="px-4 py-2">{a.pessoas?.nome}</td>
-              <td className="px-4 py-2">{a.matricula_codigo}</td>
-              <td className="px-4 py-2">{a.status}</td>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Matrícula</th>
+              <th>Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {alunos.map((a) => (
+              <tr key={a.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-4 py-2">{a.pessoas?.nome}</td>
+                <td className="px-4 py-2">{a.matricula_codigo}</td>
+                <td className="px-4 py-2">{a.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -503,11 +497,8 @@ function MatriculasTab() {
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <form
-        onSubmit={handleCreate}
-        className="rounded-lg border border-slate-200 bg-white p-4"
-      >
-        <h3 className="mb-2 text-sm font-medium text-slate-900">Nova matrícula</h3>
+      <form onSubmit={handleCreate} className="card p-4">
+        <h3 className="h-card mb-2">Nova matrícula</h3>
         <div className="flex flex-wrap gap-2">
           <select name="aluno_id" required className="input">
             <option value="">Aluno</option>
@@ -530,24 +521,26 @@ function MatriculasTab() {
         </div>
       </form>
 
-      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50">
-          <tr>
-            <th className="px-4 py-2 font-medium text-slate-600">Aluno</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Turma</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {matriculas.map((m) => (
-            <tr key={m.id} className="border-b border-slate-100 last:border-0">
-              <td className="px-4 py-2">{m.alunos?.pessoas?.nome}</td>
-              <td className="px-4 py-2">{m.turmas?.nome}</td>
-              <td className="px-4 py-2">{m.status}</td>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Aluno</th>
+              <th>Turma</th>
+              <th>Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {matriculas.map((m) => (
+              <tr key={m.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-4 py-2">{m.alunos?.pessoas?.nome}</td>
+                <td className="px-4 py-2">{m.turmas?.nome}</td>
+                <td className="px-4 py-2">{m.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -614,13 +607,8 @@ function UnidadesTab() {
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <form
-        onSubmit={handleCreate}
-        className="rounded-lg border border-slate-200 bg-white p-4"
-      >
-        <h3 className="mb-2 text-sm font-medium text-slate-900">
-          Nova unidade (CNPJ próprio)
-        </h3>
+      <form onSubmit={handleCreate} className="card p-4">
+        <h3 className="h-card mb-2">Nova unidade (CNPJ próprio)</h3>
         <div className="flex flex-wrap gap-2">
           <input
             name="nome"
@@ -671,28 +659,30 @@ function UnidadesTab() {
         </p>
       </form>
 
-      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50">
-          <tr>
-            <th className="px-4 py-2 font-medium text-slate-600">Nome</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Razão social</th>
-            <th className="px-4 py-2 font-medium text-slate-600">CNPJ</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Cidade</th>
-            <th className="px-4 py-2 font-medium text-slate-600">UF</th>
-          </tr>
-        </thead>
-        <tbody>
-          {unidades.map((u) => (
-            <tr key={u.id} className="border-b border-slate-100 last:border-0">
-              <td className="px-4 py-2">{u.nome}</td>
-              <td className="px-4 py-2">{u.razao_social}</td>
-              <td className="px-4 py-2">{u.cnpj}</td>
-              <td className="px-4 py-2">{u.endereco?.cidade}</td>
-              <td className="px-4 py-2">{u.endereco?.uf}</td>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Razão social</th>
+              <th>CNPJ</th>
+              <th>Cidade</th>
+              <th>UF</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {unidades.map((u) => (
+              <tr key={u.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-4 py-2">{u.nome}</td>
+                <td className="px-4 py-2">{u.razao_social}</td>
+                <td className="px-4 py-2">{u.cnpj}</td>
+                <td className="px-4 py-2">{u.endereco?.cidade}</td>
+                <td className="px-4 py-2">{u.endereco?.uf}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -755,13 +745,8 @@ function ProfessoresTurmasTab() {
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <form
-        onSubmit={handleCreate}
-        className="rounded-lg border border-slate-200 bg-white p-4"
-      >
-        <h3 className="mb-2 text-sm font-medium text-slate-900">
-          Atribuir professor a turma
-        </h3>
+      <form onSubmit={handleCreate} className="card p-4">
+        <h3 className="h-card mb-2">Atribuir professor a turma</h3>
         <div className="flex flex-wrap gap-2">
           <select name="professor_pessoa_id" required className="input">
             <option value="">Professor</option>
@@ -789,22 +774,24 @@ function ProfessoresTurmasTab() {
         )}
       </form>
 
-      <table className="w-full rounded-lg border border-slate-200 bg-white text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50">
-          <tr>
-            <th className="px-4 py-2 font-medium text-slate-600">Professor</th>
-            <th className="px-4 py-2 font-medium text-slate-600">Turma</th>
-          </tr>
-        </thead>
-        <tbody>
-          {vinculos.map((v) => (
-            <tr key={v.id} className="border-b border-slate-100 last:border-0">
-              <td className="px-4 py-2">{v.pessoas?.nome}</td>
-              <td className="px-4 py-2">{v.turmas?.nome}</td>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Professor</th>
+              <th>Turma</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {vinculos.map((v) => (
+              <tr key={v.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-4 py-2">{v.pessoas?.nome}</td>
+                <td className="px-4 py-2">{v.turmas?.nome}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
