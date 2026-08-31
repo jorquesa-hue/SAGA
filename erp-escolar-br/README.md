@@ -105,6 +105,45 @@ Cinco pontos levantados depois do primeiro teste com dados reais:
   quais ficam bloqueadas. Ver a nota na migração sobre o caminho de
   reconciliação necessário quando o Asaas entrar.
 
+## Terceira rodada: menu como ciclo de vida do aluno
+
+O menu listava módulos do sistema (Painel, Buscar aluno, Financeiro,
+Cadastros, Equipe), e "Cadastros" era uma gaveta com seis abas que
+misturavam o registro do próprio aluno com a estrutura da escola. Não
+havia ordem que correspondesse ao que a secretaria faz de fato.
+
+Passou a seguir o aluno pela escola, na ordem em que as coisas acontecem
+— mesma ideia do menu do SAGA (`apps/web/src/components/Layout.tsx`), que
+percorre a vida do animal na propriedade (animals → weighing →
+treatments → reproduction → lots → pasture) antes de chegar às telas
+administrativas:
+
+    Painel · Alunos · Matrículas · Financeiro · Comunicados ·
+    Relatórios · Escola · Equipe
+
+O aluno existe (**Alunos**), entra numa turma (**Matrículas**), gera
+cobrança (**Financeiro**), é comunicado (**Comunicados**) e é medido
+(**Relatórios**). **Escola** e **Equipe** ficam no fim: são o que a
+escola configura uma vez, não etapas do dia a dia.
+
+As seis abas viraram destinos com endereço próprio. Os painéis em si não
+mudaram — foram extraídos para `src/features/cadastros.tsx` e
+recompostos:
+
+| Rota          | Conteúdo                                       |
+| ------------- | ---------------------------------------------- |
+| `/alunos`     | busca (`fn_buscar_alunos`) + cadastro do aluno |
+| `/matriculas` | vínculo aluno → turma                          |
+| `/escola`     | turmas e unidades (CNPJ)                       |
+| `/equipe`     | convite + professores × turmas + pessoas       |
+
+`/cadastros` e `/financeiro/alunos` permanecem como redirects para
+`/alunos`, para não quebrar links já compartilhados.
+
+O estado ativo do menu usa o prefixo mais longo entre os itens: com
+`/financeiro` e `/financeiro/relatorios` os dois no menu, um `startsWith`
+simples acendia dois itens ao mesmo tempo na rota aninhada.
+
 ## Real infrastructure this now runs against
 
 - **Supabase project**: `erp-escolar-br` (`xozhqzdniagwjlxoiarx`, `sa-east-1`),
