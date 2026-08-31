@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { PessoasTab, ProfessoresTurmasTab } from "@/features/cadastros";
 
 interface Aluno {
   id: string;
@@ -149,6 +150,20 @@ export default function EquipePage() {
           {loading ? "Enviando..." : "Enviar convite"}
         </button>
       </form>
+
+      <section className="mt-8 border-t border-ink-200 pt-6">
+        <h2 className="h-section mb-1">Professores × Turmas</h2>
+        <p className="subtle mb-4">
+          Um professor só enxerga uma turma no próprio painel depois de ser vinculado a
+          ela aqui.
+        </p>
+        <ProfessoresTurmasTab />
+      </section>
+
+      <section className="mt-8 border-t border-ink-200 pt-6">
+        <h2 className="h-section mb-1">Pessoas da escola</h2>
+        <PessoasTab />
+      </section>
     </div>
   );
 }

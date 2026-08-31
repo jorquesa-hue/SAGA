@@ -242,7 +242,7 @@ export default function FinanceiroPage() {
           <p className="subtle mt-1">Contratos, parcelas, descontos e pagamentos.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/financeiro/alunos" className="btn btn-secondary">
+          <Link href="/alunos" className="btn btn-secondary">
             Buscar aluno
           </Link>
           <Link href="/financeiro/relatorios" className="btn btn-secondary">

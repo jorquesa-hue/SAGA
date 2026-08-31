@@ -23,8 +23,15 @@ export default function AppNav({
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  const isActive = (href: string) =>
-    pathname === href || (href !== "/dashboard" && pathname.startsWith(href + "/"));
+  // Both /financeiro and /financeiro/relatorios are menu entries, so a plain
+  // startsWith would light up two items at once on the nested route. Only the
+  // longest matching entry wins.
+  const matches = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const activeHref = items
+    .map((it) => it.href)
+    .filter(matches)
+    .sort((a, b) => b.length - a.length)[0];
+  const isActive = (href: string) => href === activeHref;
 
   return (
     <header className="sticky top-0 z-30 border-b border-ink-200 bg-white">
