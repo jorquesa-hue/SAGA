@@ -62,6 +62,7 @@ export default function FinanceiroPage() {
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [editingPagamentoId, setEditingPagamentoId] = useState<string | null>(null);
 
   async function loadContratos() {
     const { data } = await supabase
@@ -191,6 +192,33 @@ export default function FinanceiroPage() {
     if (fnError || data?.error)
       setError(data?.error ?? fnError?.message ?? "Falha ao emitir NF.");
     else loadParcelas(selectedContrato);
+  }
+
+  // Corrects a mistaken entry (valor/data/meio digitado errado) after the
+  // fact. Never exposed once a nota fiscal already references the payment,
+  // and there is no delete action to go with it — both match the RLS grant
+  // on pagamentos, which allows staff update but not delete.
+  async function handleUpdatePagamento(
+    e: FormEvent<HTMLFormElement>,
+    pagamentoId: string,
+  ) {
+    e.preventDefault();
+    if (!selectedContrato) return;
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase
+      .from("pagamentos")
+      .update({
+        valor: Number(fd.get("valor")),
+        data: fd.get("data"),
+        meio: fd.get("meio"),
+      })
+      .eq("id", pagamentoId);
+    if (error) setError(error.message);
+    else {
+      setEditingPagamentoId(null);
+      loadParcelas(selectedContrato);
+    }
   }
 
   async function handleCreateContrato(e: FormEvent<HTMLFormElement>) {
@@ -578,35 +606,93 @@ export default function FinanceiroPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pagamentos.map((pg) => (
-                    <tr key={pg.id}>
-                      <td>{dataBr(pg.data)}</td>
-                      <td className="capitalize">{pg.meio}</td>
-                      <td>{brl(pg.valor)}</td>
-                      <td>
-                        {pg.notas_fiscais[0] ? (
-                          <span className="badge badge-ok">
-                            {pg.notas_fiscais[0].status}
-                            {pg.notas_fiscais[0].numero
-                              ? ` nº ${pg.notas_fiscais[0].numero}`
-                              : ""}
-                          </span>
-                        ) : (
-                          <span className="badge badge-neutral">sem NF</span>
-                        )}
-                      </td>
-                      <td>
-                        {!pg.notas_fiscais[0] && (
-                          <button
-                            onClick={() => handleEmitirNota(pg.id)}
-                            className="btn-link"
+                  {pagamentos.map((pg) =>
+                    editingPagamentoId === pg.id ? (
+                      <tr key={pg.id} className="bg-ink-50">
+                        <td colSpan={5} className="py-3">
+                          <form
+                            onSubmit={(e) => handleUpdatePagamento(e, pg.id)}
+                            className="flex flex-wrap items-center gap-2"
                           >
-                            Emitir NF
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                            <input
+                              name="data"
+                              type="date"
+                              defaultValue={pg.data}
+                              required
+                              className="input w-40"
+                            />
+                            <select
+                              name="meio"
+                              defaultValue={pg.meio}
+                              required
+                              className="input"
+                            >
+                              <option value="boleto">Boleto</option>
+                              <option value="pix">Pix</option>
+                              <option value="cartao">Cartão</option>
+                              <option value="dinheiro">Dinheiro</option>
+                              <option value="transferencia">Transferência</option>
+                            </select>
+                            <input
+                              name="valor"
+                              type="number"
+                              step="0.01"
+                              inputMode="decimal"
+                              defaultValue={pg.valor}
+                              required
+                              className="input w-32"
+                            />
+                            <button type="submit" className="btn">
+                              Salvar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingPagamentoId(null)}
+                              className="btn btn-secondary"
+                            >
+                              Cancelar
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={pg.id}>
+                        <td>{dataBr(pg.data)}</td>
+                        <td className="capitalize">{pg.meio}</td>
+                        <td>{brl(pg.valor)}</td>
+                        <td>
+                          {pg.notas_fiscais[0] ? (
+                            <span className="badge badge-ok">
+                              {pg.notas_fiscais[0].status}
+                              {pg.notas_fiscais[0].numero
+                                ? ` nº ${pg.notas_fiscais[0].numero}`
+                                : ""}
+                            </span>
+                          ) : (
+                            <span className="badge badge-neutral">sem NF</span>
+                          )}
+                        </td>
+                        <td className="flex flex-wrap gap-2">
+                          {!pg.notas_fiscais[0] && (
+                            <>
+                              <button
+                                onClick={() => setEditingPagamentoId(pg.id)}
+                                className="btn-link"
+                              >
+                                Corrigir
+                              </button>
+                              <button
+                                onClick={() => handleEmitirNota(pg.id)}
+                                className="btn-link"
+                              >
+                                Emitir NF
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ),
+                  )}
                   {pagamentos.length === 0 && (
                     <tr>
                       <td colSpan={5} className="py-6 text-center text-ink-500">

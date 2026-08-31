@@ -26,6 +26,7 @@ export function TurmasTab() {
   const [cursos, setCursos] = useState<{ id: string; nome: string }[]>([]);
   const [unidades, setUnidades] = useState<{ id: string; nome: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   async function load() {
     const [t, a, c, u] = await Promise.all([
@@ -101,6 +102,24 @@ export function TurmasTab() {
     if (error) setError(error.message);
     else {
       e.currentTarget.reset();
+      load();
+    }
+  }
+
+  async function handleUpdateTurma(e: FormEvent<HTMLFormElement>, id: string) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase
+      .from("turmas")
+      .update({
+        nome: fd.get("nome"),
+        turno: fd.get("turno"),
+        capacidade: Number(fd.get("capacidade")),
+      })
+      .eq("id", id);
+    if (error) setError(error.message);
+    else {
+      setEditingId(null);
       load();
     }
   }
@@ -200,17 +219,72 @@ export function TurmasTab() {
               <th>Turno</th>
               <th>Capacidade</th>
               <th>Unidade</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {turmas.map((t) => (
-              <tr key={t.id} className="border-b border-slate-100 last:border-0">
-                <td className="px-4 py-2">{t.nome}</td>
-                <td className="px-4 py-2">{t.turno}</td>
-                <td className="px-4 py-2">{t.capacidade}</td>
-                <td className="px-4 py-2">{t.unidades?.nome}</td>
-              </tr>
-            ))}
+            {turmas.map((t) =>
+              editingId === t.id ? (
+                <tr
+                  key={t.id}
+                  className="border-b border-slate-100 last:border-0 bg-ink-50"
+                >
+                  <td colSpan={5} className="px-4 py-3">
+                    <form
+                      onSubmit={(e) => handleUpdateTurma(e, t.id)}
+                      className="flex flex-wrap items-center gap-2"
+                    >
+                      <input
+                        name="nome"
+                        defaultValue={t.nome}
+                        required
+                        className="input w-40"
+                      />
+                      <select
+                        name="turno"
+                        defaultValue={t.turno}
+                        required
+                        className="input"
+                      >
+                        <option value="manha">Manhã</option>
+                        <option value="tarde">Tarde</option>
+                        <option value="integral">Integral</option>
+                        <option value="noite">Noite</option>
+                      </select>
+                      <input
+                        name="capacidade"
+                        type="number"
+                        defaultValue={t.capacidade}
+                        required
+                        className="input w-24"
+                      />
+                      <button type="submit" className="btn">
+                        Salvar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        className="btn btn-secondary"
+                      >
+                        Cancelar
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={t.id} className="border-b border-slate-100 last:border-0">
+                  <td className="px-4 py-2">{t.nome}</td>
+                  <td className="px-4 py-2">{t.turno}</td>
+                  <td className="px-4 py-2">{t.capacidade}</td>
+                  <td className="px-4 py-2">{t.unidades?.nome}</td>
+                  <td className="px-4 py-2">
+                    <button onClick={() => setEditingId(t.id)} className="btn-link">
+                      Editar
+                    </button>
+                  </td>
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
       </div>
