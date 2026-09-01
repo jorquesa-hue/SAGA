@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentPessoa } from "@/lib/pessoa";
+import type { ComponentType } from "react";
+import {
+  IconBarChart,
+  IconClipboardCheck,
+  IconWallet,
+  type IconProps,
+} from "@/components/icons";
 
 const STAFF_PAPEIS = ["admin", "secretaria"];
 
@@ -100,13 +107,26 @@ async function PainelDaDirecao() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="h-page mb-4">Painel da direção</h1>
+        <h1 className="h-page mb-1">Painel da direção</h1>
+        <p className="subtle mb-4">Visão consolidada de cobrança em tempo real.</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Stat label="Parcelas em aberto" value={String(emAberto.length)} />
-          <Stat label="Parcelas vencidas" value={String(vencidas.length)} />
+          <Stat
+            label="Parcelas em aberto"
+            value={String(emAberto.length)}
+            icon={IconClipboardCheck}
+            tone="brand"
+          />
+          <Stat
+            label="Parcelas vencidas"
+            value={String(vencidas.length)}
+            icon={IconBarChart}
+            tone="warn"
+          />
           <Stat
             label="Total vencido"
             value={brl(vencidas.reduce((s, p) => s + Number(p.valor_liquido), 0))}
+            icon={IconWallet}
+            tone="danger"
           />
         </div>
       </div>
@@ -165,11 +185,32 @@ async function MinhasTurmas() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+const TONE_CLASSES: Record<string, string> = {
+  brand: "bg-brand-50 text-brand-700",
+  warn: "bg-warn-50 text-warn-700",
+  danger: "bg-danger-50 text-danger-700",
+};
+
+function Stat({
+  label,
+  value,
+  icon: Icon,
+  tone = "brand",
+}: {
+  label: string;
+  value: string;
+  icon: ComponentType<IconProps>;
+  tone?: "brand" | "warn" | "danger";
+}) {
   return (
-    <div className="card p-4">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-slate-900">{value}</p>
+    <div className="stat-card">
+      <span className={`stat-card__icon ${TONE_CLASSES[tone]}`}>
+        <Icon className="h-[18px] w-[18px]" />
+      </span>
+      <div>
+        <p className="subtle">{label}</p>
+        <p className="mt-1 text-2xl font-semibold tracking-tight text-ink-900">{value}</p>
+      </div>
     </div>
   );
 }
@@ -184,7 +225,7 @@ function Table({
   empty?: string;
 }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-slate-500">{empty ?? "Nenhum registro."}</p>;
+    return <p className="subtle">{empty ?? "Nenhum registro."}</p>;
   }
   return (
     <div className="table-wrap">
@@ -192,19 +233,15 @@ function Table({
         <thead>
           <tr>
             {head.map((h) => (
-              <th key={h} className="px-4 py-2 font-medium text-slate-600">
-                {h}
-              </th>
+              <th key={h}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-b border-slate-100 last:border-0">
+            <tr key={i}>
               {row.map((cell, j) => (
-                <td key={j} className="px-4 py-2 text-slate-800">
-                  {cell}
-                </td>
+                <td key={j}>{cell}</td>
               ))}
             </tr>
           ))}

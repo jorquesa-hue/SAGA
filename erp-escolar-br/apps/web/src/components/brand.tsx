@@ -1,6 +1,10 @@
+"use client";
+
 // Single source of truth for the product's visual identity, so the mark
 // on the login screen, the app header, the PWA manifest and the favicon
 // can never drift apart.
+
+import { useId } from "react";
 
 export const BRAND = {
   name: "Escolar",
@@ -21,6 +25,13 @@ export function LogoMark({
   size?: number;
   className?: string;
 }) {
+  // A unique gradient id per instance: the mark renders more than once at
+  // a time now (sidebar + mobile topbar + mobile drawer), and a duplicate
+  // SVG id resolves unpredictably — in Chromium, a fill="url(#id)" fails
+  // to paint at all when the first same-id definition sits in a
+  // display:none ancestor (the desktop sidebar on a mobile viewport).
+  const gradientId = `ebr-g-${useId()}`;
+
   return (
     <svg
       width={size}
@@ -31,12 +42,12 @@ export function LogoMark({
       className={className}
     >
       <defs>
-        <linearGradient id="ebr-g" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#3b5ef2" />
           <stop offset="100%" stopColor="#1c2c71" />
         </linearGradient>
       </defs>
-      <rect width="32" height="32" rx="8" fill="url(#ebr-g)" />
+      <rect width="32" height="32" rx="8" fill={`url(#${gradientId})`} />
       <rect x="8" y="9" width="16" height="3.2" rx="1.6" fill="#fff" />
       <rect x="8" y="14.4" width="11" height="3.2" rx="1.6" fill="#fff" opacity="0.85" />
       <rect x="8" y="19.8" width="16" height="3.2" rx="1.6" fill="#fff" opacity="0.7" />

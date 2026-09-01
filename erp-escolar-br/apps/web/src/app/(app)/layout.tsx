@@ -1,5 +1,16 @@
 import { redirect } from "next/navigation";
 import { getCurrentPessoa } from "@/lib/pessoa";
+import {
+  IconBarChart,
+  IconBuilding,
+  IconClipboardCheck,
+  IconGraduationCap,
+  IconGrid,
+  IconHome,
+  IconMegaphone,
+  IconUsers,
+  IconWallet,
+} from "@/components/icons";
 import AppNav, { type NavItem } from "./app-nav";
 
 const STAFF_PAPEIS = ["admin", "secretaria"];
@@ -32,21 +43,25 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // The structural and administrative screens the school configures once
   // (Escola, Equipe) come last, after the stages that happen every day.
   const items: NavItem[] = [
-    { href: "/dashboard", label: isProfessor && !isStaff ? "Minhas turmas" : "Painel" },
+    {
+      href: "/dashboard",
+      label: isProfessor && !isStaff ? "Minhas turmas" : "Painel",
+      icon: IconGrid,
+    },
     ...(isStaff
       ? [
-          { href: "/alunos", label: "Alunos" },
-          { href: "/matriculas", label: "Matrículas" },
-          { href: "/financeiro", label: "Financeiro" },
+          { href: "/alunos", label: "Alunos", icon: IconGraduationCap },
+          { href: "/matriculas", label: "Matrículas", icon: IconClipboardCheck },
+          { href: "/financeiro", label: "Financeiro", icon: IconWallet },
         ]
       : []),
-    ...(isResponsavel ? [{ href: "/portal", label: "Portal" }] : []),
-    { href: "/comunicados", label: "Comunicados" },
+    ...(isResponsavel ? [{ href: "/portal", label: "Portal", icon: IconHome }] : []),
+    { href: "/comunicados", label: "Comunicados", icon: IconMegaphone },
     ...(isStaff
       ? [
-          { href: "/financeiro/relatorios", label: "Relatórios" },
-          { href: "/escola", label: "Escola" },
-          { href: "/equipe", label: "Equipe" },
+          { href: "/financeiro/relatorios", label: "Relatórios", icon: IconBarChart },
+          { href: "/escola", label: "Escola", icon: IconBuilding },
+          { href: "/equipe", label: "Equipe", icon: IconUsers },
         ]
       : []),
   ];
@@ -55,9 +70,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     pessoa.papeis.map((p) => PAPEL_LABEL[p] ?? p).join(" · ") || "Sem papel";
 
   return (
-    <div className="min-h-screen bg-ink-50">
+    <div className="min-h-screen bg-ink-50 lg:pl-64">
       <AppNav items={items} nome={pessoa.nome} papelLabel={papelLabel} />
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
+        <div className="animate-in">{children}</div>
+      </main>
     </div>
   );
 }

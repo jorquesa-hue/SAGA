@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { LogoMark } from "@/components/brand";
+import { Logo } from "@/components/brand";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -59,9 +59,9 @@ export default function SignupPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-ink-50 px-4 py-10">
-      <div className="card w-full max-w-md p-6 sm:p-8">
-        <LogoMark size={40} />
-        <h1 className="h-page mt-4 mb-1">Cadastrar escola</h1>
+      <div className="animate-in w-full max-w-md rounded-2xl border border-ink-200 bg-white p-6 shadow-[var(--shadow-md)] sm:p-8">
+        <Logo size={36} />
+        <h1 className="h-page mt-5 mb-1">Cadastrar escola</h1>
         <p className="subtle mb-6">
           Fase 1 — Cobrança e Retenção. Você será o admin desta escola.
         </p>
@@ -84,7 +84,7 @@ export default function SignupPage() {
             onChange={update("municipio_ibge")}
             placeholder="7 dígitos"
           />
-          <hr className="border-slate-200" />
+          <hr className="border-ink-200" />
           <Field
             label="Seu nome (admin)"
             value={form.admin_nome}

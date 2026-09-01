@@ -216,9 +216,9 @@ export default function RelatoriosPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card p-4">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-slate-900">{value}</p>
+    <div className="stat-card">
+      <p className="subtle">{label}</p>
+      <p className="text-2xl font-semibold tracking-tight text-ink-900">{value}</p>
     </div>
   );
 }

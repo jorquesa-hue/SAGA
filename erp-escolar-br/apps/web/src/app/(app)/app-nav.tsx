@@ -1,14 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Logo } from "@/components/brand";
+import { Logo, LogoMark } from "@/components/brand";
+import { IconMenu, IconX, type IconProps } from "@/components/icons";
 import SignOutButton from "./sign-out-button";
 
 export interface NavItem {
   href: string;
   label: string;
+  icon: ComponentType<IconProps>;
+}
+
+function initials(nome: string) {
+  const parts = nome.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : "";
+  return (first + last).toUpperCase();
 }
 
 export default function AppNav({
@@ -32,98 +41,128 @@ export default function AppNav({
     .filter(matches)
     .sort((a, b) => b.length - a.length)[0];
   const isActive = (href: string) => href === activeHref;
+  const activeLabel = items.find((it) => it.href === activeHref)?.label ?? "";
+
+  // Lock body scroll while the mobile drawer is open.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  const navLinks = (onNavigate?: () => void) => (
+    <nav aria-label="Principal" className="flex flex-col gap-0.5 px-3">
+      {items.map((it) => {
+        const Icon = it.icon;
+        return (
+          <Link
+            key={it.href}
+            href={it.href}
+            onClick={onNavigate}
+            aria-current={isActive(it.href) ? "page" : undefined}
+            className="sidebar-link"
+          >
+            <Icon className="h-[18px] w-[18px]" />
+            {it.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 
   return (
-    <header className="sticky top-0 z-30 border-b border-ink-200 bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
-        <Link href="/dashboard" aria-label={`${nome} — início`}>
-          <Logo size={30} />
-        </Link>
-
-        {/* Desktop navigation */}
-        <nav aria-label="Principal" className="hidden md:flex md:items-center md:gap-1">
-          {items.map((it) => (
-            <Link
-              key={it.href}
-              href={it.href}
-              aria-current={isActive(it.href) ? "page" : undefined}
-              className={`rounded-md px-2.5 py-1.5 text-sm font-medium ${
-                isActive(it.href)
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
-              }`}
-            >
-              {it.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden items-center gap-3 md:flex">
-          <span className="text-right leading-tight">
-            <span className="block text-sm font-medium text-ink-800">{nome}</span>
-            <span className="block text-[0.7rem] text-ink-500">{papelLabel}</span>
-          </span>
-          <SignOutButton />
+    <>
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand-900 lg:flex">
+        <div className="flex items-center gap-2.5 px-5 py-5">
+          <Link href="/dashboard" aria-label={`${nome} — início`}>
+            <Logo size={30} inverted />
+          </Link>
         </div>
+        <div className="mt-2 flex-1 overflow-y-auto pb-4">{navLinks()}</div>
+        <div className="border-t border-white/10 p-3">
+          <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-white">
+              {initials(nome)}
+            </span>
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-sm font-medium text-white">{nome}</span>
+              <span className="block truncate text-[0.7rem] text-brand-200">
+                {papelLabel}
+              </span>
+            </span>
+            <SignOutButton iconOnly />
+          </div>
+        </div>
+      </aside>
 
-        {/* Mobile toggle */}
+      {/* Mobile topbar */}
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-ink-200 bg-white/90 px-4 py-2.5 backdrop-blur lg:hidden">
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen(true)}
           aria-expanded={open}
           aria-controls="menu-mobile"
-          aria-label={open ? "Fechar menu" : "Abrir menu"}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-ink-300 text-ink-700 md:hidden"
+          aria-label="Abrir menu"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-700 hover:bg-ink-100"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-            {open ? (
-              <path
-                d="M5 5l10 10M15 5L5 15"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            ) : (
-              <path
-                d="M3 6h14M3 10h14M3 14h14"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            )}
-          </svg>
+          <IconMenu className="h-5 w-5" />
         </button>
-      </div>
+        <span className="truncate text-sm font-semibold text-ink-800">{activeLabel}</span>
+        <Link href="/dashboard" aria-label="Início">
+          <LogoMark size={26} />
+        </Link>
+      </header>
 
-      {/* Mobile panel */}
+      {/* Mobile drawer */}
       {open && (
-        <div id="menu-mobile" className="border-t border-ink-200 bg-white md:hidden">
-          <nav aria-label="Principal" className="flex flex-col p-2">
-            {items.map((it) => (
-              <Link
-                key={it.href}
-                href={it.href}
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 bg-ink-900/50"
+          />
+          <div
+            id="menu-mobile"
+            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-brand-900 shadow-lg"
+          >
+            <div className="flex items-center justify-between px-5 py-5">
+              <Logo size={28} inverted />
+              <button
+                type="button"
                 onClick={() => setOpen(false)}
-                aria-current={isActive(it.href) ? "page" : undefined}
-                className={`rounded-md px-3 py-2.5 text-sm font-medium ${
-                  isActive(it.href)
-                    ? "bg-brand-50 text-brand-700"
-                    : "text-ink-700 hover:bg-ink-100"
-                }`}
+                aria-label="Fechar menu"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-white/80 hover:bg-white/10"
               >
-                {it.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center justify-between border-t border-ink-200 px-4 py-3">
-            <span className="leading-tight">
-              <span className="block text-sm font-medium text-ink-800">{nome}</span>
-              <span className="block text-[0.7rem] text-ink-500">{papelLabel}</span>
-            </span>
-            <SignOutButton />
+                <IconX className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-2 flex-1 overflow-y-auto pb-4">
+              {navLinks(() => setOpen(false))}
+            </div>
+            <div className="border-t border-white/10 p-3">
+              <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-white">
+                  {initials(nome)}
+                </span>
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate text-sm font-medium text-white">
+                    {nome}
+                  </span>
+                  <span className="block truncate text-[0.7rem] text-brand-200">
+                    {papelLabel}
+                  </span>
+                </span>
+                <SignOutButton iconOnly />
+              </div>
+            </div>
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
