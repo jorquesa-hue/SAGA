@@ -12,6 +12,8 @@ interface LinhaRelatorio {
   valor_desconto: string;
   valor_liquido: string;
   valor_recebido: string;
+  valor_em_aberto: string;
+  valor_vencido: string;
   qtd_parcelas: number;
   qtd_pendentes: number;
   qtd_atrasadas: number;
@@ -55,6 +57,13 @@ export default function RelatoriosPage() {
 
   function handleFilter(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Auditoria (01/09/2026, D6): um período invertido (De > Até) não dava
+    // erro nenhum — só voltava vazio, como se não houvesse dados no período,
+    // e nada na tela dizia que o filtro em si era inválido.
+    if (dataInicio > dataFim) {
+      setError('O período é inválido: "De" não pode ser depois de "Até".');
+      return;
+    }
     load(dataInicio, dataFim);
   }
 
@@ -67,11 +76,33 @@ export default function RelatoriosPage() {
       desconto: acc.desconto + Number(l.valor_desconto),
       liquido: acc.liquido + Number(l.valor_liquido),
       recebido: acc.recebido + Number(l.valor_recebido),
+      emAberto: acc.emAberto + Number(l.valor_em_aberto),
+      vencido: acc.vencido + Number(l.valor_vencido),
       pendentes: acc.pendentes + l.qtd_pendentes,
       atrasadas: acc.atrasadas + l.qtd_atrasadas,
     }),
-    { bruto: 0, desconto: 0, liquido: 0, recebido: 0, pendentes: 0, atrasadas: 0 },
+    {
+      bruto: 0,
+      desconto: 0,
+      liquido: 0,
+      recebido: 0,
+      emAberto: 0,
+      vencido: 0,
+      pendentes: 0,
+      atrasadas: 0,
+    },
   );
+
+  // Auditoria (01/09/2026, D4): o CSV era gerado sem BOM e com ponto decimal.
+  // Sem BOM, o Excel (o programa que a secretaria realmente usa) detecta o
+  // arquivo como Latin-1 e corrompe todo acento ("São Paulo" vira "SÃ£o
+  // Paulo"); e como o Excel em locale pt-BR trata "," como separador decimal,
+  // um número como "1234.56" com ponto é lido como texto (ou como "123456"
+  // se o separador de coluna também for ","). Corrigido com BOM UTF-8,
+  // separador ";" (o padrão do Excel pt-BR) e decimais com vírgula.
+  function formatarDecimalBr(v: string) {
+    return Number(v).toFixed(2).replace(".", ",");
+  }
 
   function handleExportarCsv() {
     const header = [
@@ -82,6 +113,8 @@ export default function RelatoriosPage() {
       "valor_desconto",
       "valor_liquido",
       "valor_recebido",
+      "valor_em_aberto",
+      "valor_vencido",
       "qtd_parcelas",
       "qtd_pendentes",
       "qtd_atrasadas",
@@ -90,20 +123,23 @@ export default function RelatoriosPage() {
       l.unidade_nome,
       l.unidade_cnpj,
       l.competencia,
-      l.valor_bruto,
-      l.valor_desconto,
-      l.valor_liquido,
-      l.valor_recebido,
+      formatarDecimalBr(l.valor_bruto),
+      formatarDecimalBr(l.valor_desconto),
+      formatarDecimalBr(l.valor_liquido),
+      formatarDecimalBr(l.valor_recebido),
+      formatarDecimalBr(l.valor_em_aberto),
+      formatarDecimalBr(l.valor_vencido),
       l.qtd_parcelas,
       l.qtd_pendentes,
       l.qtd_atrasadas,
     ]);
     const csv = [header, ...rows]
       .map((row) =>
-        row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","),
+        row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(";"),
       )
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      .join("\r\n");
+    const BOM = "﻿";
+    const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -161,11 +197,13 @@ export default function RelatoriosPage() {
         </button>
       </form>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="Receita bruta" value={brl(String(totais.bruto))} />
         <Stat label="Descontos" value={brl(String(totais.desconto))} />
         <Stat label="Receita líquida" value={brl(String(totais.liquido))} />
         <Stat label="Recebido" value={brl(String(totais.recebido))} />
+        <Stat label="Em aberto" value={brl(String(totais.emAberto))} />
+        <Stat label="Vencido" value={brl(String(totais.vencido))} />
       </div>
 
       <div className="table-wrap">

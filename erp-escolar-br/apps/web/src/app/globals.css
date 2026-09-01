@@ -347,6 +347,20 @@ textarea.input {
   cursor: pointer;
   box-shadow: none;
 }
+/* Auditoria (01/09/2026, B1): em telas de toque, .btn-link renderizava a
+   ~28px de altura (0.25rem de padding + a linha de texto) — abaixo dos 44px
+   recomendados como alvo de toque confortável, apertado nos botões de ação
+   das tabelas (Corrigir/Editar/Emitir NF/Isentar/Cancelar). Corrigido só em
+   telas estreitas, com display:inline-flex para o min-height valer; a
+   aparência em desktop (onde o clique é por mouse) não muda. */
+@media (max-width: 640px) {
+  .btn-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
 .btn-link:hover {
   background: none;
   color: var(--color-brand-900);

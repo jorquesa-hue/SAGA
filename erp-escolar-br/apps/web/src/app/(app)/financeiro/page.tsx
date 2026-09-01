@@ -262,6 +262,22 @@ export default function FinanceiroPage() {
     }
   }
 
+  // Auditoria (01/09/2026, C1): 'cancelado' e 'isento' existem no enum
+  // parcela_status desde o schema inicial, mas nada na interface os
+  // escrevia — não havia como registrar uma parcela perdoada ou anulada,
+  // então ela ficava "em aberto" (pendente/atrasado) para sempre, inflando
+  // o total vencido do painel e a inadimplência do relatório indefinidamente.
+  async function handleUpdateParcelaStatus(parcelaId: string, status: string) {
+    if (!selectedContrato) return;
+    setError(null);
+    const { error } = await supabase
+      .from("parcelas")
+      .update({ status })
+      .eq("id", parcelaId);
+    if (error) setError(error.message);
+    else loadParcelas(selectedContrato);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -422,6 +438,7 @@ export default function FinanceiroPage() {
                     <th>Desconto</th>
                     <th>Líquido</th>
                     <th>Status</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -435,11 +452,29 @@ export default function FinanceiroPage() {
                       <td>
                         <StatusBadge status={p.status} />
                       </td>
+                      <td className="flex flex-wrap gap-2">
+                        {ABERTA.includes(p.status) && (
+                          <>
+                            <button
+                              onClick={() => handleUpdateParcelaStatus(p.id, "isento")}
+                              className="btn-link"
+                            >
+                              Isentar
+                            </button>
+                            <button
+                              onClick={() => handleUpdateParcelaStatus(p.id, "cancelado")}
+                              className="btn-link"
+                            >
+                              Cancelar
+                            </button>
+                          </>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {parcelas.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-ink-500">
+                      <td colSpan={7} className="py-6 text-center text-ink-500">
                         Nenhuma parcela gerada ainda.
                       </td>
                     </tr>

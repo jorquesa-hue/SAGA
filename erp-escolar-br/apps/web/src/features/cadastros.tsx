@@ -415,6 +415,18 @@ export function AlunosTab() {
     }
   }
 
+  // Auditoria (01/09/2026, C1): status era gravado só na criação ('ativo')
+  // e nunca mais mudava — um aluno que saiu ficava "ativo" para sempre,
+  // ocupando vaga e aparecendo em buscas como se ainda estivesse
+  // matriculado. Este é o único lugar do app que agora escreve em
+  // alunos.status.
+  async function handleUpdateStatus(id: string, status: string) {
+    setError(null);
+    const { error } = await supabase.from("alunos").update({ status }).eq("id", id);
+    if (error) setError(error.message);
+    else load();
+  }
+
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -448,7 +460,18 @@ export function AlunosTab() {
               <tr key={a.id} className="border-b border-slate-100 last:border-0">
                 <td className="px-4 py-2">{a.pessoas?.nome}</td>
                 <td className="px-4 py-2">{a.matricula_codigo}</td>
-                <td className="px-4 py-2">{a.status}</td>
+                <td className="px-4 py-2">
+                  <select
+                    value={a.status}
+                    onChange={(e) => handleUpdateStatus(a.id, e.target.value)}
+                    className="input w-36"
+                  >
+                    <option value="ativo">Ativo</option>
+                    <option value="inativo">Inativo</option>
+                    <option value="transferido">Transferido</option>
+                    <option value="egresso">Egresso</option>
+                  </select>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -529,6 +552,18 @@ export function MatriculasTab() {
     }
   }
 
+  // Auditoria (01/09/2026, C1): status era gravado só como 'ativa' na
+  // matrícula e nunca transicionava — sem caminho para trancar, transferir
+  // ou concluir. Isso também causava D3 (busca duplicava aluno rematriculado,
+  // já que a matrícula do ano anterior nunca era encerrada). Único lugar do
+  // app que agora escreve em matriculas.status.
+  async function handleUpdateStatus(id: string, status: string) {
+    setError(null);
+    const { error } = await supabase.from("matriculas").update({ status }).eq("id", id);
+    if (error) setError(error.message);
+    else load();
+  }
+
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -554,6 +589,15 @@ export function MatriculasTab() {
           <input name="data" type="date" required className="input" />
           <button className="btn">Matricular</button>
         </div>
+        {turmas.length === 0 && (
+          <p className="mt-2 text-xs text-slate-400">
+            Nenhuma turma cadastrada — crie uma unidade, ano letivo, curso e turma na aba{" "}
+            <a href="/escola" className="underline">
+              Escola
+            </a>{" "}
+            antes de matricular.
+          </p>
+        )}
       </form>
 
       <div className="table-wrap">
@@ -570,7 +614,19 @@ export function MatriculasTab() {
               <tr key={m.id} className="border-b border-slate-100 last:border-0">
                 <td className="px-4 py-2">{m.alunos?.pessoas?.nome}</td>
                 <td className="px-4 py-2">{m.turmas?.nome}</td>
-                <td className="px-4 py-2">{m.status}</td>
+                <td className="px-4 py-2">
+                  <select
+                    value={m.status}
+                    onChange={(e) => handleUpdateStatus(m.id, e.target.value)}
+                    className="input w-36"
+                  >
+                    <option value="pre">Pré-matrícula</option>
+                    <option value="ativa">Ativa</option>
+                    <option value="trancada">Trancada</option>
+                    <option value="transferida">Transferida</option>
+                    <option value="concluida">Concluída</option>
+                  </select>
+                </td>
               </tr>
             ))}
           </tbody>
