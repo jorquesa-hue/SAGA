@@ -31,17 +31,17 @@
   },
   "devDependencies": {
     "@types/node": "^22.5.0",
-    "eslint": "^10.7.0",
+    "eslint": "^10.9.1",
     "typescript": "^5.6.2",
-    "typescript-eslint": "^8.5.0",
+    "typescript-eslint": "^8.68.0",
     "prettier": "^3.3.3",
     "vitest": "^3.2.6",
-    "tsx": "^4.19.0",
+    "tsx": "^4.23.13",
     "graphql": "^17.0.2",
     "@apidevtools/swagger-parser": "^12.1.0",
     "yaml": "^2.5.0",
-    "pg": "^8.12.0",
-    "@types/pg": "^8.11.0",
+    "pg": "^8.23.0",
+    "@types/pg": "^8.23.1",
     "dotenv": "^17.4.2"
   }
 }
