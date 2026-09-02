@@ -481,6 +481,22 @@ export function AlunosTab() {
   );
 }
 
+// Groups the 5 matricula_status values into the 3 buckets the front desk
+// actually thinks in — "pré" reads as pending, and trancada/transferida/
+// concluida are all just "not currently attending" from this list's point
+// of view. The full 5-value control (for changing status) still lives in
+// the per-row <select> below; this grouping only drives the filter.
+const GRUPOS_STATUS: Record<string, string[]> = {
+  ativa: ["ativa"],
+  pendente: ["pre"],
+  inativa: ["trancada", "transferida", "concluida"],
+};
+const GRUPO_LABEL: Record<string, string> = {
+  ativa: "Ativas",
+  pendente: "Pendentes",
+  inativa: "Inativas",
+};
+
 // ── Matrículas
 export function MatriculasTab() {
   const supabase = createClient();
@@ -488,6 +504,7 @@ export function MatriculasTab() {
     {
       id: string;
       status: string;
+      turma_id: string;
       alunos: { pessoas: { nome: string } | null } | null;
       turmas: { nome: string } | null;
     }[]
@@ -499,16 +516,19 @@ export function MatriculasTab() {
     { id: string; nome: string; ano_letivo_id: string }[]
   >([]);
   const [error, setError] = useState<string | null>(null);
+  const [filtroTurmaId, setFiltroTurmaId] = useState("");
+  const [filtroGrupo, setFiltroGrupo] = useState("");
 
   async function load() {
     const [m, a, t] = await Promise.all([
       supabase
         .from("matriculas")
-        .select("id, status, alunos(pessoas(nome)), turmas(nome)")
+        .select("id, status, turma_id, alunos(pessoas(nome)), turmas(nome)")
         .returns<
           {
             id: string;
             status: string;
+            turma_id: string;
             alunos: { pessoas: { nome: string } | null } | null;
             turmas: { nome: string } | null;
           }[]
@@ -564,9 +584,60 @@ export function MatriculasTab() {
     else load();
   }
 
+  const porTurma = filtroTurmaId
+    ? matriculas.filter((m) => m.turma_id === filtroTurmaId)
+    : matriculas;
+  const porTurmaEGrupo = filtroGrupo
+    ? porTurma.filter((m) => GRUPOS_STATUS[filtroGrupo].includes(m.status))
+    : porTurma;
+
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="field w-56">
+          <span>Filtrar por turma</span>
+          <select
+            value={filtroTurmaId}
+            onChange={(e) => {
+              setFiltroTurmaId(e.target.value);
+              setFiltroGrupo("");
+            }}
+            className="input"
+          >
+            <option value="">Todas as turmas ({matriculas.length})</option>
+            {turmas.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome} ({matriculas.filter((m) => m.turma_id === t.id).length})
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="flex flex-wrap gap-1">
+          <button
+            type="button"
+            onClick={() => setFiltroGrupo("")}
+            aria-current={filtroGrupo === "" ? "true" : undefined}
+            className={`btn ${filtroGrupo === "" ? "" : "btn-secondary"}`}
+          >
+            Todas ({porTurma.length})
+          </button>
+          {(["ativa", "pendente", "inativa"] as const).map((grupo) => (
+            <button
+              key={grupo}
+              type="button"
+              onClick={() => setFiltroGrupo(grupo)}
+              aria-current={filtroGrupo === grupo ? "true" : undefined}
+              className={`btn ${filtroGrupo === grupo ? "" : "btn-secondary"}`}
+            >
+              {GRUPO_LABEL[grupo]} (
+              {porTurma.filter((m) => GRUPOS_STATUS[grupo].includes(m.status)).length})
+            </button>
+          ))}
+        </div>
+      </div>
       <form onSubmit={handleCreate} className="card p-4">
         <h3 className="h-card mb-2">Nova matrícula</h3>
         <div className="flex flex-wrap gap-2">
@@ -610,7 +681,7 @@ export function MatriculasTab() {
             </tr>
           </thead>
           <tbody>
-            {matriculas.map((m) => (
+            {porTurmaEGrupo.map((m) => (
               <tr key={m.id} className="border-b border-slate-100 last:border-0">
                 <td className="px-4 py-2">{m.alunos?.pessoas?.nome}</td>
                 <td className="px-4 py-2">{m.turmas?.nome}</td>
@@ -629,6 +700,13 @@ export function MatriculasTab() {
                 </td>
               </tr>
             ))}
+            {porTurmaEGrupo.length === 0 && (
+              <tr>
+                <td colSpan={3} className="px-4 py-6 text-center text-slate-500">
+                  Nenhuma matrícula para este filtro.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
