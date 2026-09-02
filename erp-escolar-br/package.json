@@ -1,0 +1,21 @@
+{
+  "name": "erp-escolar-br",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ERP Escolar BR — Fase 1 (Cobrança e Retenção). Separate product, self-contained, not part of the SAGA pnpm workspace. See README.md.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:reset": "node scripts/db-reset.mjs",
+    "db:reset:test": "LOCAL_TEST_SHIM=1 APPLY_FIXTURES=1 node scripts/db-reset.mjs",
+    "test:tenant-isolation": "node --test tests/tenant-isolation.test.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

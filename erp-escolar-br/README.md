@@ -1,0 +1,434 @@
+# ERP Escolar BR
+
+A **separate, unrelated product** living inside the SAGA repository at the
+explicit request of the repo owner. SAGA itself (everything outside this
+directory) is a livestock/farm operating system governed by `CLAUDE.md` and
+spec JK-PLT-EES-001 — none of that applies here.
+
+Spec: the uploaded `erp-escolar-br-arquitetura.md` (Brazilian school ERP,
+Supabase + Next.js + Make.com + Asaas + WhatsApp stack).
+
+## Status: Milestones 1–8 built. Not production-ready — read "What's not done" below.
+
+| #   | Milestone                   | Status                                                                                                                                      |
+| --- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Schema + RLS                | Done — 106/106 tenant-isolation tests passing                                                                                               |
+| 2   | Auth e onboarding de escola | Done — signup/invite Edge Functions + Custom Access Token Hook deployed                                                                     |
+| 3   | Cadastros                   | Done — pessoas/alunos/turmas/matrículas/unidades CRUD + professor↔turma assignment in `apps/web`                                            |
+| 4   | Contratos e parcelas        | Done — `fn_gerar_parcelas` engine + UI (contratos, descontos, manual baixa, NF tracking), smoke-tested                                      |
+| 5   | Asaas                       | **Stubbed** — real Edge Functions deployed, return `501` until `ASAAS_API_KEY`/`ASAAS_WEBHOOK_TOKEN` are set (no Asaas account exists)      |
+| 6   | Portal do responsável       | Done — installable PWA, incl. LGPD consent capture (`apps/web`)                                                                             |
+| 7   | Painel da direção           | Done — inadimplência por turma, aging, previsão de recebíveis                                                                               |
+| 8   | Réguas no Make              | **Stubbed** — real Make.com scenarios created (inactive), notification channel steps are placeholders (no Twilio/Z-API/SMTP account exists) |
+
+## Post-Milestone-8 additions (user follow-up requests)
+
+Three things added on top of the 8 milestones above, at the user's
+explicit follow-up request:
+
+- **Per-unidade CNPJ** (Migration `0014`) — CNPJ, razão social, inscrição
+  municipal, município IBGE, and código INEP moved from `escolas` (the
+  tenant) down to `unidades` (the legal entity). A Brazilian school
+  network commonly bills each physical campus under its own CNPJ,
+  sometimes in a different município. `turmas` now requires a
+  `unidade_id`, so every contrato/parcela/pagamento chain resolves which
+  CNPJ it bills under. `cadastros → Unidades` captures the new fields;
+  `cadastros → Turmas` requires picking a unidade; `signup-escola`
+  creates the tenant's first ("Sede") unidade automatically.
+- **Financial reporting** (`financeiro → Ver relatórios financeiros`,
+  Migrations `0015`/`0016`) — `fn_relatorio_financeiro(data_inicio,
+data_fim)`, one RPC aggregating receita bruta/desconto/líquida/recebida
+  and parcelas pendentes/atrasadas, grouped by unidade and competência.
+  Plain SQL function (not `security definer`), so it inherits the same
+  RLS as hand-written queries — no separate role check needed. Also
+  directly callable via the Supabase REST/RPC API
+  (`/rest/v1/rpc/fn_relatorio_financeiro`) by an external BI tool with a
+  staff-scoped key — the "integration friendly" half of the same ask.
+  The UI adds a date-range filter, totals, and CSV export.
+- **Pluggable eNF (nota fiscal) integration** — `emitir-nota-fiscal`
+  (staff-only Edge Function) resolves a pagamento's unidade/CNPJ and
+  POSTs a provider-agnostic `{prestador, tomador, valor, dataEmissao}`
+  payload to whatever `NFE_PROVIDER_API_URL`/`NFE_PROVIDER_API_KEY` are
+  configured — swapping providers (PlugNotas, eNotas, NFE.io, a
+  município's own API) needs zero code change. `nfe-webhook` receives
+  async status callbacks, idempotent on `referencia_externa` (mirrors
+  the `asaas-webhook` pattern). When no provider is configured — this
+  account's current state, no real eNF account exists — it falls back
+  to recording a `pendente` bookkeeping row, same UX as the earlier
+  placeholder but now through the real integration point instead of a
+  raw client-side insert.
+
+All three: 106/106 tenant-isolation tests still pass; the full
+escola→unidade→turma→matrícula→contrato→parcela→pagamento chain was
+smoke-tested end-to-end against the real Supabase project inside a
+rolled-back transaction; `get_advisors` is clean except the pre-existing
+`fn_current_pessoa_id` finding already documented below.
+
+This ran in one continuous session at the user's explicit instruction to
+"keep going until the full Schools ERP is finished," overriding the spec's
+own "stop after each milestone" default. Real cloud infrastructure was
+provisioned along the way (see below) — this is not a local-only exercise.
+
+## Segunda rodada de ajustes (feedback de uso)
+
+Cinco pontos levantados depois do primeiro teste com dados reais:
+
+- **Identidade visual ("Escolar BR")** — marca própria em
+  `src/components/brand.tsx` (mark SVG + wordmark) usada no login, no
+  cabeçalho, no favicon e no manifest PWA, com tokens de cor/tipografia
+  em `globals.css`. O tema escuro parcial foi removido: antes só trocava
+  fundo/texto do `body` enquanto todos os cards continuavam brancos
+  fixos, o que quebrava em aparelhos configurados no modo escuro.
+- **Hierarquia do menu e dos títulos** — cabeçalho reconstruído
+  (`app-nav.tsx`) com `<nav aria-label>`, estado ativo por rota
+  (`aria-current="page"`) e escala tipográfica explícita
+  (`.h-page`/`.h-section`/`.h-card`) no lugar de classes soltas.
+- **Responsivo de verdade** — menu hamburguer abaixo de `md`, toda
+  tabela dentro de `.table-wrap` (rolagem horizontal própria, em vez de
+  empurrar a página inteira), formulários em `grid` que empilham no
+  celular, e campos com `font-size: 16px` no mobile para o Safari do iOS
+  não dar zoom ao focar.
+- **Busca de aluno** (`/financeiro/alunos`, Migration `0020`) —
+  `fn_buscar_alunos(p_busca)` devolve, por aluno, parcelas abertas e
+  atrasadas, valor em aberto, competência mais antiga e próximo
+  vencimento. Usa `unaccent` (busca por "theo" acha "Théo" — o navegador
+  não tem como normalizar o lado _armazenado_ da comparação). Função sem
+  `security definer`, então herda RLS: o responsável só encontra os
+  próprios filhos.
+- **Ordem de quitação das parcelas** (Migration `0019`) — trigger
+  `trg_pagamentos_ordem` recusa pagamento de uma competência mais recente
+  enquanto existir parcela anterior em aberto no mesmo contrato. Está no
+  banco, e não só na tela, porque o app fala direto com o PostgREST: um
+  cliente com token válido poderia postar em `/rest/v1/pagamentos` e
+  passar por cima de qualquer validação de formulário. A tela reforça a
+  regra oferecendo apenas a parcela mais antiga em aberto e listando
+  quais ficam bloqueadas. Ver a nota na migração sobre o caminho de
+  reconciliação necessário quando o Asaas entrar.
+
+## Terceira rodada: menu como ciclo de vida do aluno
+
+O menu listava módulos do sistema (Painel, Buscar aluno, Financeiro,
+Cadastros, Equipe), e "Cadastros" era uma gaveta com seis abas que
+misturavam o registro do próprio aluno com a estrutura da escola. Não
+havia ordem que correspondesse ao que a secretaria faz de fato.
+
+Passou a seguir o aluno pela escola, na ordem em que as coisas acontecem
+— mesma ideia do menu do SAGA (`apps/web/src/components/Layout.tsx`), que
+percorre a vida do animal na propriedade (animals → weighing →
+treatments → reproduction → lots → pasture) antes de chegar às telas
+administrativas:
+
+    Painel · Alunos · Matrículas · Financeiro · Comunicados ·
+    Relatórios · Escola · Equipe
+
+O aluno existe (**Alunos**), entra numa turma (**Matrículas**), gera
+cobrança (**Financeiro**), é comunicado (**Comunicados**) e é medido
+(**Relatórios**). **Escola** e **Equipe** ficam no fim: são o que a
+escola configura uma vez, não etapas do dia a dia.
+
+As seis abas viraram destinos com endereço próprio. Os painéis em si não
+mudaram — foram extraídos para `src/features/cadastros.tsx` e
+recompostos:
+
+| Rota          | Conteúdo                                       |
+| ------------- | ---------------------------------------------- |
+| `/alunos`     | busca (`fn_buscar_alunos`) + cadastro do aluno |
+| `/matriculas` | vínculo aluno → turma                          |
+| `/escola`     | turmas e unidades (CNPJ)                       |
+| `/equipe`     | convite + professores × turmas + pessoas       |
+
+`/cadastros` e `/financeiro/alunos` permanecem como redirects para
+`/alunos`, para não quebrar links já compartilhados.
+
+O estado ativo do menu usa o prefixo mais longo entre os itens: com
+`/financeiro` e `/financeiro/relatorios` os dois no menu, um `startsWith`
+simples acendia dois itens ao mesmo tempo na rota aninhada.
+
+## Real infrastructure this now runs against
+
+- **Supabase project**: `erp-escolar-br` (`xozhqzdniagwjlxoiarx`, `sa-east-1`),
+  org `jorquesa@icloud.com's Org`. 20 migrations applied. An existing
+  project in the same org (`Elara PMS`) was **paused** to free a slot under
+  the org's 2-project free-tier cap — unpause it from the Supabase
+  dashboard if you need it back.
+- **Vercel project**: `erp-escolar-br-app`, team `JQ` (`jq81`), deployed to
+  `https://erp-escolar-br-app-jq81.vercel.app`. Not connected to this
+  GitHub repo (see "Known tool gaps" below) — redeploys are manual until
+  someone connects it via the Vercel dashboard (Project Settings → Git →
+  Connect Repository, root directory `erp-escolar-br/apps/web`).
+  Two earlier project names (`erp-escolar-br`, `erp-escolar-br-web`) were
+  created by mistake during this session and are now stuck unable to
+  accept deployments — see "Known tool gaps."
+  The `erp-escolar-br` one did get git-linked to this repo, so it was
+  auto-building on every push and failing, surfacing as a red
+  `Vercel – erp-escolar-br` check on the PR. Root cause (from its build
+  log): its Root Directory is the **repo root**, not
+  `erp-escolar-br/apps/web`, so it read the root `vercel.json`, ran
+  `pnpm install --no-frozen-lockfile` against the whole SAGA workspace,
+  and died with `ERR_PNPM_UNSUPPORTED_ENGINE` — Vercel hands that project
+  pnpm 6.35.1 while the root `package.json` requires `engines.pnpm >= 9`.
+  Fixed by adding `"ignoreCommand": "exit 0"` to the **root**
+  `vercel.json`, the same pattern `apps/api/vercel.json` already uses to
+  keep `saga-api` from building. Only a project whose Root Directory is
+  the repo root reads that file, and `erp-escolar-br` is the only one, so
+  `saga-web` (root dir `apps/web`) and `saga-api` (root dir `apps/api`)
+  are unaffected. Delete the stray project in the Vercel dashboard and
+  that line can be reverted.
+- **Make.com**: org `JQ`, team `My Team`. Two real scenarios created
+  (inactive): "Régua de Cobrança" (daily, 08:00) and "Relatório Semanal de
+  Inadimplência" (weekly, Monday 08:00).
+
+## Manual steps required before this is actually live
+
+None of these could be done from this session — either the capability
+doesn't exist in the tools available, or doing it destructively wasn't
+appropriate to do unprompted. All are one-time, a few minutes each.
+
+1. ~~**Enable the Custom Access Token Hook**~~ — **no longer required.**
+   Migration `0017` rewrote `fn_jwt_escola_id()`/`fn_jwt_role()` to derive
+   the caller's escola and papel from their own `pessoas` row via
+   `auth.uid()` instead of from hook-stamped JWT claims, so every
+   role-scoped policy now works on a stock project with nothing toggled in
+   the dashboard. Enabling the hook (Authentication → Hooks → Custom
+   Access Token → `custom_access_token_hook`) remains harmless and is
+   still worth doing if you later want the claims present in the JWT for
+   some other consumer — the policies simply no longer read them.
+2. **Set Supabase project secrets** (dashboard → Edge Functions → Secrets,
+   or `supabase secrets set` via the CLI, which this session doesn't have):
+   - `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` — once a real Asaas account
+     exists (Milestone 5 stays `501 asaas_not_configured` until then).
+   - `REGUAS_API_TOKEN` — any random secret string; also paste the same
+     value into both Make scenarios' HTTP module header (currently
+     `Bearer SET-ME-REGUAS-API-TOKEN`) before activating them.
+   - `NFE_PROVIDER_API_URL`, `NFE_PROVIDER_API_KEY` — once a real eNF
+     provider account exists (PlugNotas, eNotas, NFE.io, or a
+     município's own API — `emitir-nota-fiscal` accepts any provider
+     that speaks its `{prestador, tomador, valor, dataEmissao}` →
+     `{referencia, status}` contract). Until set, "Emitir NF" records a
+     `pendente` bookkeeping row instead of calling a real provider.
+   - `NFE_WEBHOOK_TOKEN` — any random secret string, configured the same
+     way as `ASAAS_WEBHOOK_TOKEN`; paste the same value into the eNF
+     provider's webhook configuration once one exists.
+3. **Connect the Vercel project to GitHub** for auto-deploy on push
+   (Project Settings → Git, project `erp-escolar-br-app`) — see "Known
+   tool gaps."
+4. **Set real Twilio/Z-API and SMTP/push credentials** and replace the
+   `util:SetVariable2` stub step in both Make scenarios with actual
+   WhatsApp/e-mail/push send modules, then activate both scenarios
+   (`scenarios_activate`).
+5. **Point `apps/web` at real Vercel env vars** — `NEXT_PUBLIC_SUPABASE_URL`
+   / `NEXT_PUBLIC_SUPABASE_ANON_KEY` currently fall back to hardcoded
+   values in `src/lib/supabase/config.ts` (see that file's comment) because
+   this session had no way to set Vercel project env vars. Setting the real
+   env vars in the dashboard overrides the fallback with no code change
+   needed — do this and then remove the hardcoded fallback values.
+6. **Real Asaas + WhatsApp accounts** — see "What's not done" below; these
+   are the same accounts CLAUDE.md-equivalent invariants require before
+   any real student/financial data is loaded.
+7. **Legal review of `legal/*.md`** — a Brazilian lawyer (LGPD/education
+   law) needs to review the termo de uso, política de privacidade, and
+   contrato de operador de dados drafted there, fill in every
+   `[PLACEHOLDER]` per school/unidade, and publish a final version. Bump
+   `VERSAO_TERMO_ATUAL` in
+   `apps/web/src/app/(app)/portal/consentimento-form.tsx` once that's
+   done — see `legal/README.md`.
+
+## Known tool gaps hit during this session (for whoever picks this up)
+
+Documented here rather than silently worked around, so the next session
+doesn't waste time rediscovering them:
+
+- **No Vercel env-var-setting tool.** Worked around with a public,
+  non-secret fallback in `config.ts` (safe — see that file's comment) but
+  a real tool for this doesn't exist in this session's Vercel MCP access.
+- **No Supabase secrets-setting tool.** `ASAAS_API_KEY` etc. can only be
+  read via `Deno.env.get()` in Edge Function code — setting the actual
+  values requires dashboard or CLI access this session doesn't have.
+- **`create_git_project` retried against an existing unlinked project
+  corrupts its deploy permissions.** The tool's own description says it
+  "does not reconnect an existing unlinked project with the same name,"
+  but calling it anyway (twice, while debugging) left both
+  `erp-escolar-br` and `erp-escolar-br-web` unable to accept ANY deploy
+  (production or preview) via `deploy_to_vercel`, with a 403
+  "You don't have permission" error that persisted across multiple
+  target types and retries. Do not retry `create_git_project` against a
+  project it just failed to link — use a fresh project name instead (what
+  `erp-escolar-br-app` is).
+- **No network egress from this sandbox to `*.supabase.co` or
+  `*.vercel.app`.** Could not `curl` either the deployed Edge Functions or
+  the deployed frontend to verify them end-to-end over HTTP. Verification
+  instead relied on: local build/lint passing, the 106-test tenant-
+  isolation suite passing against a local Postgres running the identical
+  migrations, and rollback-wrapped `execute_sql` smoke tests directly
+  against the real Supabase project (e.g. `fn_gerar_parcelas`, confirmed
+  producing 12 correctly-discounted monthly parcelas from a synthetic
+  contract, then rolled back). **Nobody has loaded the deployed app in a
+  browser and clicked through signup → login → cadastro → contrato →
+  portal yet** — do that before treating this as verified.
+
+## Running Milestone 1 locally (schema + RLS only, no cloud needed)
+
+```bash
+cd erp-escolar-br
+npm install
+docker compose up -d   # or use the native Postgres cluster pattern below
+npm run db:reset:test          # local auth shim + all migrations + two-escola fixture
+npm run test:tenant-isolation  # the mandatory cross-tenant attack suite (106 cases)
+```
+
+## Running apps/web locally
+
+```bash
+cd erp-escolar-br/apps/web
+npm install
+cp .env.example .env.local   # or rely on the config.ts fallback (see above)
+npm run dev
+```
+
+## Multi-tenancy (spec §3)
+
+- Every domain table carries `escola_id uuid not null references escolas(id)`.
+- RLS is enabled (and policies attached) on all 18 tenant-scoped tables,
+  no exceptions.
+- Every child→parent reference uses a **composite foreign key** —
+  `unique (id, escola_id)` on the parent, `foreign key (parent_id, escola_id)
+references parent(id, escola_id)` on the child — so a row can never point
+  at a parent belonging to a different escola, as defense-in-depth
+  alongside RLS.
+- The caller's escola and papel are resolved server-side from their own
+  `pessoas` row, keyed on `auth.uid()` — never from anything
+  client-supplied. Since `0017` that lookup happens **directly in
+  `fn_jwt_escola_id()`/`fn_jwt_role()`** (SECURITY DEFINER, so policies on
+  `pessoas` don't recurse; grants closed to `authenticated` only in
+  `0018`), rather than by reading JWT claims. The Custom Access Token Hook
+  (`0011`) still exists and still stamps `escola_id`/`escola_role` when
+  enabled, but nothing depends on it any more — which both removes a
+  dashboard-only setup step and closes a real revocation gap, since a JWT
+  keeps its stamped claims until it expires (a demoted admin stayed admin
+  for the life of their token) while the table is read fresh per
+  statement. **`escola_role`, not `role`**, in that hook: Supabase reserves
+  the top-level `role` claim for `anon`/`authenticated` (PostgREST uses it
+  to pick the Postgres role) — a real bug caught via `search_docs` before
+  shipping, see `0010_fix_role_claim_key.sql`.
+- No table ever gets a `DELETE` policy or grant, for any profile — hard
+  deletes are not part of the app-level contract (`deleted_at` + RLS
+  filtering only). `consentimentos_lgpd` additionally has no `UPDATE`
+  grant (append-only / guarda permanente). `logs_acesso` has no
+  `INSERT`/`UPDATE` grant for any app role — it is written only by the
+  `SECURITY DEFINER` audit trigger.
+- `tests/tenant-isolation.test.mjs`: 106/106 passing locally against the
+  same migrations now applied to the real Supabase project.
+- `get_advisors` (security) run against the real project after every DDL
+  change: down to 1 accepted finding (`fn_current_pessoa_id` callable by
+  `authenticated` via RPC — intentional, it only ever returns the caller's
+  own id). Two SECURITY DEFINER functions that Supabase's default
+  privileges had accidentally exposed as public RPC endpoints were closed
+  in `0009_harden_functions.sql`.
+
+## Desvios da especificação (flagged, not silent)
+
+The spec says: _"Se encontrar uma contradição na spec, pare e pergunte em
+vez de decidir sozinho."_ These are gaps, not contradictions — additions
+needed to implement an explicit requirement that had no table to hang off
+of, or engineering decisions the spec left open. Flagged here for review
+rather than decided silently:
+
+1. **`professores_turmas` table** — not in §4's table list. Added because
+   §3.6 ("Professor só enxerga as turmas atribuídas a ele") is a
+   non-negotiable RLS rule with nothing else to scope it against.
+2. **`escola_role` custom JWT claim** — §3.4 only names `escola_id` as a
+   custom claim. A second claim was added, server-set at signup/invite
+   exactly like `escola_id` (via the Custom Access Token Hook), because
+   the four-profile model in §3 has no other claims mechanism specified.
+   Named `escola_role` rather than `role` — see above.
+3. **`fn_current_pessoa_id()`** — resolves the caller's own `pessoas.id`
+   from `auth.uid()` via `pessoas.auth_user_id`, instead of a third custom
+   claim. Chosen over a `pessoa_id` JWT claim to avoid a claim that could
+   drift from the `pessoas` table; this is Supabase's documented pattern
+   for identity lookups inside RLS policies.
+4. **Enum sets** (`parcela_status`, `nota_fiscal_status`, `matricula_status`
+   values, etc.) — §4 says "status" without enumerating values for most
+   fields. Reasonable domain-standard values were chosen.
+5. **CPF is nullable on `pessoas`** — most `aluno` rows won't have one
+   (minors). Validity (`fn_cpf_valido`) is still enforced whenever a CPF
+   _is_ present.
+6. **Role priority when a pessoa holds multiple `papeis`** — spec §4
+   explicitly allows a person to be e.g. professor AND responsavel
+   simultaneously, but doesn't say which "hat" governs a session. The
+   Custom Access Token Hook picks the highest-priority role by
+   `pessoa_papel`'s enum declaration order (admin > secretaria > professor
+   > responsavel > aluno). A future "act as" role switcher could replace
+   > this with an explicit per-session choice.
+7. **No separate REST API layer** — `apps/web` talks to Supabase directly
+   (PostgREST + RPC + Edge Functions) from client and server components,
+   per the spec's own architecture (§2: Supabase + Next.js, no mention of
+   a custom backend). All privileged writes (signup, invite, Asaas,
+   réguas) go through Edge Functions using `service_role`, never
+   client-side (§3.7).
+8. **Réguas call platform-wide Edge Functions, not per-escola ones** —
+   spec §5 doesn't specify whether Make orchestrates per-school or
+   globally; built as one global batch job (service_role, shared-token
+   auth) iterating all escolas per run, matching how a real multi-tenant
+   SaaS's scheduled jobs normally work. Delivery is still meant to reach
+   each school's own responsáveis/direção — only the trigger/collection
+   step is centralized.
+
+## Guardrails honored (spec §6)
+
+- Zero `service_role` usage in browser code — every privileged operation
+  (signup, invite, Asaas, réguas) is an Edge Function.
+- Every table born in this project ships with RLS enabled in the same
+  migration set — `0008_rls_policies.sql` is exhaustive, no table is
+  missing a policy.
+- All monetary columns are `numeric(12,2)`.
+- `ALTER DATABASE ... SET timezone TO 'America/Sao_Paulo'` (session
+  default); all columns needing wall-clock semantics are `timestamptz`.
+- CPF/CNPJ are validated in the database via `fn_cpf_valido`/`fn_cnpj_valido`
+  (real mod-11 check-digit algorithms, not format-only), as `CHECK`
+  constraints — not only client-side.
+- No real student/personal data anywhere: `tests/fixtures/seed-two-escolas.sql`
+  is entirely synthetic (placeholder names, CPF/CNPJ numbers with valid
+  check digits but no correspondence to real people or companies). The
+  Supabase project itself currently has zero rows in every table.
+
+## What's not done — do not treat as production-ready
+
+- ~~The Custom Access Token Hook is still not enabled~~ — **fixed in
+  `0017`/`0018`**: the RLS helpers no longer depend on that hook (see
+  "Manual steps required" #1). A logged-in user now sees their own
+  school's data on a stock project. Verified against the real project
+  with a rolled-back transaction simulating a JWT carrying only `sub`:
+  the caller's escola/papel resolve correctly and rows from a second
+  escola stay invisible. The 106-case tenant-isolation suite passes
+  unchanged, and an extra local check exercises the no-claims path
+  directly for admin/professor/responsável plus an unknown user (who
+  gets NULL/NULL and sees nothing).
+- Asaas, WhatsApp/e-mail/push, and eNF (NFS-e) are entirely stubbed
+  pending real accounts — see "Manual steps required" above.
+  `emitir-nota-fiscal` is a real, provider-agnostic integration point
+  (see "Post-Milestone-8 additions"), but with no `NFE_PROVIDER_API_URL`
+  configured it falls back to recording a `pendente` bookkeeping row —
+  there is no real NFS-e/prefeitura call happening yet.
+- **Termo de uso / política de privacidade / contrato de operador de
+  dados now exist as drafts** (`legal/`), replacing pure placeholder
+  text — they cover the LGPD-required content (data categories, legal
+  basis, third-party sharing with Asaas/eNF provider/Make.com, retention,
+  data-subject rights, DPO contact, sub-processor list) and the consent
+  form's `finalidade` copy was aligned to match. **They are explicitly
+  marked as unreviewed drafts** (`legal/README.md`) — no lawyer has read
+  them, every `[PLACEHOLDER]` (razão social, CNPJ, DPO contact, foro)
+  still needs filling in per school/unidade, and `VERSAO_TERMO_ATUAL`
+  in `consentimento-form.tsx` needs bumping once a reviewed version is
+  published. Per spec §6, real student data must never be loaded before
+  a lawyer has signed off on these, regardless of how much text now
+  exists.
+- No automated test coverage for `apps/web` itself (only the database
+  layer has automated tests — the 106-case tenant-isolation suite, which
+  doesn't cover any UI added after Milestone 1).
+- No CI wiring for any of this (SAGA's own `pull-request`/`security`
+  GitHub Actions workflows run against the whole repo and will lint/
+  format-check `apps/web`, but nothing runs the Next.js build or the
+  Supabase migrations in CI).
+- Two stray Vercel projects (`erp-escolar-br`, `erp-escolar-br-web`,
+  see "Known tool gaps") still exist and are harmless but unused —
+  worth deleting from the dashboard.
