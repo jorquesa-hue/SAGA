@@ -1,16 +1,5 @@
 import { redirect } from "next/navigation";
 import { getCurrentPessoa } from "@/lib/pessoa";
-import {
-  IconBarChart,
-  IconBuilding,
-  IconClipboardCheck,
-  IconGraduationCap,
-  IconGrid,
-  IconHome,
-  IconMegaphone,
-  IconUsers,
-  IconWallet,
-} from "@/components/icons";
 import AppNav, { type NavItem } from "./app-nav";
 
 const STAFF_PAPEIS = ["admin", "secretaria"];
@@ -46,22 +35,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     {
       href: "/dashboard",
       label: isProfessor && !isStaff ? "Minhas turmas" : "Painel",
-      icon: IconGrid,
+      icon: "grid",
     },
     ...(isStaff
       ? [
-          { href: "/alunos", label: "Alunos", icon: IconGraduationCap },
-          { href: "/matriculas", label: "Matrículas", icon: IconClipboardCheck },
-          { href: "/financeiro", label: "Financeiro", icon: IconWallet },
+          { href: "/alunos", label: "Alunos", icon: "graduationCap" as const },
+          { href: "/matriculas", label: "Matrículas", icon: "clipboardCheck" as const },
+          { href: "/financeiro", label: "Financeiro", icon: "wallet" as const },
         ]
       : []),
-    ...(isResponsavel ? [{ href: "/portal", label: "Portal", icon: IconHome }] : []),
-    { href: "/comunicados", label: "Comunicados", icon: IconMegaphone },
+    ...(isResponsavel ? [{ href: "/portal", label: "Portal", icon: "home" as const }] : []),
+    { href: "/comunicados", label: "Comunicados", icon: "megaphone" },
     ...(isStaff
       ? [
-          { href: "/financeiro/relatorios", label: "Relatórios", icon: IconBarChart },
-          { href: "/escola", label: "Escola", icon: IconBuilding },
-          { href: "/equipe", label: "Equipe", icon: IconUsers },
+          { href: "/financeiro/relatorios", label: "Relatórios", icon: "barChart" as const },
+          { href: "/escola", label: "Escola", icon: "building" as const },
+          { href: "/equipe", label: "Equipe", icon: "users" as const },
         ]
       : []),
   ];

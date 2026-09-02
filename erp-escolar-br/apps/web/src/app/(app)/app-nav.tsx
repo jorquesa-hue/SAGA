@@ -1,16 +1,46 @@
 "use client";
 
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo, LogoMark } from "@/components/brand";
-import { IconMenu, IconX, type IconProps } from "@/components/icons";
+import {
+  IconBarChart,
+  IconBuilding,
+  IconClipboardCheck,
+  IconGraduationCap,
+  IconGrid,
+  IconHome,
+  IconMegaphone,
+  IconMenu,
+  IconUsers,
+  IconWallet,
+  IconX,
+  type IconProps,
+} from "@/components/icons";
 import SignOutButton from "./sign-out-button";
+
+// AppLayout ((app)/layout.tsx) is a Server Component; a React component
+// reference is a function and can't cross the server->client boundary as a
+// prop (Next.js rejects it at request time — "Functions cannot be passed
+// directly to Client Components"). NavItem carries a string key instead,
+// resolved to a component here, inside the client boundary.
+const ICONS: Record<string, React.ComponentType<IconProps>> = {
+  grid: IconGrid,
+  graduationCap: IconGraduationCap,
+  clipboardCheck: IconClipboardCheck,
+  wallet: IconWallet,
+  home: IconHome,
+  megaphone: IconMegaphone,
+  barChart: IconBarChart,
+  building: IconBuilding,
+  users: IconUsers,
+};
 
 export interface NavItem {
   href: string;
   label: string;
-  icon: ComponentType<IconProps>;
+  icon: keyof typeof ICONS;
 }
 
 function initials(nome: string) {
@@ -56,7 +86,7 @@ export default function AppNav({
   const navLinks = (onNavigate?: () => void) => (
     <nav aria-label="Principal" className="flex flex-col gap-0.5 px-3">
       {items.map((it) => {
-        const Icon = it.icon;
+        const Icon = ICONS[it.icon];
         return (
           <Link
             key={it.href}
