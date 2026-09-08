@@ -826,6 +826,19 @@ importers:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@22.20.1)(jsdom@25.0.1(supports-color@7.2.0))(supports-color@7.2.0)(tsx@4.23.1)(yaml@2.9.0)
 
+  packages/vision-weight:
+    dependencies:
+      '@jk/domain-kernel':
+        specifier: workspace:*
+        version: link:../domain-kernel
+    devDependencies:
+      typescript:
+        specifier: ^5.6.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@22.20.1)(jsdom@25.0.1(supports-color@7.2.0))(supports-color@7.2.0)(tsx@4.23.1)(yaml@2.9.0)
+
 packages:
 
   '@adobe/css-tools@4.5.0':
@@ -861,6 +874,9 @@ packages:
   '@aws-sdk/core@3.977.4':
     resolution: {integrity: sha512-CEkcQlMOQJCvul60U7wdAOACjtdgFWDsfJI+6wUOGdhGNV2lGbuJpi/R50QLpFG3Tp+sQxa/RmzC3X7KHbhuTA==}
     engines: {node: '>=20.0.0'}
+    deprecated: |-
+      Deprecated due to Document number parsing bug in JSON, see
+        https://github.com/aws/aws-sdk-js-v3/issues/8246. Newer version available.
 
   '@aws-sdk/credential-provider-env@3.972.65':
     resolution: {integrity: sha512-lJT2aRw9wCV8jPHyFJjdZLD4HTydL6/22AnCSOB8e/LqOc55nEJGLHkJQeSxhn8QiqyjFwPKQFtMw0ovjRUY/g==}
