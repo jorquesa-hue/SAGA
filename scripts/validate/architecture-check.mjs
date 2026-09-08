@@ -45,6 +45,10 @@ const SHARED_TECHNICAL = new Set([
   "@jk/contracts-events",
   "@jk/offline-sync",
   "@jk/sync-http",
+  // Pure computation kernel (photogrammetry, morphometry, identity scoring).
+  // Shared rather than a feature package because it owns no tables and must be
+  // callable from the API, the edge gateway and herd-operations alike.
+  "@jk/vision-weight",
 ]);
 
 const violations = [];

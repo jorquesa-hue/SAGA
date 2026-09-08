@@ -1,0 +1,28 @@
+{
+  "name": "@jk/vision-weight",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Camera weight estimation kernel: plane photogrammetry (scale recovery), silhouette morphometry, multi-species weight models, ensemble fusion with honest uncertainty, and closed-set ear-tag identity scoring. Pure deterministic functions — no I/O, no database, no clock, no randomness. JK-PLT-EES-001 §11, §34.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run",
+    "test:integration": "echo 'no integration tests for vision-weight'"
+  },
+  "dependencies": {
+    "@jk/domain-kernel": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "vitest": "^3.2.6"
+  }
+}
