@@ -71,8 +71,7 @@ export function measureRosterDensity(
     const original = identifier[i]!;
     for (const replacement of digits) {
       if (replacement === original) continue;
-      const variant =
-        identifier.slice(0, i) + replacement + identifier.slice(i + 1);
+      const variant = identifier.slice(0, i) + replacement + identifier.slice(i + 1);
       if (!roster.has(variant)) continue;
       any++;
       if ((confusions.get(original) ?? []).includes(replacement)) tierA++;

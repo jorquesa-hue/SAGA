@@ -94,7 +94,8 @@ export function ctcScore(lattice: CtcLattice, target: string): number {
   if (T < M) return LOG_ZERO;
 
   /** Extended sequence: blank, l1, blank, l2, ..., blank. */
-  const extended = (u: number): number => (u % 2 === 0 ? blankIndex : labels[(u - 1) / 2]!);
+  const extended = (u: number): number =>
+    u % 2 === 0 ? blankIndex : labels[(u - 1) / 2]!;
 
   let previous = new Float64Array(U).fill(LOG_ZERO);
   let current = new Float64Array(U).fill(LOG_ZERO);

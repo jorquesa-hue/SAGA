@@ -102,7 +102,9 @@ describe("frame correlation", () => {
     expect(fuseFrameScores(perFrame, 0.8)).toBeCloseTo(-8, 9);
     expect(fuseFrameScores(perFrame, 1)).toBeCloseTo(-10, 9);
     // One unreadable frame poisons the pass rather than being silently dropped.
-    expect(fuseFrameScores([-2, Number.NEGATIVE_INFINITY])).toBe(Number.NEGATIVE_INFINITY);
+    expect(fuseFrameScores([-2, Number.NEGATIVE_INFINITY])).toBe(
+      Number.NEGATIVE_INFINITY,
+    );
   });
 });
 
@@ -116,9 +118,7 @@ describe("roster density — how ranches actually number tags", () => {
 
   it("finds many rivals in a contiguous tag block — the dominant real-world case", () => {
     // A lot tagged in one run, exactly how it is done in practice.
-    const roster = new Set(
-      Array.from({ length: 500 }, (_, i) => String(12000 + i)),
-    );
+    const roster = new Set(Array.from({ length: 500 }, (_, i) => String(12000 + i)));
     const density = measureRosterDensity("12345", roster);
 
     // Every units-digit and tens-digit variant is another real animal here.
@@ -285,8 +285,6 @@ describe("weight prediction", () => {
   });
 
   it("returns nothing for an animal with no weight history", () => {
-    expect(
-      predictWeight({ animalId: "a", visualId: "1", tier: "session" }),
-    ).toBeNull();
+    expect(predictWeight({ animalId: "a", visualId: "1", tier: "session" })).toBeNull();
   });
 });

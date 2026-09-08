@@ -181,7 +181,8 @@ function refineGeometric(
 ): number[][] {
   // Parameterise with h33 == 1.
   const scale = initial[2]![2]!;
-  if (!Number.isFinite(scale) || Math.abs(scale) < 1e-12) return initial.map((r) => [...r]);
+  if (!Number.isFinite(scale) || Math.abs(scale) < 1e-12)
+    return initial.map((r) => [...r]);
   let theta = [
     initial[0]![0]! / scale,
     initial[0]![1]! / scale,
@@ -213,9 +214,7 @@ function refineGeometric(
   let current = cost(theta);
 
   for (let iter = 0; iter < 50; iter++) {
-    const jtj: number[][] = Array.from({ length: 8 }, () =>
-      new Array<number>(8).fill(0),
-    );
+    const jtj: number[][] = Array.from({ length: 8 }, () => new Array<number>(8).fill(0));
     const jtr = new Array<number>(8).fill(0);
     const h = toMatrix(theta);
 

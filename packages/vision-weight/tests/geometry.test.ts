@@ -115,9 +115,7 @@ describe("two-plane geometry solve", () => {
     )!;
 
     const elevatedWorld = boardCorners({ x: 0.05, y: 0.05 }, 0.45);
-    const elevatedPixels = elevatedWorld.map((w) =>
-      CAMERA.project(w, REFERENCE_HEIGHT),
-    );
+    const elevatedPixels = elevatedWorld.map((w) => CAMERA.project(w, REFERENCE_HEIGHT));
     const elevated = estimateHomography(
       elevatedWorld.map((w, i) => ({ pixel: elevatedPixels[i]!, world: w })),
     )!;
@@ -175,9 +173,9 @@ describe("two-plane geometry solve", () => {
     const naive = applyHomography(ground.matrix, pixel);
 
     // The naive reading is inflated about the nadir...
-    expect(Math.hypot(naive.x - geometry.nadir.x, naive.y - geometry.nadir.y)).toBeGreaterThan(
-      Math.hypot(truth.x - geometry.nadir.x, truth.y - geometry.nadir.y),
-    );
+    expect(
+      Math.hypot(naive.x - geometry.nadir.x, naive.y - geometry.nadir.y),
+    ).toBeGreaterThan(Math.hypot(truth.x - geometry.nadir.x, truth.y - geometry.nadir.y));
 
     // ...and the correction recovers the truth.
     const corrected = correctForHeight(naive, geometry, REFERENCE_HEIGHT);
@@ -282,11 +280,7 @@ describe("drift detection", () => {
 
   it("catches a scale change from the post being knocked", () => {
     // The camera drops 8 cm: every length silently shrinks by 2%.
-    const drift = assessDrift(
-      homographyForCamera(4.0),
-      homographyForCamera(3.92),
-      gate,
-    );
+    const drift = assessDrift(homographyForCamera(4.0), homographyForCamera(3.92), gate);
     expect(Math.abs(drift.scaleRatio - 1)).toBeGreaterThan(0.015);
     expect(drift.exceedsTolerance).toBe(true);
   });

@@ -364,7 +364,10 @@ export function resolveIdentity(
     };
   }
 
-  if (best.posterior >= thresholds.minPosterior && marginNats >= thresholds.minMarginNats) {
+  if (
+    best.posterior >= thresholds.minPosterior &&
+    marginNats >= thresholds.minMarginNats
+  ) {
     return {
       decision: "auto_accept",
       best,

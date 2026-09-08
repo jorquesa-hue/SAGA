@@ -2,6 +2,19 @@ import { applyHomography, type Homography, type Point2 } from "./homography.js";
 import { choleskySolve } from "./matrix.js";
 
 /**
+ * MONOCULAR FALLBACK PATH. The primary acquisition mode is a depth sensor
+ * (see ./depth.ts), which MEASURES metric scale and the animal's back height
+ * per pixel and therefore needs none of the machinery in this file.
+ *
+ * This module is retained for the degraded tier: a farm running a plain RGB
+ * camera, or a depth sensor operating outside its usable range or washed out
+ * by direct sun. It is deliberately not deleted, because the acquisition layer
+ * is meant to be swappable — but it is NOT the path to reason about first, and
+ * everything it computes carries materially more uncertainty than the depth
+ * equivalent.
+ *
+ * ---
+ *
  * Two-plane geometry: recovering the camera's height above the ground and the
  * nadir point (where the optical axis meets the ground), using nothing but two
  * homographies calibrated at two known heights.
@@ -63,9 +76,7 @@ const MAX_DORSAL_HEIGHT_RATIO = 0.5;
 
 /** Rejection reasons that a calibration can fail with, for operator messaging. */
 export type GeometryFailure =
-  | "insufficient_points"
-  | "planes_indistinguishable"
-  | "degenerate_fit";
+  "insufficient_points" | "planes_indistinguishable" | "degenerate_fit";
 
 export interface GeometryResult {
   ok: boolean;
