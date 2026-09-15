@@ -258,7 +258,7 @@ function normalizarCabecalho(s: string) {
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 }
@@ -269,7 +269,7 @@ function csvTemplate() {
   const escapar = (v: string) => `"${v.replaceAll('"', '""')}"`;
   const csv = [header, exemplo].map((l) => l.map(escapar).join(";")).join("\r\n");
   // BOM: sem ele o Excel lê o arquivo como Latin-1 e quebra todo acento.
-  return "﻿" + csv + "\r\n";
+  return "\uFEFF" + csv + "\r\n";
 }
 
 // ── Componente ─────────────────────────────────────────────────────────────
@@ -330,7 +330,7 @@ export default function ImportarMatriculas() {
     setLinhas([]);
     setArquivoNome(file.name);
 
-    const texto = (await file.text()).replace(/^﻿/, "");
+    const texto = (await file.text()).replace(/^\uFEFF/, "");
     const primeiraQuebra = texto.indexOf("\n");
     const cabecalhoBruto = primeiraQuebra === -1 ? texto : texto.slice(0, primeiraQuebra);
     const delim = detectarDelimitador(cabecalhoBruto);

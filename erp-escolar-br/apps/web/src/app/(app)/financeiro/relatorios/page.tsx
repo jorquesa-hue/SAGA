@@ -138,7 +138,7 @@ export default function RelatoriosPage() {
         row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(";"),
       )
       .join("\r\n");
-    const BOM = "﻿";
+    const BOM = "\uFEFF";
     const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
