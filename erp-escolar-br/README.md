@@ -500,29 +500,41 @@ depois (zero assinaturas em produção).
   project in the same org (`Elara PMS`) was **paused** to free a slot under
   the org's 2-project free-tier cap — unpause it from the Supabase
   dashboard if you need it back.
-- **Vercel project**: `erp-escolar-br-app`, team `JQ` (`jq81`), deployed to
-  `https://erp-escolar-br-app-jq81.vercel.app`. Not connected to this
-  GitHub repo (see "Known tool gaps" below) — redeploys are manual until
-  someone connects it via the Vercel dashboard (Project Settings → Git →
-  Connect Repository, root directory `erp-escolar-br/apps/web`).
-  Two earlier project names (`erp-escolar-br`, `erp-escolar-br-web`) were
-  created by mistake during this session and are now stuck unable to
-  accept deployments — see "Known tool gaps."
-  The `erp-escolar-br` one did get git-linked to this repo, so it was
-  auto-building on every push and failing, surfacing as a red
-  `Vercel – erp-escolar-br` check on the PR. Root cause (from its build
-  log): its Root Directory is the **repo root**, not
-  `erp-escolar-br/apps/web`, so it read the root `vercel.json`, ran
-  `pnpm install --no-frozen-lockfile` against the whole SAGA workspace,
-  and died with `ERR_PNPM_UNSUPPORTED_ENGINE` — Vercel hands that project
-  pnpm 6.35.1 while the root `package.json` requires `engines.pnpm >= 9`.
-  Fixed by adding `"ignoreCommand": "exit 0"` to the **root**
-  `vercel.json`, the same pattern `apps/api/vercel.json` already uses to
-  keep `saga-api` from building. Only a project whose Root Directory is
-  the repo root reads that file, and `erp-escolar-br` is the only one, so
-  `saga-web` (root dir `apps/web`) and `saga-api` (root dir `apps/api`)
-  are unaffected. Delete the stray project in the Vercel dashboard and
-  that line can be reverted.
+- **Vercel**: team `JQ` (`jq81`). Há dois projetos apontando para este
+  mesmo app, e **o que funciona não é o que este README dizia**. Estado
+  real, conferido pela API na sexta rodada:
+
+  | Projeto              | Root Directory            | Git | Build | Proteção | Serve |
+  | -------------------- | ------------------------- | --- | ----- | -------- | ----- |
+  | `erp-escolar-br`     | `erp-escolar-br/apps/web` | sim | ✅ ok | nenhuma  | ✅ código atual |
+  | `erp-escolar-br-app` | (não é este app)          | sim | ❌ cancelado | SSO | ❌ parado |
+
+  O `vercel.json` deste app (`installCommand: npm ci`, `outputDirectory:
+  .next`, `ignoreCommand` por diff de pasta), acrescentado na quinta
+  rodada, é lido pelo **`erp-escolar-br`** — e é o que fez o build voltar a
+  passar. URL pública com o código desta branch:
+
+      https://erp-escolar-br-git-claude-md-file-instructions-odzavn-jq81.vercel.app
+
+  Nenhum dos dois tem deployment de **produção** (`target: production`):
+  a branch de trabalho não é a branch de produção do projeto, então todo
+  build sai como preview. Promover é decisão de merge.
+
+  `erp-escolar-br-app` é resíduo de uma tentativa anterior: está com
+  Ignored Build Step configurado no painel (cancelando todo build, com
+  `errorLink` apontando para a doc do recurso) e com SSO ligado em tudo
+  que não é domínio próprio, então `erp-escolar-br-app-jq81.vercel.app`
+  responde 302 para o SSO da Vercel e serve código velho. Nenhuma das duas
+  configurações é alcançável pelas ferramentas disponíveis aqui — são
+  ajustes de painel. **Sugestão: apagar `erp-escolar-br-app` e
+  `erp-escolar-br-web`** (este último nunca chegou a ser ligado ao repo) e
+  ficar só com `erp-escolar-br`.
+
+  A nota anterior de que o Root Directory de `erp-escolar-br` era a raiz do
+  repo está **desatualizada** — o log de build mostra que ele lê
+  `erp-escolar-br/apps/web/vercel.json`. O `"ignoreCommand": "exit 0"` no
+  `vercel.json` da raiz continua valendo para quem tiver root dir na raiz,
+  e não afeta este app.
 - **Make.com**: org `JQ`, team `My Team`. Two real scenarios created
   (inactive): "Régua de Cobrança" (daily, 08:00) and "Relatório Semanal de
   Inadimplência" (weekly, Monday 08:00).
