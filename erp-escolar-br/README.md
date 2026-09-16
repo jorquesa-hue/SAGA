@@ -504,15 +504,16 @@ depois (zero assinaturas em produção).
   mesmo app, e **o que funciona não é o que este README dizia**. Estado
   real, conferido pela API na sexta rodada:
 
-  | Projeto              | Root Directory            | Git | Build | Proteção | Serve |
-  | -------------------- | ------------------------- | --- | ----- | -------- | ----- |
-  | `erp-escolar-br`     | `erp-escolar-br/apps/web` | sim | ✅ ok | nenhuma  | ✅ código atual |
-  | `erp-escolar-br-app` | (não é este app)          | sim | ❌ cancelado | SSO | ❌ parado |
+  | Projeto              | Root Directory            | Git | Build        | Proteção | Serve           |
+  | -------------------- | ------------------------- | --- | ------------ | -------- | --------------- |
+  | `erp-escolar-br`     | `erp-escolar-br/apps/web` | sim | ✅ ok        | nenhuma  | ✅ código atual |
+  | `erp-escolar-br-app` | (não é este app)          | sim | ❌ cancelado | SSO      | ❌ parado       |
 
-  O `vercel.json` deste app (`installCommand: npm ci`, `outputDirectory:
-  .next`, `ignoreCommand` por diff de pasta), acrescentado na quinta
-  rodada, é lido pelo **`erp-escolar-br`** — e é o que fez o build voltar a
-  passar. URL pública com o código desta branch:
+  O `vercel.json` deste app, acrescentado na quinta rodada, é lido pelo
+  **`erp-escolar-br`** — e é o que fez o build voltar a passar. Ele define
+  `installCommand` como `npm ci`, `outputDirectory` como `.next`, e um
+  `ignoreCommand` que pula o build quando o commit não toca esta pasta.
+  URL pública com o código desta branch:
 
       https://erp-escolar-br-git-claude-md-file-instructions-odzavn-jq81.vercel.app
 
@@ -535,6 +536,7 @@ depois (zero assinaturas em produção).
   `erp-escolar-br/apps/web/vercel.json`. O `"ignoreCommand": "exit 0"` no
   `vercel.json` da raiz continua valendo para quem tiver root dir na raiz,
   e não afeta este app.
+
 - **Make.com**: org `JQ`, team `My Team`. Two real scenarios created
   (inactive): "Régua de Cobrança" (daily, 08:00) and "Relatório Semanal de
   Inadimplência" (weekly, Monday 08:00).
