@@ -144,10 +144,99 @@ O estado ativo do menu usa o prefixo mais longo entre os itens: com
 `/financeiro` e `/financeiro/relatorios` os dois no menu, um `startsWith`
 simples acendia dois itens ao mesmo tempo na rota aninhada.
 
+## Quarta rodada: importação em lote (escola que já opera)
+
+Até aqui só existia cadastro de um registro por vez. Uma escola que já
+funciona não entra no sistema aluno por aluno: ela chega com centenas de
+matrículas, contratos e uma posição de pagamento ("de fevereiro a junho
+está tudo quitado"). Sem um caminho de migração, o produto só servia para
+escola nova — o que exclui quase todo cliente real.
+
+`fn_importar_matriculas(p_linhas jsonb, p_dry_run boolean, p_arquivo_nome
+text)` (migração 0025) recebe a planilha já convertida em JSON pelo
+navegador e cria, **numa transação só**, a cadeia inteira: pessoa do
+aluno → aluno → pessoa do responsável → vínculo → matrícula → contrato →
+parcelas → pagamentos do que já estava quitado.
+
+Quatro decisões sustentam o desenho:
+
+**SECURITY INVOKER, deliberadamente.** É o único ponto do sistema que
+escreve em nove tabelas de uma vez. Como DEFINER, o isolamento por tenant
+viraria uma checagem manual de `escola_id` repetida nove vezes — nove
+chances de esquecer uma. Como INVOKER, quem barra uma escrita cruzada é a
+mesma política `*_insert_staff` que já protege o CRUD, sem código novo.
+As checagens de papel no topo da função existem só para dar mensagem de
+erro legível; o isolamento é da RLS.
+
+**Duas fases, tudo-ou-nada.** A fase 1 valida as N linhas sem escrever
+nada e devolve relatório linha a linha; qualquer erro aborta o arquivo
+inteiro. "Importou 340 de 500" é pior que não ter importado: ninguém
+consegue dizer o que ficou de fora. `p_dry_run` é `true` por padrão, e a
+simulação não grava nem registro de auditoria — ela não muda nada.
+
+**Reaproveita `fn_gerar_parcelas` (0013)** em vez de gerar parcelas por
+conta própria. Competência, arredondamento e desconto têm que ser
+idênticos aos de um contrato assinado pela tela, senão o relatório
+financeiro passa a ter duas verdades.
+
+**Pagamentos migrados entram em ordem crescente de competência.** Isso não
+é detalhe de implementação: é o que faz `trg_pagamentos_ordem` (0019)
+aceitar o backfill histórico sem ser desligado. Quitar fev, mar, abr nessa
+ordem sempre satisfaz "não há parcela anterior em aberto". Nenhum bypass,
+nenhum `disable trigger` — a regra de negócio continua valendo durante a
+própria migração.
+
+Tabelas e valores novos:
+
+| Migração | O quê                                                          |
+| -------- | -------------------------------------------------------------- |
+| 0023     | valor `migracao` em `meio_pagamento`                           |
+| 0024     | tabela `importacoes` + helpers de coerção de texto de planilha |
+| 0025     | `fn_importar_matriculas`                                       |
+
+`meio_pagamento` ganhou `migracao` porque ninguém lembra se a mensalidade
+de março foi boleto, PIX ou dinheiro na secretaria. Gravar um palpite
+envenenaria todo relatório por meio de pagamento; `migracao` diz o que é
+verdade — quitada antes do sistema, instrumento desconhecido.
+
+`importacoes` guarda o **payload bruto** de cada importação efetiva.
+`logs_acesso` registra cada linha criada individualmente, mas não responde
+a única pergunta que alguém faz depois ("esse contrato está errado — qual
+upload criou, e o que o arquivo dizia?").
+
+A importação **nunca cria turma, curso ou ano letivo**: são decisões
+pedagógicas (etapa, turno, capacidade, unidade/CNPJ) que não cabem numa
+coluna de planilha, e inventá-las em massa produziria uma estrutura
+escolar plausível e errada. Turma inexistente vira erro acionável.
+
+Idempotência sai de graça das chaves naturais que já existiam:
+`alunos(escola_id, matricula_codigo)` e `matriculas(escola_id, aluno_id,
+ano_letivo_id)`. Reenviar o mesmo arquivo reporta `ja_importada` e não
+duplica nada.
+
+Interface em `/matriculas/importar` (`src/features/importar-matriculas.tsx`):
+baixar modelo CSV, subir o arquivo, simular, e só então confirmar. O
+parser de CSV é próprio — o formato que interessa é o que o Excel pt-BR
+exporta (separador `;`, aspas duplicadas, CRLF, BOM), e isso cabe numa
+máquina de estados curta.
+
+Limitação conhecida: `pessoas.data_nascimento` é `NOT NULL`, então a
+planilha **exige** a data de nascimento do responsável. Preferimos barrar
+a linha a preencher com uma data inventada — seria criar dado pessoal
+falso em massa. Se isso atritar na prática, a alternativa é tornar a
+coluna opcional no schema, o que afeta outras telas.
+
+Testado contra o Supabase real dentro de transações revertidas: linha com
+seis erros distintos; irmãos com o mesmo responsável (uma pessoa, dois
+alunos); bolsa de 100% (parcelas `isento`, sem pagamento de valor zero);
+quitação até 06/2026 (5 pagas, 3 atrasadas, 2 pendentes); reimportação do
+mesmo arquivo; isolamento entre tenants; e bloqueio de quem não é
+admin/secretaria.
+
 ## Real infrastructure this now runs against
 
 - **Supabase project**: `erp-escolar-br` (`xozhqzdniagwjlxoiarx`, `sa-east-1`),
-  org `jorquesa@icloud.com's Org`. 20 migrations applied. An existing
+  org `jorquesa@icloud.com's Org`. 25 migrations applied. An existing
   project in the same org (`Elara PMS`) was **paused** to free a slot under
   the org's 2-project free-tier cap — unpause it from the Supabase
   dashboard if you need it back.
