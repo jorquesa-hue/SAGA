@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentPapeis } from "@/lib/use-current-papeis";
 
 // Importação em lote — a migração de uma escola que já opera.
 //
@@ -274,9 +275,12 @@ function csvTemplate() {
 
 // ── Componente ─────────────────────────────────────────────────────────────
 
+const STAFF_PAPEIS = ["admin", "secretaria"];
+
 export default function ImportarMatriculas() {
   const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
+  const papeis = useCurrentPapeis();
 
   const [arquivoNome, setArquivoNome] = useState<string | null>(null);
   const [linhas, setLinhas] = useState<Record<string, string>[]>([]);
@@ -398,12 +402,30 @@ export default function ImportarMatriculas() {
   }
 
   const podeImportar =
-    relatorio !== null && relatorio.dry_run && relatorio.ok && relatorio.linhas_a_criar > 0;
+    relatorio !== null &&
+    relatorio.dry_run &&
+    relatorio.ok &&
+    relatorio.linhas_a_criar > 0;
   const concluida = relatorio !== null && !relatorio.dry_run && relatorio.ok;
 
   const comProblema = relatorio
     ? relatorio.linhas.filter((l) => l.erros.length > 0 || l.avisos.length > 0)
     : [];
+
+  // O link no menu só aparece para staff, mas a rota continua alcançável
+  // pela URL. Sem isto, um responsável baixaria o modelo, preencheria a
+  // planilha inteira e só descobriria que não pode importar ao clicar em
+  // "Simular", na forma de um erro cru vindo do Postgres. A RLS já barra a
+  // escrita; o que falta aqui é dizer isso antes do trabalho, não depois.
+  // papeis vazio é o estado de carregamento, não "sem papel nenhum" — daí
+  // o length > 0, que evita piscar o aviso para quem tem permissão.
+  if (papeis.length > 0 && !papeis.some((p) => STAFF_PAPEIS.includes(p))) {
+    return (
+      <p className="alert alert-warn">
+        A importação de matrículas é restrita a admin e secretaria.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -512,7 +534,9 @@ export default function ImportarMatriculas() {
             <Stat
               label={relatorio.dry_run ? "Serão criadas" : "Importadas"}
               value={String(
-                relatorio.dry_run ? relatorio.linhas_a_criar : relatorio.linhas_importadas,
+                relatorio.dry_run
+                  ? relatorio.linhas_a_criar
+                  : relatorio.linhas_importadas,
               )}
             />
             <Stat label="Já existiam" value={String(relatorio.linhas_ja_importadas)} />
@@ -529,7 +553,9 @@ export default function ImportarMatriculas() {
           {concluida && (
             <p className="alert alert-ok">
               Importação concluída: {relatorio.linhas_importadas}{" "}
-              {relatorio.linhas_importadas === 1 ? "matrícula criada" : "matrículas criadas"}
+              {relatorio.linhas_importadas === 1
+                ? "matrícula criada"
+                : "matrículas criadas"}
               , com contrato, parcelas e pagamentos já quitados.
             </p>
           )}
@@ -623,7 +649,11 @@ export default function ImportarMatriculas() {
                     <td className="text-xs">{a.arquivo_nome ?? "—"}</td>
                     <td>
                       <span
-                        className={a.status === "concluida" ? "badge badge-ok" : "badge badge-danger"}
+                        className={
+                          a.status === "concluida"
+                            ? "badge badge-ok"
+                            : "badge badge-danger"
+                        }
                       >
                         {a.status === "concluida" ? "Concluída" : "Reprovada"}
                       </span>
