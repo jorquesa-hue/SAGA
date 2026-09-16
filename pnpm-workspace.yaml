@@ -8,9 +8,28 @@ overrides:
   # its vulnerable esbuild 0.21).
   vite: "^6.4.3"
   # Pull the eslint/typescript-eslint toolchain's transitive brace-expansion up
-  # to the patched line (GHSA-mh99-v99m-4gvg: unbounded-expansion DoS, <=5.0.7).
+  # to the patched line (GHSA-mh99-v99m-4gvg: unbounded-expansion DoS, <=5.0.7,
+  # then GHSA-rgw5-rvv9-x895 which moved the patched floor to 5.0.9).
   # A deep dev-only dependency; the patch bump is behaviour-compatible.
-  brace-expansion: ">=5.0.8"
+  brace-expansion: ">=5.0.9"
+  # postcss's id generator; GHSA-2v37-7h3g-55p8 (custom generators can loop
+  # indefinitely when size is zero). Only nanoid 3.x is in the tree, so the
+  # override is pinned to that line rather than crossing to the ESM-only 5.x.
+  nanoid: "^3.3.18"
+  # GHSA-fxqj-rqcc-2cmp — attacker-controlled CSS can desynchronise the
+  # parser (incomplete fix of GHSA-6g55-p6wh-862q). Reached only through
+  # vite/vitest and the Tailwind toolchain at build time.
+  postcss: "^8.5.23"
+  # GHSA-5p4m-2wfm-xmqj — quadratic CPU consumption in !!omap resolution.
+  # Reached through @apidevtools/swagger-parser in contracts:validate.
+  js-yaml: "^4.3.1"
+  # GHSA-7p8r-x3mc-p8w7 (host confusion via backslash authority
+  # interpretation). fast-uri is present on two majors (ajv 8 and
+  # @fastify/ajv-compiler pull 3.x, fast-json-stringify pulls 4.x), each with
+  # its own patched floor. Bumped per major rather than collapsed onto one:
+  # an unbounded ">=3.1.5" would drag the 3.x consumers onto 4.x.
+  fast-uri@^3.0.0: "^3.1.5"
+  fast-uri@^4.0.0: "^4.1.2"
 auditConfig:
   ignoreGhsas:
     # GHSA-qwww-vcr4-c8h2 — React Router "RSC Mode CSRF Bypass" (react-router

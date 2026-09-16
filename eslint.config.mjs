@@ -12,6 +12,9 @@ export default tseslint.config(
       "contracts/examples/**",
       // React Native UI — built with the RN toolchain, not the repo tsc/eslint.
       "apps/mobile/ui/**",
+      // ERP Escolar BR — separate product, npm-based toolchain, own
+      // eslint.config.mjs; not part of the pnpm workspace or this lint run.
+      "erp-escolar-br/**",
     ],
   },
   ...tseslint.configs.recommended,
