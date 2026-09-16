@@ -314,10 +314,189 @@ débito; regressão completa da importação; e os quatro caminhos da fila
 (sem destinatário, reentrega duplicada, envio normal, nota `pendente` que
 não deve enfileirar).
 
+## Sexta rodada: portal da família — comunicados, assinatura e contato
+
+Pedido: um portal para os pais, para receber comunicações, pegar boleto,
+assinar a matrícula com assinatura eletrônica, e o que mais fizer sentido
+para eles resolverem sozinhos.
+
+Ao abrir a tela, dois defeitos do que já existia apareceram antes de
+qualquer funcionalidade nova. Estão corrigidos aqui, e valem ser lidos
+primeiro porque são bug, não melhoria.
+
+### Defeito 1: público-alvo não restringia nada
+
+`comunicados_select` era `escola_id = fn_jwt_escola_id()` e mais nada.
+Qualquer responsável autenticado lia **todo** comunicado da escola: o que
+foi escrito para o corpo docente, e o rascunho ainda não enviado. Filtrar
+na tela não resolveria — pela arquitetura do próprio spec (§3.7) a RLS é a
+única camada de autorização, e quem tem token faz `GET /rest/v1/comunicados`
+sem passar por tela nenhuma.
+
+A 0030 reescreve a política por papel, e `enviado_em` deixa de ser campo
+informativo para virar a fronteira entre rascunho e publicado para todo
+mundo que não é secretaria.
+
+| Papel            | Vê                                                           |
+| ---------------- | ------------------------------------------------------------ |
+| admin/secretaria | tudo, inclusive rascunho (é quem escreve)                    |
+| professor        | `todos`, `professores`, e a turma que leciona                |
+| responsável      | `todos`, `responsaveis`, e a turma do dependente matriculado |
+| aluno            | `todos` e a própria turma — nunca o que é dos responsáveis   |
+
+A última linha é deliberada: aviso de inadimplência é conversa com quem
+paga.
+
+### Defeito 2: "turma específica" não guardava turma nenhuma
+
+O formulário oferecia "Turma específica", gravava, e não existia coluna
+dizendo qual turma. Na prática era mais um comunicado para todo mundo, com
+um rótulo que mentia. A 0030 acrescenta `comunicados.turma_id` com uma
+restrição que exige turma exatamente quando o público é a turma, e a recusa
+nos demais casos. A tela da secretaria passou a pedir a turma.
+
+### Um acoplamento invisível que quase passou
+
+A primeira versão da política resolvia "é da turma?" com um `EXISTS` sobre
+`alunos`/`matriculas` dentro da própria política. Subconsulta em política
+roda como o **chamador**, então a RLS daquelas tabelas se aplica de novo ali
+dentro — e o aluno não tem política de leitura em `alunos`. O `EXISTS` dava
+falso e o comunicado da própria turma simplesmente não chegava nele. Sem
+erro e sem log: a única forma de falha que ninguém percebe. O teste
+`aluno com conta própria lê o geral e o da turma` foi o que pegou.
+
+A correção é `fn_turmas_do_usuario()` (SECURITY DEFINER), que responde
+"quais turmas são suas" de uma vez para os três papéis, sem depender da RLS
+das tabelas de vínculo.
+
+### Assinatura eletrônica do contrato
+
+Até aqui quem "assinava" era a secretaria, clicando em Assinar no
+Financeiro: o contrato ganhava `assinado_em` sem que nenhuma família tivesse
+manifestado vontade. Isso serve como marco operacional para gerar parcelas,
+e não é assinatura de ninguém.
+
+O que a 0029/0031 implementam é assinatura eletrônica **simples**, na
+acepção da Lei 14.063/2020 e da MP 2.200-2/2001: entre particulares, o que
+dá validade não é certificado ICP-Brasil, é a prova de autoria e
+integridade. `contratos_assinaturas` guarda o dossiê:
+
+| O quê   | Como                                                       |
+| ------- | ---------------------------------------------------------- |
+| quem    | pessoa, com nome e CPF **congelados** no momento do aceite |
+| quando  | timestamp do servidor, não do relógio do cliente           |
+| de onde | IP e user-agent da requisição                              |
+| o que   | o **texto integral** exibido, mais seu SHA-256             |
+
+O último ponto sustenta o resto. Guardar só "aceitou o contrato X" não prova
+nada — o contrato pode mudar depois. Guardamos o texto exato que a pessoa
+viu e o hash dele; se a escola alterar a anuidade amanhã, a assinatura
+continua apontando para o que foi aceito.
+
+E o texto é renderizado **no servidor** (`fn_contrato_texto`), dentro de
+`fn_assinar_contrato`, no mesmo instante da gravação. Se viesse do
+navegador, bastaria um POST forjado para "assinar" um contrato com outro
+valor — e a prova provaria exatamente a coisa errada.
+
+Quem assina é o responsável **financeiro** daquele aluno, mesma condição de
+`contratos_select_responsavel`: quem pode ler é quem pode assinar. Um
+contrato, uma assinatura; sem UPDATE e sem DELETE, como
+`consentimentos_lgpd` — assinatura errada se resolve com distrato
+registrado, não editando a prova.
+
+`/api/assinar-contrato` é a segunda (e última) rota deste app, pelo mesmo
+motivo da de consentimento: o IP tem de vir da requisição. Ela roda com a
+sessão de quem chamou, não com `service_role`.
+
+**Limites declarados.** Assinatura simples tem peso probatório menor que
+ICP-Brasil se a família contestar em juízo; o modelo comporta um provedor
+externo depois sem refazer nada, porque a tabela guarda o dossiê e não
+presume a origem. E o `p_ip` é informado por quem chama: o caminho honesto é
+a rota, que o lê do `x-forwarded-for`; uma chamada direta ao PostgREST
+poderia informar outro. É a mesma postura já aceita em
+`consentimentos_lgpd.ip`, e a diferença que importa está garantida — o que o
+signatário **não** consegue escolher é o conteúdo que está assinando.
+
+O texto do contrato é um resumo factual das condições (partes, aluno, turma,
+anuidade, parcelas, vencimento, descontos), **não um clausulado revisado por
+advogado**, e o campo `documento_url` do contrato é referenciado no fim para
+apontar o documento da escola. Mesma ressalva de `legal/README.md`.
+
+### Confirmação de leitura
+
+`comunicados_leituras`: a família marca o que já leu, e a escola enxerga
+quem confirmou. Para a escola, "avisamos a família" sem registro é a mesma
+coisa que não ter avisado quando alguém contesta. Append-only, igual ao
+consentimento — não se desfaz ter lido.
+
+### Contato self-service
+
+O e-mail em `pessoas` é para onde vão nota fiscal e régua de cobrança
+(0027, 0028). Depender da secretaria para corrigir uma letra errada é o
+jeito mais barato de a família parar de receber e ninguém descobrir por
+meses.
+
+Foi feito com `fn_atualizar_meu_email` (SECURITY DEFINER) e **não** com uma
+política `pessoas_update_self`, e o motivo é a parte que interessa: RLS
+autoriza **linhas**, não **colunas**, e `authenticated` tem UPDATE na tabela
+inteira. Com uma política de linha própria, o mesmo endereço reescreveria o
+próprio `papeis` para `{admin}` — escalada de privilégio em uma requisição.
+GRANT por coluna também não serve: é por role, e secretaria e responsável
+são o mesmo role `authenticated`. Há um teste que tenta exatamente isso.
+
+Só o e-mail. Nome e CPF continuam com a secretaria: são o que identifica a
+pessoa em contrato e em nota fiscal, e o CPF é o que amarra a assinatura já
+registrada.
+
+### Boleto: o que a tela diz hoje
+
+Continua dependendo de conta Asaas (Milestone 5, `asaas_not_configured`).
+O que mudou é a tela parar de repetir "Aguardando integração Asaas" em toda
+linha e passar a dizer o que a família precisa saber: **qual parcela pagar
+primeiro**. Desde a 0026 o banco recusa o pagamento de uma parcela enquanto
+houver outra em atraso do mesmo aluno; sem isso a família tentaria pagar a
+do mês e levaria um erro sem entender por quê. As demais aparecem como
+"libera após a parcela anterior".
+
+### Uma consequência das funções novas nos advisors
+
+`fn_assinar_contrato`, `fn_atualizar_meu_email` e `fn_turmas_do_usuario`
+aparecem no advisor `authenticated_security_definer_function_executable`,
+junto de `fn_current_pessoa_id`, `fn_jwt_escola_id` e `fn_jwt_role`, que já
+estavam lá. É intencional e não é achado: as três existem para serem
+chamadas por usuário autenticado, e cada uma autoriza por dentro. Nenhum
+achado novo de `search_path` foi introduzido.
+
+### Um bug de infraestrutura encontrado no caminho
+
+`db:reset:test` estava quebrado desde a 0027: a migração faz backfill a
+partir de `auth.users`, e o shim de teste local não define essa tabela. Ou
+seja, **a suíte obrigatória de isolamento (spec §3) não rodava desde
+então**. O shim passou a definir `auth.users` (vazia — a migração só lê), e
+a suíte voltou a rodar do zero.
+
+### Testes
+
+181 casos, todos verdes, contra PostgreSQL 16 do zero
+(`db:reset:test` + `test:tenant-isolation`) — 75 a mais que antes. Os novos
+cobrem cada ramo de visibilidade de comunicado por papel, a restrição de
+turma, a confirmação de leitura (em nome próprio, só do que se enxerga,
+sem desfazer), e a assinatura: hash conferindo com o texto, texto sendo o do
+servidor, responsável sem `financeiro` recusado, aluno alheio recusado,
+outra escola recusada, segunda assinatura recusada, `assinado_em` preenchido
+quando nulo e preservado quando já existia, e a tentativa de escalada de
+privilégio em `pessoas`.
+
+Também exercitado contra o Supabase real em transações revertidas: a
+responsável de verdade não enxerga comunicado de professores nem rascunho,
+`fn_turmas_do_usuario` devolve as três turmas dos filhos dela, e a
+assinatura grava nome/CPF/vínculo/IP com hash conferindo — tudo desfeito
+depois (zero assinaturas em produção).
+
 ## Real infrastructure this now runs against
 
 - **Supabase project**: `erp-escolar-br` (`xozhqzdniagwjlxoiarx`, `sa-east-1`),
-  org `jorquesa@icloud.com's Org`. 28 migrations applied. An existing
+  org `jorquesa@icloud.com's Org`. 31 migrations applied. An existing
   project in the same org (`Elara PMS`) was **paused** to free a slot under
   the org's 2-project free-tier cap — unpause it from the Supabase
   dashboard if you need it back.

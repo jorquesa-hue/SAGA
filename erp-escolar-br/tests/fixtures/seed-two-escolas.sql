@@ -94,3 +94,62 @@ insert into comunicados (id, escola_id, titulo, corpo, publico_alvo, enviado_em)
 insert into consentimentos_lgpd (id, escola_id, titular_pessoa_id, responsavel_pessoa_id, finalidade, versao_termo, ip) values
   ('a0000000-0000-0000-0000-0000000000b0', 'a0000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000004', 'comunicacao_financeira', 'v1', '203.0.113.10'),
   ('b0000000-0000-0000-0000-0000000000b0', 'b0000000-0000-0000-0000-000000000000', 'b0000000-0000-0000-0000-000000000005', 'b0000000-0000-0000-0000-000000000004', 'comunicacao_financeira', 'v1', '203.0.113.20');
+
+-- ── Portal do responsável (0030, 0031) ────────────────────────────────────
+--
+-- Um segundo responsável de escola A, vinculado ao aluno A2 mas SEM
+-- financeiro: enxerga o filho e não enxerga (nem assina) o contrato dele.
+-- É o caso que separa "é da família" de "é quem paga" — a distinção que
+-- contratos_select_responsavel e fn_assinar_contrato fazem.
+insert into pessoas (id, escola_id, nome, cpf, data_nascimento, papeis, auth_user_id) values
+  ('a0000000-0000-0000-0000-000000000008', 'a0000000-0000-0000-0000-000000000000', 'Responsavel Pedagogico A', '11122238002', '1983-08-08', array['responsavel']::pessoa_papel[], 'a0000000-0000-0000-0000-0000000000f8');
+
+insert into responsaveis_alunos (id, escola_id, responsavel_pessoa_id, aluno_id, vinculo, financeiro, pedagogico, retirada) values
+  ('a0000000-0000-0000-0000-000000000031', 'a0000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000008', 'a0000000-0000-0000-0000-000000000021', 'pai', false, true, true);
+
+-- Contrato do aluno A2, ainda sem assinado_em: é o contrato pendente que
+-- o portal oferece para assinar.
+insert into contratos (id, escola_id, matricula_id, valor_anuidade, num_parcelas, vencimento_dia) values
+  ('a0000000-0000-0000-0000-000000000061', 'a0000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000051', 12000.00, 12, 10);
+
+-- Quatro comunicados que cobrem cada ramo de comunicados_select: um só
+-- para professores, um rascunho não enviado, e um por turma (A, onde o
+-- aluno do responsável A está; A2, onde não está).
+insert into comunicados (id, escola_id, titulo, corpo, publico_alvo, turma_id, enviado_em) values
+  ('a0000000-0000-0000-0000-0000000000a1', 'a0000000-0000-0000-0000-000000000000', 'Reuniao pedagogica', 'So para o corpo docente.', 'professores', null, now()),
+  ('a0000000-0000-0000-0000-0000000000a2', 'a0000000-0000-0000-0000-000000000000', 'Rascunho', 'Ainda nao enviado.', 'todos', null, null),
+  ('a0000000-0000-0000-0000-0000000000a3', 'a0000000-0000-0000-0000-000000000000', 'Passeio 3o Ano A', 'Somente a turma A.', 'turma_especifica', 'a0000000-0000-0000-0000-000000000012', now()),
+  ('a0000000-0000-0000-0000-0000000000a4', 'a0000000-0000-0000-0000-000000000000', 'Passeio 3o Ano B', 'Somente a turma A2.', 'turma_especifica', 'a0000000-0000-0000-0000-000000000013', now());
+
+-- Aluno A2 com conta própria (o caso de EJA/ensino médio, em que o aluno
+-- acessa o portal sozinho). Aluno A segue sem login, para que os dois
+-- caminhos existam na base.
+update pessoas set auth_user_id = 'a0000000-0000-0000-0000-0000000000f7'
+ where id = 'a0000000-0000-0000-0000-000000000007';
+
+-- Linhas de escola B nas tabelas novas, para que a varredura cross-tenant
+-- da seção 1 tenha o que tentar ler. Sem elas o teste passaria por não
+-- haver nada — que é passar por acaso, não por isolamento.
+--
+-- O hash é calculado do jeito real, a partir do texto renderizado: uma
+-- constante inventada aqui passaria a checagem de formato e não provaria
+-- integridade nenhuma.
+insert into contratos_assinaturas (
+  id, escola_id, contrato_id, signatario_pessoa_id, signatario_nome,
+  signatario_cpf, vinculo, documento_texto, documento_hash, ip
+)
+select
+  'b0000000-0000-0000-0000-0000000000d0',
+  'b0000000-0000-0000-0000-000000000000',
+  'b0000000-0000-0000-0000-000000000060',
+  'b0000000-0000-0000-0000-000000000004',
+  'Responsavel B',
+  '22233347099',
+  'mae',
+  t.texto,
+  encode(sha256(convert_to(t.texto, 'UTF8')), 'hex'),
+  '203.0.113.20'
+from (select fn_contrato_texto('b0000000-0000-0000-0000-000000000060') as texto) t;
+
+insert into comunicados_leituras (id, escola_id, comunicado_id, pessoa_id) values
+  ('b0000000-0000-0000-0000-0000000000e0', 'b0000000-0000-0000-0000-000000000000', 'b0000000-0000-0000-0000-0000000000a0', 'b0000000-0000-0000-0000-000000000004');

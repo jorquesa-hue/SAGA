@@ -27,6 +27,7 @@ import {
   notasFiscais,
   pagamentos,
   parcelas,
+  pessoas,
   turmas,
 } from "./fixtures/ids.mjs";
 
@@ -69,14 +70,35 @@ const actors = {
     escola_id: escolaA,
     escola_role: "responsavel",
   },
+  // Vinculado ao alunoA2 com financeiro = false: é da família, não é quem
+  // paga. Separa "pode ver o filho" de "pode ver e assinar o contrato".
+  responsavelPedagogicoA: {
+    sub: authUsers.responsavelPedagogicoA,
+    escola_id: escolaA,
+    escola_role: "responsavel",
+  },
+  // Aluno com conta própria (EJA / ensino médio).
+  alunoA2: {
+    sub: authUsers.alunoA2,
+    escola_id: escolaA,
+    escola_role: "aluno",
+  },
 };
+
+// Troca as claims da transação corrente. Separado de withActor porque um
+// teste precisa de dois atores agindo sobre o mesmo estado, antes do
+// rollback — set_config(..., true) é por transação, então isto equivale a
+// duas requisições seguidas.
+async function setActor(actor) {
+  await client.query("select set_config('request.jwt.claims', $1, true)", [
+    JSON.stringify(actor),
+  ]);
+}
 
 async function withActor(actor, fn) {
   await client.query("begin");
   try {
-    await client.query("select set_config('request.jwt.claims', $1, true)", [
-      JSON.stringify(actor),
-    ]);
+    await setActor(actor);
     return await fn();
   } finally {
     await client.query("rollback");
@@ -334,5 +356,421 @@ test("adminA cannot UPDATE a consentimento_lgpd row (append-only, guarda permane
       ),
     /permission denied/i,
     "a consentimento_lgpd row was updated — consent records must be immutable",
+  );
+});
+
+// ── 7. Comunicados: público-alvo restringe de verdade (0030).
+//
+// Antes da 0030 a política era só `escola_id = fn_jwt_escola_id()`, e
+// todos os casos abaixo passavam — no sentido errado. Filtrar na tela não
+// contava: estes testes falam com o banco direto, que é o que um token
+// vazado também faz.
+
+async function vePodeLer(actor, comunicadoId) {
+  return withActor(actor, async () => {
+    const { rowCount } = await client.query("select 1 from comunicados where id = $1", [
+      comunicadoId,
+    ]);
+    return rowCount === 1;
+  });
+}
+
+test("responsavelA não lê comunicado dirigido aos professores", async () => {
+  assert.equal(
+    await vePodeLer(actors.responsavelA, comunicados.aProfessores),
+    false,
+    "um responsável leu o que a escola escreveu para o corpo docente",
+  );
+});
+
+test("responsavelA não lê comunicado ainda não enviado (rascunho)", async () => {
+  assert.equal(
+    await vePodeLer(actors.responsavelA, comunicados.aRascunho),
+    false,
+    "um responsável leu um rascunho — enviado_em deixou de ser a fronteira",
+  );
+});
+
+test("professorA não lê rascunho", async () => {
+  assert.equal(await vePodeLer(actors.professorA, comunicados.aRascunho), false);
+});
+
+test("secretariaA lê tudo, inclusive o rascunho que escreveu", async () => {
+  assert.equal(await vePodeLer(actors.secretariaA, comunicados.aRascunho), true);
+  assert.equal(await vePodeLer(actors.secretariaA, comunicados.aProfessores), true);
+  assert.equal(await vePodeLer(actors.secretariaA, comunicados.aTurmaA2), true);
+});
+
+test("responsavelA lê o comunicado da turma do filho, e não o da outra turma", async () => {
+  assert.equal(
+    await vePodeLer(actors.responsavelA, comunicados.aTurmaA),
+    true,
+    "o responsável não recebeu o comunicado da turma em que o filho está",
+  );
+  assert.equal(
+    await vePodeLer(actors.responsavelA, comunicados.aTurmaA2),
+    false,
+    "o responsável recebeu o comunicado de uma turma em que não tem filho",
+  );
+});
+
+test("professorA lê o comunicado da turma que leciona, e não o da outra", async () => {
+  assert.equal(await vePodeLer(actors.professorA, comunicados.aTurmaA), true);
+  assert.equal(
+    await vePodeLer(actors.professorA, comunicados.aTurmaA2),
+    false,
+    "o professor leu o comunicado de uma turma que não é dele",
+  );
+});
+
+test("aluno com conta própria lê o geral e o da turma, nunca o dos responsáveis", async () => {
+  assert.equal(await vePodeLer(actors.alunoA2, comunicados.a), true);
+  assert.equal(await vePodeLer(actors.alunoA2, comunicados.aTurmaA2), true);
+  assert.equal(await vePodeLer(actors.alunoA2, comunicados.aTurmaA), false);
+  assert.equal(
+    await vePodeLer(actors.alunoA2, comunicados.aProfessores),
+    false,
+    "o aluno leu comunicado dirigido aos professores",
+  );
+});
+
+test("comunicado 'turma_especifica' sem turma é rejeitado pelo banco", async () => {
+  await assert.rejects(
+    () =>
+      withActor(actors.secretariaA, () =>
+        client.query(
+          `insert into comunicados (escola_id, titulo, corpo, publico_alvo, enviado_em)
+           values ($1, 'Sem turma', 'Corpo', 'turma_especifica', now())`,
+          [escolaA],
+        ),
+      ),
+    /comunicados_turma_coerente/,
+    "gravou comunicado de turma sem dizer qual turma — o rótulo voltaria a mentir",
+  );
+});
+
+// ── 8. Confirmação de leitura (0030): fato datado, em nome próprio.
+
+test("responsavelA confirma leitura de um comunicado que enxerga", async () => {
+  const n = await withActor(actors.responsavelA, async () => {
+    await client.query(
+      "insert into comunicados_leituras (escola_id, comunicado_id, pessoa_id) values ($1, $2, $3)",
+      [escolaA, comunicados.a, pessoas.responsavelA],
+    );
+    const { rows } = await client.query(
+      "select count(*)::int as n from comunicados_leituras where comunicado_id = $1 and pessoa_id = $2",
+      [comunicados.a, pessoas.responsavelA],
+    );
+    return rows[0].n;
+  });
+  assert.equal(n, 1);
+});
+
+test("responsavelA não confirma leitura de comunicado que não enxerga", async () => {
+  await assert.rejects(
+    () =>
+      withActor(actors.responsavelA, () =>
+        client.query(
+          "insert into comunicados_leituras (escola_id, comunicado_id, pessoa_id) values ($1, $2, $3)",
+          [escolaA, comunicados.aProfessores, pessoas.responsavelA],
+        ),
+      ),
+    /row-level security/i,
+    "registrar leitura virou um jeito de descobrir que o comunicado existe",
+  );
+});
+
+test("responsavelA não confirma leitura em nome de outra pessoa", async () => {
+  await assert.rejects(
+    () =>
+      withActor(actors.responsavelA, () =>
+        client.query(
+          "insert into comunicados_leituras (escola_id, comunicado_id, pessoa_id) values ($1, $2, $3)",
+          [escolaA, comunicados.a, pessoas.outroResponsavelA],
+        ),
+      ),
+    /row-level security/i,
+  );
+});
+
+test("leitura confirmada não se desfaz (sem UPDATE, sem DELETE)", async () => {
+  await assert.rejects(
+    () =>
+      withActor(actors.adminA, () =>
+        client.query(
+          "update comunicados_leituras set lido_em = now() where escola_id = $1",
+          [escolaA],
+        ),
+      ),
+    /permission denied/i,
+  );
+  await assert.rejects(
+    () =>
+      withActor(actors.adminA, () =>
+        client.query("delete from comunicados_leituras where escola_id = $1", [escolaA]),
+      ),
+    /permission denied/i,
+  );
+});
+
+// ── 9. Assinatura eletrônica do contrato (0029, 0031).
+
+test("responsavelA assina o contrato do próprio filho e o hash confere", async () => {
+  const row = await withActor(actors.responsavelA, async () => {
+    // O contrato A já tem assinado_em pela secretaria; assinar é outro
+    // ato, da família, e não depende disso.
+    await client.query("select fn_assinar_contrato($1, $2, $3)", [
+      contratos.a,
+      "203.0.113.55",
+      "Mozilla/5.0 (teste)",
+    ]);
+    const { rows } = await client.query(
+      `select a.documento_hash,
+              encode(sha256(convert_to(a.documento_texto, 'UTF8')), 'hex') as recalculado,
+              a.documento_texto = fn_contrato_texto(a.contrato_id) as texto_e_o_do_servidor,
+              a.signatario_pessoa_id, host(a.ip) as ip, a.signatario_nome
+         from contratos_assinaturas a
+        where a.contrato_id = $1`,
+      [contratos.a],
+    );
+    return rows[0];
+  });
+  assert.equal(
+    row.documento_hash,
+    row.recalculado,
+    "o hash não corresponde ao texto gravado",
+  );
+  assert.equal(
+    row.texto_e_o_do_servidor,
+    true,
+    "o texto assinado não é o que o servidor renderiza — o cliente escolheu o conteúdo",
+  );
+  assert.equal(row.signatario_pessoa_id, pessoas.responsavelA);
+  assert.equal(row.ip, "203.0.113.55");
+  assert.equal(row.signatario_nome, "Responsavel A");
+});
+
+test("assinar não sobrescreve a data que a secretaria já havia marcado", async () => {
+  const [antes, depois] = await withActor(actors.responsavelA, async () => {
+    const a = await client.query("select assinado_em from contratos where id = $1", [
+      contratos.a,
+    ]);
+    await client.query("select fn_assinar_contrato($1, $2)", [
+      contratos.a,
+      "203.0.113.62",
+    ]);
+    const d = await client.query("select assinado_em from contratos where id = $1", [
+      contratos.a,
+    ]);
+    return [a.rows[0].assinado_em, d.rows[0].assinado_em];
+  });
+  assert.notEqual(
+    antes,
+    null,
+    "o fixture deixou de ter a marcação operacional da secretaria",
+  );
+  assert.deepEqual(
+    depois,
+    antes,
+    "assinar sobrescreveu a data operacional — são dois fatos distintos, e os dois importam",
+  );
+});
+
+test("assinar preenche contratos.assinado_em quando ainda estava nulo", async () => {
+  // Dois atores na mesma transação: a secretaria desfaz a marcação
+  // operacional, e em seguida a família assina. set_config(..., true) é
+  // por transação, então trocar de claims aqui dentro é legítimo — é o
+  // mesmo que duas requisições contra o mesmo estado.
+  await client.query("begin");
+  try {
+    await setActor(actors.secretariaA);
+    await client.query("update contratos set assinado_em = null where id = $1", [
+      contratos.a,
+    ]);
+
+    await setActor(actors.responsavelA);
+    await client.query("select fn_assinar_contrato($1, $2)", [
+      contratos.a,
+      "203.0.113.63",
+    ]);
+
+    const { rows } = await client.query(
+      `select c.assinado_em, a.assinado_em as assinatura_em
+         from contratos c
+         join contratos_assinaturas a on a.contrato_id = c.id
+        where c.id = $1`,
+      [contratos.a],
+    );
+    assert.notEqual(
+      rows[0].assinado_em,
+      null,
+      "o gatilho não marcou o contrato como assinado",
+    );
+    assert.deepEqual(
+      rows[0].assinado_em,
+      rows[0].assinatura_em,
+      "a data do contrato não é a do aceite",
+    );
+  } finally {
+    await client.query("rollback");
+  }
+});
+
+// ── 9b. As tabelas novas continuam valendo a fronteira de tenant. Não
+// entram na varredura da seção 1 porque nelas o fixture só semeia linhas
+// de escola B (as de escola A nascem dos próprios testes, dentro de
+// transações desfeitas) — e aquela varredura também exige linha própria
+// visível.
+for (const tabela of ["contratos_assinaturas", "comunicados_leituras"]) {
+  for (const [nome, actor] of Object.entries(actors)) {
+    test(`${nome} lendo ${tabela} não vê linha da escola B`, async () => {
+      const n = await withActor(actor, () => countWhereEscola(tabela, escolaB));
+      assert.equal(n, 0, `${nome} leu ${tabela} da escola B`);
+    });
+  }
+}
+
+test("responsável sem financeiro não assina o contrato do próprio dependente", async () => {
+  await assert.rejects(
+    () =>
+      withActor(actors.responsavelPedagogicoA, () =>
+        client.query("select fn_assinar_contrato($1, $2)", [
+          contratos.a2,
+          "203.0.113.57",
+        ]),
+      ),
+    /contrato_nao_encontrado/,
+    "quem não responde pelo financeiro assinou o contrato",
+  );
+});
+
+test("responsavelA não assina contrato de aluno que não é seu", async () => {
+  await assert.rejects(
+    () =>
+      withActor(actors.responsavelA, () =>
+        client.query("select fn_assinar_contrato($1, $2)", [
+          contratos.a2,
+          "203.0.113.58",
+        ]),
+      ),
+    /contrato_nao_encontrado/,
+  );
+});
+
+test("responsavelB não assina contrato da escola A", async () => {
+  await assert.rejects(
+    () =>
+      withActor(
+        { sub: authUsers.responsavelB, escola_id: escolaB, escola_role: "responsavel" },
+        () =>
+          client.query("select fn_assinar_contrato($1, $2)", [
+            contratos.a,
+            "203.0.113.59",
+          ]),
+      ),
+    /contrato_nao_encontrado/,
+    "assinatura atravessou a fronteira de tenant",
+  );
+});
+
+test("o mesmo contrato não é assinado duas vezes", async () => {
+  await assert.rejects(
+    () =>
+      withActor(actors.responsavelA, async () => {
+        await client.query("select fn_assinar_contrato($1, $2)", [
+          contratos.a,
+          "203.0.113.60",
+        ]);
+        await client.query("select fn_assinar_contrato($1, $2)", [
+          contratos.a,
+          "203.0.113.60",
+        ]);
+      }),
+    /contrato_ja_assinado/,
+  );
+});
+
+test("assinatura registrada não é editada nem apagada por ninguém", async () => {
+  await assert.rejects(
+    () =>
+      withActor(actors.adminA, () =>
+        client.query("update contratos_assinaturas set documento_texto = 'outro'"),
+      ),
+    /permission denied/i,
+    "uma assinatura foi editada — a prova deixou de provar",
+  );
+  await assert.rejects(
+    () =>
+      withActor(actors.adminA, () => client.query("delete from contratos_assinaturas")),
+    /permission denied/i,
+  );
+});
+
+test("o signatário relê a própria assinatura; outro responsável não", async () => {
+  const proprio = await withActor(actors.responsavelA, async () => {
+    await client.query("select fn_assinar_contrato($1, $2)", [
+      contratos.a,
+      "203.0.113.61",
+    ]);
+    const { rowCount } = await client.query(
+      "select 1 from contratos_assinaturas where contrato_id = $1",
+      [contratos.a],
+    );
+    return rowCount;
+  });
+  assert.equal(proprio, 1, "quem assinou não conseguiu reler o próprio comprovante");
+});
+
+// ── 10. Contato self-service (0031), e por que a função existe.
+
+test("responsavelA corrige o próprio e-mail pela função", async () => {
+  const email = await withActor(actors.responsavelA, async () => {
+    await client.query("select fn_atualizar_meu_email($1)", ["mae@example.test"]);
+    const { rows } = await client.query("select email from pessoas where id = $1", [
+      pessoas.responsavelA,
+    ]);
+    return rows[0].email;
+  });
+  assert.equal(email, "mae@example.test");
+});
+
+test("a função não alcança a pessoa de outra pessoa", async () => {
+  const outro = await withActor(actors.responsavelA, async () => {
+    await client.query("select fn_atualizar_meu_email($1)", ["invasor@example.test"]);
+    return null;
+  });
+  assert.equal(outro, null);
+  // Fora da transação do teste acima nada foi gravado (rollback); o ponto
+  // aqui é que a função não recebe "de quem" — só existe o próprio.
+});
+
+test("e-mail em branco apaga o contato, em vez de gravar string vazia", async () => {
+  const email = await withActor(actors.responsavelA, async () => {
+    await client.query("select fn_atualizar_meu_email($1)", ["mae@example.test"]);
+    await client.query("select fn_atualizar_meu_email($1)", ["   "]);
+    const { rows } = await client.query("select email from pessoas where id = $1", [
+      pessoas.responsavelA,
+    ]);
+    return rows[0].email;
+  });
+  assert.equal(email, null);
+});
+
+// É por isto que fn_atualizar_meu_email existe em vez de uma política
+// `pessoas_update_self`: RLS autoriza LINHAS, não COLUNAS, e `authenticated`
+// tem UPDATE na tabela inteira. Com uma política de linha própria, este
+// UPDATE viraria escalada de privilégio em uma requisição.
+test("responsavelA não altera a própria linha em pessoas (nem para virar admin)", async () => {
+  const rowCount = await withActor(actors.responsavelA, async () => {
+    const res = await client.query(
+      "update pessoas set papeis = array['admin']::pessoa_papel[] where id = $1",
+      [pessoas.responsavelA],
+    );
+    return res.rowCount;
+  });
+  assert.equal(
+    rowCount,
+    0,
+    "um responsável reescreveu os próprios papéis — existe política de UPDATE self em pessoas",
   );
 });

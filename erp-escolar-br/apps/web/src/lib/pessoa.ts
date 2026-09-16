@@ -5,6 +5,7 @@ export interface CurrentPessoa {
   escola_id: string;
   nome: string;
   papeis: string[];
+  email: string | null;
 }
 
 // Looks up the caller's own pessoas row by auth_user_id. Works regardless
@@ -21,7 +22,7 @@ export async function getCurrentPessoa(): Promise<CurrentPessoa | null> {
 
   const { data } = await supabase
     .from("pessoas")
-    .select("id, escola_id, nome, papeis")
+    .select("id, escola_id, nome, papeis, email")
     .eq("auth_user_id", user.id)
     .is("deleted_at", null)
     .maybeSingle();

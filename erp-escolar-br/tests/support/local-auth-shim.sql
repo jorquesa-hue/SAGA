@@ -57,3 +57,16 @@ $$;
 grant usage on schema auth to authenticated, anon;
 grant execute on function auth.jwt() to authenticated, anon;
 grant execute on function auth.uid() to authenticated, anon;
+
+-- auth.users: no Supabase real é a tabela do GoTrue. Aqui existe só porque
+-- 0027_pessoas_email.sql faz backfill de e-mail a partir dela — sem esta
+-- definição o db:reset:test falha na 0027 e a suíte obrigatória de
+-- isolamento (spec §3) deixa de rodar. Vazia basta: a migração só lê.
+--
+-- Nenhuma política referencia esta tabela; quem resolve identidade é
+-- auth.uid() acima, a partir do claim `sub`. As colunas são as duas que as
+-- migrações tocam, não o schema completo do GoTrue.
+create table if not exists auth.users (
+  id uuid primary key,
+  email text
+);

@@ -15,6 +15,7 @@ export const pessoas = {
   alunoA: "a0000000-0000-0000-0000-000000000005",
   outroResponsavelA: "a0000000-0000-0000-0000-000000000006",
   alunoA2: "a0000000-0000-0000-0000-000000000007",
+  responsavelPedagogicoA: "a0000000-0000-0000-0000-000000000008",
 
   adminB: "b0000000-0000-0000-0000-000000000001",
   secretariaB: "b0000000-0000-0000-0000-000000000002",
@@ -47,6 +48,8 @@ export const alunos = {
 
 export const responsaveisAlunos = {
   a: "a0000000-0000-0000-0000-000000000030",
+  // Vínculo pedagógico sem financeiro: responsavelPedagogicoA -> alunoA2.
+  a2: "a0000000-0000-0000-0000-000000000031",
   b: "b0000000-0000-0000-0000-000000000030",
 };
 
@@ -63,6 +66,8 @@ export const matriculas = {
 
 export const contratos = {
   a: "a0000000-0000-0000-0000-000000000060",
+  // Do alunoA2, sem assinado_em: o contrato pendente de assinatura.
+  a2: "a0000000-0000-0000-0000-000000000061",
   b: "b0000000-0000-0000-0000-000000000060",
 };
 
@@ -83,7 +88,19 @@ export const notasFiscais = {
 
 export const comunicados = {
   a: "a0000000-0000-0000-0000-0000000000a0",
+  aProfessores: "a0000000-0000-0000-0000-0000000000a1",
+  aRascunho: "a0000000-0000-0000-0000-0000000000a2",
+  aTurmaA: "a0000000-0000-0000-0000-0000000000a3",
+  aTurmaA2: "a0000000-0000-0000-0000-0000000000a4",
   b: "b0000000-0000-0000-0000-0000000000a0",
+};
+
+export const assinaturas = {
+  b: "b0000000-0000-0000-0000-0000000000d0",
+};
+
+export const leituras = {
+  b: "b0000000-0000-0000-0000-0000000000e0",
 };
 
 export const consentimentos = {
@@ -99,6 +116,8 @@ export const authUsers = {
   professorA: "a0000000-0000-0000-0000-0000000000f3",
   responsavelA: "a0000000-0000-0000-0000-0000000000f4",
   outroResponsavelA: "a0000000-0000-0000-0000-0000000000f6",
+  responsavelPedagogicoA: "a0000000-0000-0000-0000-0000000000f8",
+  alunoA2: "a0000000-0000-0000-0000-0000000000f7",
 
   adminB: "b0000000-0000-0000-0000-0000000000f1",
   secretariaB: "b0000000-0000-0000-0000-0000000000f2",
