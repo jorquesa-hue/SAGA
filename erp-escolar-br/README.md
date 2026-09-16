@@ -233,10 +233,91 @@ quitação até 06/2026 (5 pagas, 3 atrasadas, 2 pendentes); reimportação do
 mesmo arquivo; isolamento entre tenants; e bloqueio de quem não é
 admin/secretaria.
 
+## Quinta rodada: débito bloqueia pagamento, e nota fiscal por e-mail
+
+Dois pedidos: não deixar registrar pagamento de quem tem parcela em atraso,
+e mandar o comprovante por e-mail quando o pagamento acontece.
+
+### Bloqueio por aluno, não só por contrato
+
+Metade disso já existia. A migração 0019 recusa, no banco, o pagamento de
+uma competência mais recente com parcela anterior em aberto **no mesmo
+contrato** — e é no banco, não na tela, porque o app fala direto com o
+PostgREST.
+
+A lacuna era entre contratos, e aparecia justo no caso que mais importa: um
+aluno com contrato de 2025 em atraso e contrato de 2026 novo tinha o
+pagamento de 2026 aceito normalmente. A escola registrava a mensalidade do
+ano corrente e o débito antigo seguia esquecido.
+
+A migração 0026 acrescenta a regra 2: qualquer parcela **vencida** e em
+aberto em outro contrato do mesmo aluno bloqueia o pagamento. Usa "vencida"
+(vencimento < hoje) e não "competência anterior" porque comparar
+competências entre contratos de anos diferentes não quer dizer nada — o que
+caracteriza débito é ter vencido e não ter sido pago.
+
+Pagamentos com `meio = 'migracao'` são isentos da regra 2, deliberadamente.
+A importação (0025) grava o que a escola realmente recebeu antes de usar o
+sistema; escola que migra com aluno devendo 2024 e contrato de 2025 quitado
+é o caso comum, e aplicar a regra ali derrubaria a importação inteira (ela é
+tudo-ou-nada) por causa de um fato que já aconteceu. A regra existe para
+impedir recebimento fora de ordem daqui para frente, não para reescrever o
+passado. A regra 1 continua valendo na importação, e é satisfeita
+naturalmente porque o backfill insere em ordem crescente de competência.
+
+### Nota fiscal por e-mail — outbox transacional
+
+`pessoas` não tinha nenhum campo de e-mail (0027 acrescenta). Quem entra
+pelo convite tem endereço em `auth.users`, mas isso é credencial de login,
+não dado de contato: a maioria dos responsáveis nunca acessa o portal e
+aluno nunca tem conta. A coluna não é única de propósito — dois irmãos
+compartilham o e-mail da mãe. `invite-pessoa` passou a gravar o endereço
+também em `pessoas`, e a migração faz backfill de quem já tem login.
+
+O envio usa outbox (0028), não chamada direta:
+
+    nota fiscal chega em 'emitida'
+      → gatilho enfileira em emails_transacionais (mesma transação)
+      → enviar-emails-pendentes envia via Resend (separado, retentável)
+
+Mandar e-mail é chamada de rede a terceiro, e falha. Se fosse feito dentro
+do fluxo que emite a nota, uma falha ou derrubaria a emissão — péssimo, a
+nota é o documento fiscal e o e-mail é conveniência — ou seria engolida em
+silêncio, que é pior: a família não recebe e ninguém fica sabendo. Com
+outbox a intenção fica gravada, e o envio vira trabalho auditável.
+
+Detalhes que a tabela registra de propósito: quando não há endereço para
+ninguém, a linha é gravada como `sem_destinatario` em vez de o recibo sumir
+sem rastro; e um índice único por `nota_fiscal_id` garante que a reentrega
+do webhook (at-least-once) não mande o mesmo comprovante duas vezes.
+
+### O que ainda não funciona, e por quê
+
+O envio de comprovante por e-mail depende de **duas** contas externas, não
+de uma:
+
+| Dependência       | Estado          | Efeito                         |
+| ----------------- | --------------- | ------------------------------ |
+| Provedor de NFS-e | não configurado | a nota nunca sai de `pendente` |
+| Resend            | não configurado | a fila não é consumida         |
+
+Como o gatilho dispara em `emitida`, e sem provedor de eNF a nota para em
+`pendente`, **nenhum e-mail é enfileirado hoje**. Configurar só o Resend não
+faz comprovante nenhum sair. `enviar-emails-pendentes` responde
+`email_not_configured` (501) enquanto faltar `RESEND_API_KEY` /
+`EMAIL_REMETENTE` — falhar alto em vez de fingir que enviou, o mesmo padrão
+das réguas e do Asaas.
+
+Testado contra o Supabase real em transações revertidas: bloqueio entre
+contratos do mesmo aluno; isenção da migração; liberação depois de quitado o
+débito; regressão completa da importação; e os quatro caminhos da fila
+(sem destinatário, reentrega duplicada, envio normal, nota `pendente` que
+não deve enfileirar).
+
 ## Real infrastructure this now runs against
 
 - **Supabase project**: `erp-escolar-br` (`xozhqzdniagwjlxoiarx`, `sa-east-1`),
-  org `jorquesa@icloud.com's Org`. 25 migrations applied. An existing
+  org `jorquesa@icloud.com's Org`. 28 migrations applied. An existing
   project in the same org (`Elara PMS`) was **paused** to free a slot under
   the org's 2-project free-tier cap — unpause it from the Supabase
   dashboard if you need it back.

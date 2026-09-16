@@ -107,6 +107,12 @@ Deno.serve(async (req: Request) => {
       cpf: body.cpf ?? null,
       data_nascimento: body.data_nascimento,
       papeis: body.papeis,
+      // Também em pessoas, não só em auth.users: o endereço aqui é dado de
+      // contato (recibo, nota fiscal, régua de cobrança), e auth.users é
+      // credencial de login. Sem isto, quem entra pelo convite ficaria sem
+      // endereço para onde a escola pudesse mandar documento — ver
+      // Migração 0027.
+      email: body.email,
       auth_user_id: invited.user.id,
     })
     .select("id")
